@@ -358,6 +358,7 @@ body { font-family:'Heebo',sans-serif; background:var(--cream); color:var(--text
     </div>
     <div class="action-btns">
       <button class="btn-back" onclick="goBack()">← חזרה</button>
+      <button class="btn-pdf" style="background:linear-gradient(135deg,#1E8449,#27AE60);" onclick="openVeggies()">🥦 הזמנת ירקות</button>
       <button class="btn-pdf" onclick="submitOrder()">✅ אישור ושליחה</button>
     </div>
   </div>
@@ -728,7 +729,57 @@ function updateNotes(){
   if(v){b.style.display='block';t.textContent=v;}else{b.style.display='none';}
 }
 
-// ===== מספר הטלפון שלך לקבלת הזמנות בוואטסאפ =====
+// ===== חיבור לטופס הירקות =====
+const VEGGIES_URL = 'https://chunkyzz.github.io/amalfi-orders/';
+
+// מיפוי שמות מנות Pizza Zmani → שמות ב-Supabase
+const DISH_MAP = {
+  'קיסר':           'קיסר',
+  'קפרזה':          'קפרזה',
+  'חציל':           'חציל קלי',
+  'בורגול סלקים':   'בורגול סלק',
+  'עשבי תיבול':     'עשבי תיבול',
+  'סלט קינואה':     'קינואה',
+  'סלט שורשים':     'שורשים',
+  'סלט יווני':      'יווני',
+  'אנטיפסטי':       'אנטיפסטי',
+  "קרפצ'יו סלק":    'קרפציו סלק',
+  'תפו"א איטלקי':   'תפו"א איטלקי',
+  "ארנצ'יני":       'ארנצ׳יני',
+  'פיצה אדומה':     'פיצה כללי',
+  'פיצה ירוקה':     'פיצה כללי',
+  'פיצה צהובה':     'פיצה כללי',
+  'פיצה סגולה':     'פיצה כללי',
+  'פיצה לבנה':      'פיצה כללי',
+  'פסטה קצרה':      'פסטה קצרה שמנת פטריות',
+  'ניוקי צבעוני':   'ניוקי צבעוני',
+  'פלין גבינות':    'רביולי גבינות',
+  "סביצ'ה דג ים":  'סביצה',
+  'פילה דג לבן / סלמון': 'סביצה',
+};
+
+function openVeggies(){
+  const guests = parseInt(document.getElementById('f-guests').value) || guestCount;
+  const eventName = document.getElementById('f-name').value + ' — ' + document.getElementById('f-etype').value;
+
+  // איסוף מנות שנבחרו — ללא כפילויות (פיצות → פיצה כללי פעם אחת)
+  const mappedDishes = new Set();
+  Object.keys(selected).forEach(id => {
+    const item = menuItems.find(i => i.id == id);
+    if(!item) return;
+    const mapped = DISH_MAP[item.name];
+    if(mapped) mappedDishes.add(mapped);
+  });
+
+  // בניית פרמטרים לURL
+  const params = new URLSearchParams({
+    event: eventName,
+    people: guests,
+    dishes: [...mappedDishes].join(','),
+  });
+
+  window.open(VEGGIES_URL + '?' + params.toString(), '_blank');
+}
 const MY_WHATSAPP = '972542031181';
 
 function submitOrder(){
