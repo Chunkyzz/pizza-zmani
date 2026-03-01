@@ -358,8 +358,8 @@ body { font-family:'Heebo',sans-serif; background:var(--cream); color:var(--text
     </div>
     <div class="action-btns">
       <button class="btn-back" onclick="goBack()">← חזרה</button>
-      <button class="btn-pdf" style="background:linear-gradient(135deg,#1E8449,#27AE60);" onclick="openVeggies()">🥦 הזמנת ירקות</button>
-      <button class="btn-pdf" onclick="submitOrder()">✅ אישור ושליחה</button>
+      <button class="btn-pdf" onclick="window.print()">📄 שמור PDF</button>
+      <button class="btn-pdf" onclick="submitOrder()">✅ שלח הזמנה</button>
     </div>
   </div>
 </div>
@@ -445,6 +445,9 @@ body { font-family:'Heebo',sans-serif; background:var(--cream); color:var(--text
       <div class="adm-sec">
         <h2>הזמנות שהתקבלו</h2>
         <div id="adm-orders"></div>
+        <div id="adm-veggies-btn-wrap" style="display:none;margin-top:1rem;">
+          <button class="abtn" style="background:linear-gradient(135deg,#1E8449,#27AE60);color:white;font-size:0.9rem;padding:0.6rem 1.2rem;" onclick="sendSelectedToVeggies()">🥦 שלח הזמנות מסומנות לאמלפי</button>
+        </div>
       </div>
     </div>
   </div>
@@ -971,13 +974,57 @@ function openWA(id,name){
 }
 function rAdmOrders(){
   const el=document.getElementById('adm-orders');
-  if(!orders.length){el.innerHTML='<div class="empty">עדיין לא התקבלו הזמנות</div>';return;}
+  const btnWrap=document.getElementById('adm-veggies-btn-wrap');
+  if(!orders.length){
+    el.innerHTML='<div class="empty">עדיין לא התקבלו הזמנות</div>';
+    btnWrap.style.display='none';
+    return;
+  }
   el.innerHTML='';
+  btnWrap.style.display='block';
   [...orders].reverse().forEach(o=>{
     const d=document.createElement('div');d.className='oc';
-    d.innerHTML=`<div class="oc-hd"><div class="oc-name">🎉 ${o.client} — ${o.event}</div><div class="oc-date">${o.created}</div></div><div class="oc-info">📍 ${o.address} · 📅 ${o.date} ${o.time} · 👥 ${o.guests} מוזמנים</div><div class="oc-tags">${o.items.map(i=>`<span class="oc-tag">${i.name} ×${i.qty}</span>`).join('')}</div>${o.notes?`<div class="oc-notes">💬 ${o.notes}</div>`:''}`;
+    d.style.cssText='display:flex;gap:0.75rem;align-items:flex-start;';
+    d.innerHTML=`
+      <input type="checkbox" class="order-check" data-id="${o.id}"
+        style="margin-top:0.3rem;width:18px;height:18px;accent-color:#C0392B;flex-shrink:0;cursor:pointer;">
+      <div style="flex:1">
+        <div class="oc-hd"><div class="oc-name">🎉 ${o.client} — ${o.event}</div><div class="oc-date">${o.created}</div></div>
+        <div class="oc-info">📍 ${o.address} · 📅 ${o.date} ${o.time} · 👥 ${o.guests} מוזמנים</div>
+        <div class="oc-tags">${o.items.map(i=>`<span class="oc-tag">${i.name} ×${i.qty}</span>`).join('')}</div>
+        ${o.notes?`<div class="oc-notes">💬 ${o.notes}</div>`:''}
+      </div>`;
     el.appendChild(d);
   });
+}
+
+function sendSelectedToVeggies(){
+  const checked = [...document.querySelectorAll('.order-check:checked')];
+  if(!checked.length){ alert('יש לסמן לפחות הזמנה אחת'); return; }
+
+  const selectedOrders = checked.map(cb => orders.find(o=>o.id==cb.dataset.id)).filter(Boolean);
+
+  // מיזוג כל ההזמנות — מנות + אנשים
+  const allDishNames = new Set();
+  let totalGuests = 0;
+  const eventNames = [];
+
+  selectedOrders.forEach(o=>{
+    totalGuests += parseInt(o.guests)||0;
+    eventNames.push(o.client + ' (' + o.guests + ' איש)');
+    o.items.forEach(item=>{
+      const mapped = DISH_MAP[item.name];
+      if(mapped) allDishNames.add(mapped);
+    });
+  });
+
+  const params = new URLSearchParams({
+    event: eventNames.join(' + '),
+    people: totalGuests,
+    dishes: [...allDishNames].join(','),
+  });
+
+  window.open(VEGGIES_URL + '?' + params.toString(), '_blank');
 }
 </script>
 </body>
