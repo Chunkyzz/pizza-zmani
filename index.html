@@ -226,6 +226,24 @@ body { font-family:'Heebo',sans-serif; background:var(--cream); color:var(--text
 </head>
 <body>
 
+<!-- מסך סיסמה -->
+<div id="password-screen" style="display:none;position:fixed;inset:0;background:linear-gradient(160deg,#1C1008,#2E1A0E);z-index:2000;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:2rem;">
+  <div style="font-size:3rem;margin-bottom:0.5rem;">🍕</div>
+  <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.8rem;color:white;font-weight:900;margin-bottom:0.2rem;">Pizza Zmani</div>
+  <div style="color:#b8876a;font-size:0.85rem;margin-bottom:2rem;">אוכל איטלקי שמח</div>
+  <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(192,57,43,0.3);border-radius:16px;padding:1.8rem;width:100%;max-width:320px;">
+    <div style="color:#F5C6C0;font-size:0.9rem;margin-bottom:1rem;">🔒 אנא הזינו סיסמה לכניסה</div>
+    <input type="password" id="entry-password" placeholder="סיסמה..."
+      style="width:100%;background:rgba(255,255,255,0.08);border:1.5px solid rgba(192,57,43,0.3);border-radius:9px;padding:0.7rem 1rem;color:white;font-family:'Heebo',sans-serif;font-size:1rem;direction:rtl;text-align:center;letter-spacing:0.15em;margin-bottom:0.75rem;"
+      onkeydown="if(event.key==='Enter') checkPassword()">
+    <div id="pw-error" style="color:#ff6b6b;font-size:0.78rem;min-height:1.1rem;margin-bottom:0.5rem;"></div>
+    <button onclick="checkPassword()"
+      style="width:100%;background:linear-gradient(135deg,#922B21,#C0392B);color:white;border:none;padding:0.75rem;border-radius:50px;font-family:'Heebo',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;">
+      כניסה →
+    </button>
+  </div>
+</div>
+
 <nav class="steps-nav" id="steps-nav">
   <div class="step-pill active" id="sp1"><span class="sn">1</span><span>בחירת תפריט</span></div>
   <span class="step-sep">›</span>
@@ -784,21 +802,58 @@ function submitOrder(){
 // Auto-load client from URL on page init
 window.addEventListener('DOMContentLoaded', ()=>{
   const client = getClient();
+
   if(client){
+    // לקוח עם קישור אישי — נכנס ישירות ללא סיסמה
     document.getElementById('hero-tag').textContent = `שלום, ${client.name}! בחרו את התפריט לאירוע שלכם 🍕`;
     if(client.name) document.getElementById('f-name').value = client.name;
     if(client.event){
       const sel = document.getElementById('f-etype');
       for(let o of sel.options){ if(o.value === client.event){ o.selected=true; break; } }
     }
+    renderMenu();
+    showScreen('screen-menu');
+  } else if(sessionStorage.getItem('pz-auth')==='1'){
+    // כבר עבר אימות בסשן זה
+    renderMenu();
+    showScreen('screen-menu');
+  } else {
+    // מציג מסך סיסמה
+    document.getElementById('password-screen').style.display='flex';
+    setTimeout(()=>document.getElementById('entry-password').focus(), 100);
   }
-  renderMenu();
-  showScreen('screen-menu');
 });
+// ===== סיסמאות =====
+const ENTRY_PASSWORD  = 'pizza3027';
+const ADMIN_PASSWORD  = 'pizzaadmin';
+
+function checkPassword(){
+  const val = document.getElementById('entry-password').value;
+  if(val === ENTRY_PASSWORD){
+    sessionStorage.setItem('pz-auth','1');
+    document.getElementById('password-screen').style.display='none';
+    renderMenu();
+    showScreen('screen-menu');
+  } else {
+    document.getElementById('pw-error').textContent = 'סיסמה שגויה, נסה שוב';
+    document.getElementById('entry-password').value='';
+    document.getElementById('entry-password').focus();
+  }
+}
+
 function toggleAdmin(){
-  const p=document.getElementById('admin-panel');
-  if(p.style.display==='block'){p.style.display='none';}
-  else{p.style.display='block';rAdmItems();rAdmClients();rAdmOrders();rAcCats();}
+  const p = document.getElementById('admin-panel');
+  if(p.style.display==='block'){
+    p.style.display='none';
+  } else {
+    const pw = prompt('סיסמת ניהול:');
+    if(pw !== ADMIN_PASSWORD){
+      alert('סיסמה שגויה');
+      return;
+    }
+    p.style.display='block';
+    rAdmItems();rAdmClients();rAdmOrders();rAcCats();
+  }
 }
 function aTab(id,el){
   document.querySelectorAll('.atab-c').forEach(t=>t.classList.remove('active'));
