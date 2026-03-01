@@ -1029,33 +1029,33 @@ async function rAdmOrders(){
   window._supabaseOrders = allOrders;
 }
 
-function sendSelectedToVeggies(){
+async function sendSelectedToVeggies(){
   const checked = [...document.querySelectorAll('.order-check:checked')];
   if(!checked.length){ alert('יש לסמן לפחות הזמנה אחת'); return; }
 
   const allOrders = window._supabaseOrders || [];
   const selectedOrders = checked.map(cb => allOrders.find(o=>o.id==cb.dataset.id)).filter(Boolean);
 
-  const allDishNames = new Set();
-  let totalGuests = 0;
-  const eventNames = [];
-
-  selectedOrders.forEach(o=>{
-    totalGuests += parseInt(o.guests)||0;
-    eventNames.push(o.client_name + ' (' + o.guests + ' איש)');
-    (o.items||[]).forEach(item=>{
+  // שמור כל הזמנה בנפרד ב-Supabase
+  const rows = selectedOrders.map(o => {
+    const dishNames = new Set();
+    (o.items||[]).forEach(item => {
       const mapped = DISH_MAP[item.name];
-      if(mapped) allDishNames.add(mapped);
+      if(mapped) dishNames.add(mapped);
     });
+    return {
+      event_name: o.client_name + ' — ' + o.event_type,
+      guests: parseInt(o.guests)||0,
+      items: [...dishNames],
+      status: 'pending'
+    };
   });
 
-  const params = new URLSearchParams({
-    event: eventNames.join(' + '),
-    people: totalGuests,
-    dishes: [...allDishNames].join(','),
-  });
+  const { error } = await db.from('veggie_orders').insert(rows);
+  if(error){ alert('שגיאה בשמירה: ' + error.message); return; }
 
-  window.open(VEGGIES_URL + '?' + params.toString(), '_blank');
+  alert(`✅ ${rows.length} הזמנות נשלחו לאמלפי!`);
+  window.open(VEGGIES_URL, '_blank');
 }
 </script>
 </body>
