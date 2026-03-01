@@ -800,11 +800,14 @@ function submitOrder(){
 }
 
 // Auto-load client from URL on page init
+// ===== סיסמאות =====
+const ENTRY_PASSWORD  = 'pizza3027';
+const ADMIN_PASSWORD  = 'pizzaadmin';
+
 window.addEventListener('DOMContentLoaded', ()=>{
   const client = getClient();
 
   if(client){
-    // לקוח עם קישור אישי — נכנס ישירות ללא סיסמה
     document.getElementById('hero-tag').textContent = `שלום, ${client.name}! בחרו את התפריט לאירוע שלכם 🍕`;
     if(client.name) document.getElementById('f-name').value = client.name;
     if(client.event){
@@ -814,18 +817,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
     renderMenu();
     showScreen('screen-menu');
   } else if(sessionStorage.getItem('pz-auth')==='1'){
-    // כבר עבר אימות בסשן זה
     renderMenu();
     showScreen('screen-menu');
   } else {
-    // מציג מסך סיסמה
     document.getElementById('password-screen').style.display='flex';
     setTimeout(()=>document.getElementById('entry-password').focus(), 100);
   }
 });
-// ===== סיסמאות =====
-const ENTRY_PASSWORD  = 'pizza3027';
-const ADMIN_PASSWORD  = 'pizzaadmin';
 
 function checkPassword(){
   const val = document.getElementById('entry-password').value;
