@@ -453,7 +453,15 @@ body { font-family:'Heebo',sans-serif; background:var(--cream); color:var(--text
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ===== Supabase =====
+const { createClient } = supabase;
+const db = createClient(
+  'https://qgmyaxxzebwcatetbngs.supabase.co',
+  'sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq'
+);
+
 const CATS = ['סלטים','ראשונות','תנור – פיצה','פסטה','דגים','מתוקים','שתייה קלה','שתייה חמה'];
 const CAT_ICONS = {'סלטים':'🥗','ראשונות':'🫒','תנור – פיצה':'🍕','פסטה':'🍝','דגים':'🐟','מתוקים':'🍰','שתייה קלה':'🥤','שתייה חמה':'☕'};
 
@@ -797,15 +805,24 @@ function submitOrder(){
   const venue   = document.getElementById('f-venue').value;
   const notes   = document.getElementById('notes-input').value;
 
-  // ===== שמירת הזמנה =====
+  const items = Object.entries(selected).map(([id,qty])=>{
+    const item = menuItems.find(i=>i.id==id);
+    return {name:item?.name, cat:item?.cat, qty};
+  });
+
+  // ===== שמירה ב-Supabase =====
+  db.from('orders').insert({
+    client_name: name, phone, email,
+    event_type: etype, event_date: date, event_time: time,
+    guests: parseInt(guests)||0,
+    address, venue, items, notes
+  }).then(({error})=>{ if(error) console.error('Supabase:', error); });
+
+  // ===== שמירה מקומית גם כגיבוי =====
   const order = {
     id: Date.now(), client: name, phone, email, event: etype,
-    date, time, guests, address, venue,
-    items: Object.entries(selected).map(([id,qty])=>{
-      const item = menuItems.find(i=>i.id==id);
-      return {name:item?.name, cat:item?.cat, qty};
-    }),
-    notes, created: new Date().toLocaleString('he-IL'),
+    date, time, guests, address, venue, items, notes,
+    created: new Date().toLocaleString('he-IL'),
   };
   orders.push(order);
 
@@ -821,8 +838,8 @@ function submitOrder(){
   });
 
   let menuText = '';
-  Object.entries(itemsByCat).forEach(([cat,items])=>{
-    menuText += `\n*${cat}:*\n${items}`;
+  Object.entries(itemsByCat).forEach(([cat,its])=>{
+    menuText += `\n*${cat}:*\n${its}`;
   });
 
   let msg = `🍕 *הזמנה חדשה – Pizza Zmani*\n`;
@@ -972,47 +989,62 @@ function openWA(id,name){
   const msg=encodeURIComponent('שלום '+name+' 🍕\n\nהנה הקישור לבחירת התפריט לאירוע שלכם:\n'+link+'\n\nPizza Zmani – אוכל איטלקי שמח');
   window.open('https://wa.me/?text='+msg,'_blank');
 }
-function rAdmOrders(){
+async function rAdmOrders(){
   const el=document.getElementById('adm-orders');
   const btnWrap=document.getElementById('adm-veggies-btn-wrap');
-  if(!orders.length){
+  el.innerHTML='<div class="empty">טוען הזמנות...</div>';
+
+  // טעינה מ-Supabase
+  const {data, error} = await db.from('orders').select('*').order('created_at', {ascending:false});
+  if(error){ el.innerHTML='<div class="empty" style="color:red">שגיאה בטעינה</div>'; return; }
+
+  // מיזוג עם הזמנות מקומיות שעוד לא נשמרו
+  const allOrders = data || [];
+
+  if(!allOrders.length){
     el.innerHTML='<div class="empty">עדיין לא התקבלו הזמנות</div>';
     btnWrap.style.display='none';
     return;
   }
+
   el.innerHTML='';
   btnWrap.style.display='block';
-  [...orders].reverse().forEach(o=>{
+
+  allOrders.forEach(o=>{
+    const items = o.items || [];
     const d=document.createElement('div');d.className='oc';
     d.style.cssText='display:flex;gap:0.75rem;align-items:flex-start;';
     d.innerHTML=`
       <input type="checkbox" class="order-check" data-id="${o.id}"
         style="margin-top:0.3rem;width:18px;height:18px;accent-color:#C0392B;flex-shrink:0;cursor:pointer;">
       <div style="flex:1">
-        <div class="oc-hd"><div class="oc-name">🎉 ${o.client} — ${o.event}</div><div class="oc-date">${o.created}</div></div>
-        <div class="oc-info">📍 ${o.address} · 📅 ${o.date} ${o.time} · 👥 ${o.guests} מוזמנים</div>
-        <div class="oc-tags">${o.items.map(i=>`<span class="oc-tag">${i.name} ×${i.qty}</span>`).join('')}</div>
+        <div class="oc-hd"><div class="oc-name">🎉 ${o.client_name} — ${o.event_type}</div><div class="oc-date">${new Date(o.created_at).toLocaleString('he-IL')}</div></div>
+        <div class="oc-info">📍 ${o.address} · 📅 ${o.event_date} ${o.event_time} · 👥 ${o.guests} מוזמנים</div>
+        <div class="oc-tags">${items.map(i=>`<span class="oc-tag">${i.name}</span>`).join('')}</div>
         ${o.notes?`<div class="oc-notes">💬 ${o.notes}</div>`:''}
       </div>`;
     el.appendChild(d);
   });
+
+  // שמור לשימוש ב-sendSelectedToVeggies
+  window._supabaseOrders = allOrders;
 }
 
 function sendSelectedToVeggies(){
   const checked = [...document.querySelectorAll('.order-check:checked')];
   if(!checked.length){ alert('יש לסמן לפחות הזמנה אחת'); return; }
 
-  const selectedOrders = checked.map(cb => orders.find(o=>o.id==cb.dataset.id)).filter(Boolean);
+  const allOrders = window._supabaseOrders || [];
+  const selectedOrders = checked.map(cb => allOrders.find(o=>o.id==cb.dataset.id)).filter(Boolean);
 
-  // מיזוג כל ההזמנות — מנות + אנשים
   const allDishNames = new Set();
   let totalGuests = 0;
   const eventNames = [];
 
   selectedOrders.forEach(o=>{
     totalGuests += parseInt(o.guests)||0;
-    eventNames.push(o.client + ' (' + o.guests + ' איש)');
-    o.items.forEach(item=>{
+    eventNames.push(o.client_name + ' (' + o.guests + ' איש)');
+    (o.items||[]).forEach(item=>{
       const mapped = DISH_MAP[item.name];
       if(mapped) allDishNames.add(mapped);
     });
