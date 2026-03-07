@@ -212,7 +212,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);di
 #screen-success p{color:var(--text2);font-size:0.92rem;max-width:340px;line-height:1.65;}
 
 /* ===== ADMIN ===== */
-#admin-panel{display:none;position:fixed;inset:0;background:#1C1008;z-index:1000;overflow-y:auto;color:#f0e0d0;}
+
 .adm-hdr{background:linear-gradient(135deg,#1C1008,#2E1A0E);border-bottom:2px solid #C0392B;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
 .adm-hdr h1{font-family:'Frank Ruhl Libre',serif;color:#F5C6C0;font-size:1.3rem;display:flex;align-items:center;gap:0.5rem;}
 .adm-body{padding:1.2rem;max-width:920px;margin:0 auto;}
@@ -480,20 +480,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);di
   </div>
 </div>
 
-<button id="adm-toggle" onclick="toggleAdmin()">⚙️ ניהול</button>
 
-<!-- ADMIN -->
-<div id="admin-panel">
-  <div class="adm-hdr">
-    <h1>🍕 ניהול Pizza Zmani</h1>
-    <button class="abtn abtn-out abtn-sm" onclick="toggleAdmin()">✕ סגור</button>
-  </div>
-  <div class="adm-body">
-    <div class="adm-tabs">
-      <button class="atab active" onclick="aTab('at-clients',this)">לקוחות</button>
-      <button class="atab" onclick="aTab('at-orders',this)">הזמנות</button>
-      <button class="atab" onclick="aTab('at-menu',this)">תפריט</button>
-    </div>
 
     <div id="at-clients" class="atab-c active">
       <div class="adm-sec">
@@ -559,7 +546,6 @@ const MY_WHATSAPP = '972542031181';
 const VEGGIES_URL = 'https://chunkyzz.github.io/amalfi-orders/';
 const HIDE_PRICES = new URLSearchParams(location.search).get('hp') === '1';
 const ENTRY_PASSWORD = 'pizza3027';
-const ADMIN_PASSWORD = 'pizzaadmin';
 
 // ===== MENU DATA =====
 const CATS = ['סלטים','ראשונות','תנור – פיצה','פסטה','דגים','מתוקים','שתייה קלה','שתייה חמה'];
@@ -655,8 +641,6 @@ let pendingFishId = null;
 let pendingFishTempChoice = null;
 
 let allowedCats = null;
-let clients = [];
-let nextCid = 1;
 let orders = [];
 
 // category flow
@@ -673,11 +657,22 @@ function getClient(){
   try { return JSON.parse(decodeURIComponent(atob(p))); } catch(e){ return null; }
 }
 
-function buildClientLink(c, hidePrices=false){
-  const data = {name:c.name,event:c.event,cats:c.cats,phone:c.phone||'',guests:c.guests||''};
-  const base = location.href.split('?')[0]+'?c='+btoa(encodeURIComponent(JSON.stringify(data)));
-  return hidePrices ? base+'&hp=1' : base;
+function getClientGifts(){
+  const c = getClient();
+  return c?.gifts || {};
 }
+
+function isCatGift(catName){
+  const gifts = getClientGifts();
+  return !!gifts[catName];
+}
+
+function getCatGiftConfig(catName){
+  return getClientGifts()[catName] || null;
+}
+
+// buildClientLink moved to admin.html
+
 
 function fmtD(d){ if(!d)return''; const[y,m,day]=d.split('-'); return`${day}/${m}/${y}`; }
 
@@ -755,10 +750,12 @@ function renderCatScreen(idx){
 
   // header
   const hdr = document.getElementById('cat-header');
+  const catIsGift = isCatGift(cat);
   hdr.innerHTML = `
     <div class="cat-header-icon">${CAT_ICONS[cat]}</div>
-    <h2>${cat}</h2>
+    <h2>${cat}${catIsGift?' <span style="font-size:1rem;">🎁</span>':''}</h2>
     <div class="cat-header-hint">${CAT_HINTS[cat]||''}</div>
+    ${catIsGift?'<div style="display:inline-block;background:rgba(92,122,62,0.15);border:1px solid rgba(92,122,62,0.4);color:#8BC34A;padding:0.2rem 0.8rem;border-radius:50px;font-size:0.78rem;margin-top:0.3rem;">🎁 מתנה מהבית לאירוע שלכם</div>':''}
     <div class="cat-counter-badge" id="cat-counter-badge">0 נבחרו</div>`;
 
   // restore notes
@@ -1045,7 +1042,7 @@ function calcPrice(){
   const selSalads = menuItems.filter(i=>i.cat==='סלטים'&&selected[i.id]);
   if(selSalads.length > 0){
     const extra = Math.max(0, selSalads.length - 4);
-    const saladGift = selSalads.every(s=>s.gift);
+    const saladGift = isCatGift('סלטים');
     const saladCost = saladGift ? 0 : (20 * minBillable + extra * 5 * minBillable);
     lines.push({label:`סלטים (${selSalads.length})${saladGift?' 🎁 מתנה מהבית':' — '+(selSalads.length>4?`4 כלול + ${extra} נוסף`:'4 כלול')}`, val: saladCost});
     total += saladCost;
@@ -1054,7 +1051,7 @@ function calcPrice(){
   // starters
   const starters = menuItems.filter(i=>i.cat==='ראשונות'&&selected[i.id]);
   starters.forEach(item=>{
-    if(item.gift){ lines.push({label:item.name+' 🎁 מתנה מהבית', val:0}); return; }
+    if(isCatGift('ראשונות')){ lines.push({label:item.name+' 🎁 מתנה מהבית', val:0}); return; }
     const p = (item.price||0) * adults;
     if(p>0){ lines.push({label:item.name, val:p}); total+=p; }
   });
@@ -1280,22 +1277,11 @@ const DISH_MAP = {
   'סביצה':'סביצה','דג אפוי בטאבון':'פילה דג','סשימי':'סשימי','סלמון כבוש':'סלמון כבוש',
 };
 
-function toggleAdmin(){
-  const p=document.getElementById('admin-panel');
-  if(p.style.display==='block'){ p.style.display='none'; return; }
   const pw=prompt('סיסמת ניהול:');
   if(pw!==ADMIN_PASSWORD){ alert('סיסמה שגויה'); return; }
   p.style.display='block';
   rAdmItems(); rAdmClients(); rAdmOrders(); rAcCats();
 }
-function aTab(id,el){
-  document.querySelectorAll('.atab-c').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.atab').forEach(t=>t.classList.remove('active'));
-  document.getElementById(id).classList.add('active'); el.classList.add('active');
-}
-function rAdmItems(){
-  const el=document.getElementById('adm-items');
-  if(!menuItems.length){el.innerHTML='<div class="empty">אין מנות</div>';return;}
   el.innerHTML='';
   menuItems.forEach(item=>{
     const r=document.createElement('div');r.className='arow';
@@ -1305,42 +1291,6 @@ function rAdmItems(){
     el.appendChild(r);
   });
 }
-function addItem(){
-  const n=document.getElementById('ai-name').value.trim(); if(!n)return;
-  menuItems.push({id:nextId++,name:n,cat:document.getElementById('ai-cat').value,desc:document.getElementById('ai-desc').value.trim()});
-  document.getElementById('ai-name').value='';document.getElementById('ai-desc').value='';
-  rAdmItems();
-}
-function removeItem(id){menuItems=menuItems.filter(i=>i.id!==id);rAdmItems();}
-function toggleGift(id){
-  const item = menuItems.find(i=>i.id===id);
-  if(!item) return;
-  item.gift = !item.gift;
-  rAdmItems();
-}
-function rAcCats(){
-  const c=document.getElementById('ac-cats');c.innerHTML='';
-  CATS.forEach(cat=>{
-    const l=document.createElement('label');
-    l.style.cssText='display:flex;align-items:center;gap:0.28rem;cursor:pointer;font-size:0.8rem;color:#b8876a;';
-    l.innerHTML=`<input type="checkbox" value="${cat}" checked style="accent-color:#C0392B"> ${cat}`;
-    c.appendChild(l);
-  });
-}
-function addClient(){
-  const n=document.getElementById('ac-name').value.trim();if(!n)return;
-  const phone=document.getElementById('ac-phone').value.trim();
-  const guests=document.getElementById('ac-guests').value.trim();
-  const checked=Array.from(document.querySelectorAll('#ac-cats input:checked')).map(i=>i.value);
-  clients.push({id:'c'+nextCid++,name:n,phone,guests,event:document.getElementById('ac-event').value.trim(),cats:checked.length?checked:[...CATS]});
-  document.getElementById('ac-name').value='';document.getElementById('ac-event').value='';
-  document.getElementById('ac-phone').value='';document.getElementById('ac-guests').value='';
-  rAdmClients();
-}
-function removeClient(id){clients=clients.filter(c=>c.id!==id);rAdmClients();}
-function rAdmClients(){
-  const el=document.getElementById('adm-clients');
-  if(!clients.length){el.innerHTML='<div class="empty">אין לקוחות</div>';return;}
   el.innerHTML='';
   clients.forEach(c=>{
     const link=buildClientLink(c);
@@ -1349,30 +1299,6 @@ function rAdmClients(){
     el.appendChild(d);
   });
 }
-function copyLink_c(id){
-  const c=clients.find(x=>x.id===id);if(!c)return;
-  navigator.clipboard.writeText(buildClientLink(c)).then(()=>alert('✓ הקישור הועתק!')).catch(()=>prompt('העתק:',buildClientLink(c)));
-}
-function openWA(id,name){
-  const c=clients.find(x=>x.id===id);if(!c)return;
-  const link=buildClientLink(c);
-  window.open('https://wa.me/?text='+encodeURIComponent('שלום '+name+' 🍕\n\nהנה הקישור לבחירת התפריט לאירוע שלכם:\n'+link+'\n\nPizza Zmani – אוכל איטלקי שמח'),'_blank');
-}
-async function rAdmOrders(showDone=false){
-  const el=document.getElementById('adm-orders');
-  const btnWrap=document.getElementById('adm-veggies-btn-wrap');
-  el.innerHTML='<div class="empty">טוען...</div>';
-  const filterBar=document.getElementById('adm-orders-filter')||(() => {
-    const f=document.createElement('div');f.id='adm-orders-filter';f.style.cssText='margin-bottom:0.75rem;display:flex;gap:0.5rem;';
-    f.innerHTML=`<button class="abtn abtn-sm" id="filter-active" onclick="rAdmOrders(false)">פעילות</button><button class="abtn abtn-sm" id="filter-done" onclick="rAdmOrders(true)">בוצע</button>`;
-    el.parentNode.insertBefore(f,el);return f;
-  })();
-  document.getElementById('filter-active').style.cssText=!showDone?'background:#C0392B;color:white;':'background:#eee;color:#555;';
-  document.getElementById('filter-done').style.cssText=showDone?'background:#27AE60;color:white;':'background:#eee;color:#555;';
-  let q=db.from('orders').select('*').order('created_at',{ascending:false});
-  q=showDone?q.eq('status','done'):q.neq('status','done');
-  const{data,error}=await q;
-  if(error){el.innerHTML='<div class="empty" style="color:red">שגיאה</div>';return;}
   const all=data||[];
   if(!all.length){el.innerHTML=`<div class="empty">${showDone?'אין בוצעו':'אין הזמנות'}</div>`;btnWrap.style.display='none';return;}
   el.innerHTML='';btnWrap.style.display=showDone?'none':'block';
@@ -1390,15 +1316,8 @@ async function rAdmOrders(showDone=false){
   });
   window._supabaseOrders=all;
 }
-async function markDone(id){
-  if(!confirm('לסמן כבוצעה?'))return;
-  const{error}=await db.from('orders').update({status:'done'}).eq('id',id);
-  if(error){alert('שגיאה: '+error.message);return;}
   rAdmOrders(false);
 }
-async function sendSelectedToVeggies(){
-  const checked=[...document.querySelectorAll('.order-check:checked')];
-  if(!checked.length){alert('יש לסמן לפחות הזמנה אחת');return;}
   const all=window._supabaseOrders||[];
   const selOrders=checked.map(cb=>all.find(o=>o.id==cb.dataset.id)).filter(Boolean);
   const rows=selOrders.map(o=>{
