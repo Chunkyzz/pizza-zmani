@@ -110,6 +110,13 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);di
 .badge-vegan-opt{background:#F1F8E9;color:#558B2F;}
 .badge-gluten-free{background:#E3F2FD;color:#1565C0;}
 
+/* pasta modal sauce options */
+.sauce-opt{display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0.8rem;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);cursor:pointer;transition:all 0.15s;font-size:0.88rem;color:var(--text);}
+.sauce-opt:hover{border-color:var(--gold2);}
+.sauce-opt.sel{background:linear-gradient(135deg,#FFF8F0,#FFF2E8);border-color:var(--red);color:var(--red2);font-weight:700;}
+.sauce-opt.sel::before{content:'✓ ';font-weight:900;}
+.sauce-opt.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none;}
+
 /* fish sub-selector */
 .fish-sub{display:none;gap:0.4rem;margin-top:0.6rem;flex-wrap:wrap;}
 .m-item.sel .fish-sub{display:flex;}
@@ -480,6 +487,39 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);di
   </div>
 </div>
 
+<!-- MODAL: pasta selector -->
+<div class="modal-overlay" id="modal-pasta">
+  <div class="modal-box" style="text-align:right;max-width:400px;">
+    <div style="font-size:2rem;margin-bottom:0.3rem;">🍝</div>
+    <h3 style="margin-bottom:0.25rem;">פסטה קצרה</h3>
+    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:1rem;">בחרו רוטב לפסטה</p>
+
+    <div id="pasta-sauce1-section">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.03em;">רוטב ראשי</div>
+      <div id="pasta-sauce1-opts" style="display:flex;flex-direction:column;gap:0.35rem;margin-bottom:1rem;"></div>
+    </div>
+
+    <div id="pasta-sauce2-section" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.03em;">רוטב נוסף</div>
+        <button onclick="removeSauce2()" style="background:none;border:none;font-size:0.8rem;color:var(--text2);cursor:pointer;text-decoration:underline;">הסר</button>
+      </div>
+      <div id="pasta-sauce2-opts" style="display:flex;flex-direction:column;gap:0.35rem;margin-bottom:1rem;"></div>
+    </div>
+
+    <div id="pasta-add-sauce2-btn">
+      <button onclick="addSauce2()" style="width:100%;background:var(--cream2);border:1.5px dashed var(--border);border-radius:10px;padding:0.6rem;font-family:'Heebo',sans-serif;font-size:0.82rem;color:var(--text2);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold2)'" onmouseout="this.style.borderColor='var(--border)'">
+        + רוטב נוסף &nbsp;<span style="color:var(--red2);font-weight:700;">5 ₪ לאדם</span>
+      </button>
+    </div>
+
+    <div class="modal-btns" style="justify-content:flex-end;margin-top:1rem;">
+      <button class="modal-btn-cancel" onclick="closePastaModal()">ביטול</button>
+      <button class="modal-btn-ok" id="pasta-confirm-btn" onclick="pastaConfirm()" disabled style="opacity:0.4;">בחר רוטב ←</button>
+    </div>
+  </div>
+</div>
+
 
 
     <div id="at-clients" class="atab-c active">
@@ -639,6 +679,12 @@ let allowExtraSalads = false;
 let pendingSaladId = null;
 let pendingFishId = null;
 let pendingFishTempChoice = null;
+let pendingPastaId = null;
+let pastaSauce1 = null;
+let pastaSauce2 = null;
+let pastaHasDouble = false;
+
+const PASTA_SAUCES = ['עגבניות','רוזה','שמנת','שמנת פטריות','פסטו'];
 
 let allowedCats = null;
 let orders = [];
@@ -875,6 +921,15 @@ function toggleCatItem(id){
     openFishModal(item); return;
   }
 
+  // pasta sauce selector
+  if(item?.pastaOpts && !selected[id]){
+    pendingPastaId = id;
+    pastaSauce1 = null;
+    pastaSauce2 = null;
+    pastaHasDouble = false;
+    openPastaModal(); return;
+  }
+
   selected[id] = {selected:true, fishChoice:null, pastaDouble:false, kidsExtras:[], kidsNote:''};
   refreshCatItem(id);
   updateCatBar();
@@ -922,6 +977,81 @@ function setFishOpt(id, opt, e){
   refreshCatItem(id);
 }
 
+function openPastaModal(){
+  pastaSauce1 = null; pastaSauce2 = null; pastaHasDouble = false;
+  renderSauceOpts('pasta-sauce1-opts', 1);
+  document.getElementById('pasta-sauce2-section').style.display = 'none';
+  document.getElementById('pasta-add-sauce2-btn').style.display = 'block';
+  document.getElementById('pasta-confirm-btn').disabled = true;
+  document.getElementById('pasta-confirm-btn').style.opacity = '0.4';
+  document.getElementById('pasta-confirm-btn').textContent = 'בחר רוטב ←';
+  openModal('modal-pasta');
+}
+
+function closePastaModal(){
+  closeModal('modal-pasta');
+  pendingPastaId = null;
+}
+
+function renderSauceOpts(containerId, sauceNum){
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  PASTA_SAUCES.forEach(sauce=>{
+    const isBlocked = sauceNum === 2 && sauce === pastaSauce1;
+    const isSel = sauceNum === 1 ? pastaSauce1 === sauce : pastaSauce2 === sauce;
+    const div = document.createElement('div');
+    div.className = 'sauce-opt' + (isSel?' sel':'') + (isBlocked?' disabled':'');
+    div.textContent = sauce;
+    if(!isBlocked) div.onclick = ()=> selectSauce(sauceNum, sauce);
+    container.appendChild(div);
+  });
+}
+
+function selectSauce(num, sauce){
+  if(num===1){ pastaSauce1 = sauce; renderSauceOpts('pasta-sauce1-opts',1); }
+  else { pastaSauce2 = sauce; renderSauceOpts('pasta-sauce2-opts',2); }
+  updatePastaConfirmBtn();
+}
+
+function updatePastaConfirmBtn(){
+  const btn = document.getElementById('pasta-confirm-btn');
+  const ready = pastaSauce1 && (!pastaHasDouble || pastaSauce2);
+  btn.disabled = !ready;
+  btn.style.opacity = ready ? '1' : '0.4';
+  if(ready){
+    btn.textContent = pastaHasDouble ? `${pastaSauce1} + ${pastaSauce2} ←` : `${pastaSauce1} ←`;
+  }
+}
+
+function addSauce2(){
+  pastaHasDouble = true;
+  document.getElementById('pasta-sauce2-section').style.display = 'block';
+  document.getElementById('pasta-add-sauce2-btn').style.display = 'none';
+  renderSauceOpts('pasta-sauce2-opts', 2);
+  updatePastaConfirmBtn();
+}
+
+function removeSauce2(){
+  pastaHasDouble = false;
+  pastaSauce2 = null;
+  document.getElementById('pasta-sauce2-section').style.display = 'none';
+  document.getElementById('pasta-add-sauce2-btn').style.display = 'block';
+  updatePastaConfirmBtn();
+}
+
+function pastaConfirm(){
+  if(!pastaSauce1) return;
+  selected[pendingPastaId] = {
+    selected: true, fishChoice: null,
+    pastaDouble: pastaHasDouble,
+    pastaSauce1, pastaSauce2,
+    kidsExtras: [], kidsNote: ''
+  };
+  refreshCatItem(pendingPastaId);
+  updateCatBar();
+  closePastaModal();
+}
+
 function setPastaOpt(id, isDouble, e){
   e.stopPropagation();
   if(!selected[id]) { selected[id]={selected:true}; }
@@ -962,7 +1092,9 @@ function refreshCatItem(id){
     const pdiv = el.querySelector('.pasta-sub');
     if(pdiv){
       const dbl = sel?.pastaDouble||false;
-      pdiv.querySelectorAll('.pasta-opt').forEach((d,i)=>{ d.className='pasta-opt'+(i===(dbl?1:0)?' sel':''); });
+      const s1 = sel?.pastaSauce1||'';
+      const s2 = sel?.pastaSauce2||'';
+      pdiv.innerHTML = s1 ? `<div style="font-size:0.75rem;color:var(--red2);font-weight:700;">🍝 ${s1}${s2?' + '+s2:''}</div>` : '';
     }
   }
 }
@@ -1158,7 +1290,13 @@ function buildSummary(){
     const items = menuItems.filter(i=>i.cat===cat&&selected[i.id]);
     const block = document.createElement('div');
     block.className = 'cat-sum-block';
-    const tags = items.length ? items.map(i=>`<span class="sum-item-tag">${i.name}${selected[i.id]?.fishChoice?' — '+selected[i.id].fishChoice:''}${selected[i.id]?.pastaDouble?' (2 רטבים)':''}</span>`).join('') : '<span class="sum-item-empty">לא נבחר</span>';
+    const tags = items.length ? items.map(i=>{
+        const s = selected[i.id];
+        let extra = '';
+        if(s?.fishChoice) extra = ' — ' + s.fishChoice;
+        else if(s?.pastaSauce1) extra = ' — ' + s.pastaSauce1 + (s.pastaSauce2 ? ' + '+s.pastaSauce2 : '');
+        return `<span class="sum-item-tag">${i.name}${extra}</span>`;
+      }).join('') : '<span class="sum-item-empty">לא נבחר</span>';
     block.innerHTML = `<div class="cat-sum-hdr">
       <div class="cat-sum-title">${CAT_ICONS[cat]} ${cat}</div>
       <button class="btn-edit-cat" onclick="editCat('${cat}')">✏️ שנה</button>
@@ -1233,6 +1371,8 @@ async function submitOrder(){
     name:i.name, cat:i.cat,
     fishChoice:selected[i.id]?.fishChoice||null,
     pastaDouble:selected[i.id]?.pastaDouble||false,
+    pastaSauce1:selected[i.id]?.pastaSauce1||null,
+    pastaSauce2:selected[i.id]?.pastaSauce2||null,
   }));
 
   // Supabase
@@ -1252,7 +1392,7 @@ async function submitOrder(){
   msg += `━━━━━━━━━━━━━━━\n*תפריט:*\n`;
   catFlow.forEach(cat=>{
     const ci = items.filter(i=>i.cat===cat);
-    if(ci.length){ msg+=`\n*${CAT_ICONS[cat]} ${cat}:*\n`; ci.forEach(i=>{ msg+=`  • ${i.name}${i.fishChoice?' ('+i.fishChoice+')':''}${i.pastaDouble?' (2 רטבים)':''}\n`; }); }
+    if(ci.length){ msg+=`\n*${CAT_ICONS[cat]} ${cat}:*\n`; ci.forEach(i=>{ const sauces = i.pastaSauce1 ? ' ('+i.pastaSauce1+(i.pastaSauce2?'+'+i.pastaSauce2:'')+')' : ''; msg+=`  • ${i.name}${i.fishChoice?' ('+i.fishChoice+')':''}${sauces}\n`; }); }
   });
   // notes per cat
   const catNotesEntries = Object.entries(catNotes).filter(([,v])=>v.trim());
