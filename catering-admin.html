@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizza Zmani | ניהול</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;900&family=Frank+Ruhl+Libre:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #F5C518;
+  --gold2: #E8A820;
+  --gold3: #C8880A;
+  --orange: #F5A623;
+  --red: #E8442A;
+  --red2: #C03520;
+  --cream: #FAF6EE;
+  --cream2: #F2EBD9;
+  --olive: #5C7A3E;
+  --olive2: #4A6230;
+  --text: #2C1A08;
+  --text2: #7A5230;
+  --white: #FFFFFF;
+  --border: rgba(200,136,10,0.25);
+  --shadow: rgba(44,26,8,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);direction:rtl;min-height:100vh;}
+
+/* LOGIN */
+#login-screen{display:flex;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:1.2rem;padding:2rem;text-align:center;background:linear-gradient(160deg,#2C1A08 0%,#4A1A05 100%);}
+.login-logo{font-family:'Frank Ruhl Libre',serif;font-size:2.2rem;color:white;font-weight:900;}
+.login-logo span{color:var(--gold);}
+.login-sub{color:#b8876a;font-size:0.9rem;}
+.login-box{background:rgba(255,255,255,0.06);border:1.5px solid rgba(200,136,10,0.3);border-radius:18px;padding:1.8rem;width:100%;max-width:320px;}
+.login-box input{width:100%;background:rgba(255,255,255,0.08);border:1.5px solid rgba(200,136,10,0.3);border-radius:10px;padding:0.75rem 1rem;font-family:'Heebo',sans-serif;font-size:1rem;color:white;direction:rtl;text-align:center;margin-bottom:0.75rem;}
+.login-box input::placeholder{color:rgba(255,255,255,0.35);}
+.login-box input:focus{outline:none;border-color:var(--gold2);}
+.login-box button{width:100%;background:linear-gradient(135deg,var(--red2),var(--red),var(--orange));color:white;border:none;padding:0.85rem;border-radius:50px;font-family:'Heebo',sans-serif;font-weight:800;font-size:1rem;cursor:pointer;box-shadow:0 5px 18px rgba(232,68,42,0.4);}
+#login-err{color:#FF8A80;font-size:0.82rem;min-height:1.2rem;margin-top:0.3rem;}
+
+/* TOP BAR */
+#app{display:none;}
+.top-bar{background:linear-gradient(135deg,#2C1A08,#4A1A05);padding:0.85rem 1.4rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 14px rgba(44,26,8,0.35);}
+.top-bar-logo{font-family:'Frank Ruhl Libre',serif;font-size:1.2rem;color:white;font-weight:900;display:flex;align-items:center;gap:0.4rem;}
+.top-bar-logo span{color:var(--gold);}
+.top-bar-right{display:flex;align-items:center;gap:0.75rem;}
+.top-bar-right a{color:#b8876a;font-size:0.78rem;text-decoration:none;transition:color 0.15s;}
+.top-bar-right a:hover{color:var(--gold);}
+.btn-logout{background:rgba(232,68,42,0.15);color:var(--red);border:1px solid rgba(232,68,42,0.3);padding:0.3rem 0.85rem;border-radius:20px;font-family:'Heebo',sans-serif;font-size:0.78rem;cursor:pointer;transition:all 0.15s;}
+.btn-logout:hover{background:rgba(232,68,42,0.3);}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid var(--border);background:white;padding:0 1rem;box-shadow:0 2px 8px var(--shadow);}
+.tab{padding:0.8rem 1.2rem;font-size:0.88rem;font-weight:600;color:var(--text2);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:all 0.2s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--red2);border-bottom-color:var(--red2);}
+
+/* TAB CONTENT */
+.tab-content{display:none;max-width:860px;margin:0 auto;padding:1.4rem 1rem 4rem;}
+.tab-content.active{display:block;}
+
+/* SECTION */
+.sec{background:white;border:1.5px solid var(--border);border-radius:16px;padding:1.3rem 1.4rem;margin-bottom:1rem;box-shadow:0 3px 14px var(--shadow);}
+.sec h2{font-family:'Frank Ruhl Libre',serif;font-size:1.05rem;color:var(--text);font-weight:700;margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.4rem;}
+
+/* FORM */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;}
+.ff{display:flex;flex-direction:column;gap:0.2rem;}
+.ff.full{grid-column:1/-1;}
+.ff label{font-size:0.7rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.03em;}
+.ff input,.ff select,.ff textarea{background:var(--cream2);border:1.5px solid var(--border);border-radius:10px;padding:0.58rem 0.8rem;font-family:'Heebo',sans-serif;font-size:0.9rem;color:var(--text);direction:rtl;transition:border-color 0.2s,box-shadow 0.2s;width:100%;}
+.ff input:focus,.ff select:focus,.ff textarea:focus{outline:none;border-color:var(--gold2);box-shadow:0 0 0 3px rgba(245,197,24,0.15);}
+
+/* CHIPS */
+.cats-wrap,.gifts-wrap{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.3rem;}
+.cat-chip{display:flex;align-items:center;gap:0.3rem;background:var(--cream2);border:1.5px solid var(--border);border-radius:20px;padding:0.32rem 0.8rem;font-size:0.78rem;cursor:pointer;transition:all 0.15s;user-select:none;color:var(--text2);}
+.cat-chip.selected{border-color:var(--red2);background:var(--red2);color:white;font-weight:700;box-shadow:0 2px 8px rgba(192,57,43,0.3);}
+.gift-chip{display:flex;align-items:center;gap:0.3rem;background:var(--cream2);border:1.5px solid var(--border);border-radius:20px;padding:0.32rem 0.8rem;font-size:0.78rem;cursor:pointer;transition:all 0.15s;user-select:none;color:var(--text2);}
+.gift-chip.selected{border-color:var(--olive2);background:var(--olive2);color:white;font-weight:700;box-shadow:0 2px 8px rgba(74,98,48,0.3);}
+
+/* BUTTONS */
+.btn{padding:0.62rem 1.3rem;border-radius:50px;border:none;font-family:'Heebo',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;transition:all 0.18s;}
+.btn-red{background:linear-gradient(135deg,var(--red2),var(--red),var(--orange));color:white;box-shadow:0 4px 14px rgba(232,68,42,0.35);}
+.btn-red:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,68,42,0.48);}
+.btn-green{background:linear-gradient(135deg,var(--olive2),var(--olive));color:white;box-shadow:0 4px 14px rgba(92,122,62,0.35);}
+.btn-del{background:rgba(192,57,43,0.08);color:var(--red2);border:1px solid rgba(192,57,43,0.2);padding:0.25rem 0.75rem;font-size:0.75rem;border-radius:20px;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:600;transition:all 0.15s;}
+.btn-del:hover{background:rgba(192,57,43,0.18);}
+
+/* CLIENT CARDS */
+.cc-card{background:var(--cream2);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.1rem;margin-bottom:0.65rem;transition:box-shadow 0.2s;}
+.cc-card:hover{box-shadow:0 4px 18px var(--shadow);}
+.cc-name{font-weight:800;font-size:1rem;color:var(--text);}
+.cc-meta{font-size:0.78rem;color:var(--text2);margin-top:0.1rem;}
+.cc-gifts{font-size:0.72rem;color:var(--olive2);margin-top:0.2rem;font-weight:600;}
+.cc-actions{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.7rem;}
+.cc-btn{padding:0.3rem 0.8rem;border-radius:20px;font-size:0.75rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);font-family:'Heebo',sans-serif;background:white;color:var(--text2);transition:all 0.15s;}
+.cc-btn:hover{border-color:var(--gold2);color:var(--text);}
+.cc-btn-wa{border-color:rgba(37,211,102,0.4);color:var(--olive2);background:rgba(37,211,102,0.06);}
+.cc-btn-wa:hover{background:rgba(37,211,102,0.14);border-color:var(--olive);}
+.cc-btn-noprice{border-color:rgba(200,136,10,0.3);color:var(--gold3);background:rgba(200,136,10,0.06);}
+.cc-btn-noprice:hover{background:rgba(200,136,10,0.15);}
+
+/* ORDERS */
+.oc{background:var(--cream2);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.1rem;margin-bottom:0.65rem;display:flex;gap:0.75rem;align-items:flex-start;}
+.oc-check{width:18px;height:18px;accent-color:var(--red2);cursor:pointer;flex-shrink:0;margin-top:0.2rem;}
+.oc-name{font-weight:700;color:var(--text);font-size:0.95rem;}
+.oc-date{font-size:0.72rem;color:var(--text2);}
+.oc-info{font-size:0.8rem;color:var(--text2);margin-top:0.2rem;}
+.oc-tags{display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.4rem;}
+.oc-tag{background:white;border:1px solid var(--border);color:var(--text2);padding:0.15rem 0.5rem;border-radius:20px;font-size:0.7rem;}
+.oc-price{font-size:0.78rem;color:var(--red2);margin-top:0.3rem;font-weight:700;}
+.oc-notes{font-size:0.78rem;color:var(--text2);margin-top:0.25rem;font-style:italic;}
+.oc-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;}
+.badge-done{background:var(--olive);color:white;padding:2px 8px;border-radius:20px;font-size:0.7rem;font-weight:700;cursor:pointer;border:none;font-family:'Heebo',sans-serif;}
+
+/* MENU ROW */
+.arow{background:var(--cream2);border:1.5px solid var(--border);border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.45rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;}
+.arow-info{display:flex;align-items:center;gap:0.5rem;flex:1;flex-wrap:wrap;}
+.cbadge{background:rgba(200,136,10,0.1);border:1px solid var(--border);color:var(--gold3);padding:0.15rem 0.55rem;border-radius:20px;font-size:0.7rem;white-space:nowrap;}
+.arow-name{font-size:0.88rem;font-weight:700;color:var(--text);}
+.arow-desc{font-size:0.72rem;color:var(--text2);}
+
+/* FILTER */
+.filter-bar{display:flex;gap:0.5rem;margin-bottom:0.8rem;}
+.filter-btn{padding:0.3rem 0.9rem;border-radius:20px;border:1.5px solid var(--border);font-family:'Heebo',sans-serif;font-size:0.78rem;cursor:pointer;font-weight:600;background:white;color:var(--text2);transition:all 0.15s;}
+.filter-btn:hover{border-color:var(--gold2);}
+
+/* EMPTY */
+.empty{text-align:center;color:var(--text2);padding:2rem;font-size:0.88rem;}
+/* GIFT MODAL */
+.mode-btn{flex:1;padding:0.5rem 0.6rem;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);font-family:'Heebo',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;color:var(--text2);transition:all 0.15s;}
+.mode-btn.active{background:var(--olive2);color:white;border-color:var(--olive2);}
+.modal-item-row{display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:9px;border:1.5px solid var(--border);background:var(--cream2);cursor:pointer;transition:all 0.15s;font-size:0.85rem;color:var(--text);}
+.modal-item-row.sel{border-color:var(--olive);background:rgba(92,122,62,0.08);color:var(--olive2);font-weight:600;}
+.modal-item-row input{accent-color:var(--olive);width:16px;height:16px;}
+.gift-tag{display:inline-flex;align-items:center;gap:0.3rem;background:rgba(92,122,62,0.1);border:1.5px solid rgba(92,122,62,0.3);border-radius:20px;padding:0.28rem 0.75rem;font-size:0.76rem;color:var(--olive2);font-weight:600;cursor:pointer;transition:all 0.15s;}
+.gift-tag:hover{background:rgba(92,122,62,0.2);}
+.gift-tag .remove-gift{margin-right:0.3rem;opacity:0.6;font-size:0.8rem;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">🍕 Pizza <span>Zmani</span></div>
+  <div class="login-sub">ממשק ניהול</div>
+  <div class="login-box">
+    <input type="password" id="pw-input" placeholder="סיסמת ניהול..." onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">כניסה →</button>
+    <div id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="top-bar">
+    <div class="top-bar-logo">🍕 Pizza <span>Zmani</span> — ניהול</div>
+    <div class="top-bar-right">
+      <a href="catering-order.html" target="_blank">🔗 לאתר הלקוח</a>
+      <button class="btn-logout" onclick="logout()">יציאה</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('clients',this)">👥 לקוחות</div>
+    <div class="tab" onclick="switchTab('orders',this)">📋 הזמנות</div>
+    <div class="tab" onclick="switchTab('menu',this)">🍕 תפריט</div>
+  </div>
+
+  <!-- CLIENTS TAB -->
+  <div id="tab-clients" class="tab-content active">
+    <div class="sec">
+      <h2>הוספת לקוח חדש</h2>
+      <div class="fg">
+        <div class="ff"><label>שם הלקוח *</label><input type="text" id="ac-name" placeholder="משפחת כהן"></div>
+        <div class="ff"><label>טלפון</label><input type="tel" id="ac-phone" placeholder="050-0000000"></div>
+        <div class="ff"><label>סוג אירוע</label><input type="text" id="ac-event" placeholder="בר מצווה"></div>
+        <div class="ff"><label>מספר משתתפים</label><input type="number" id="ac-guests" placeholder="50" min="1"></div>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.4rem;">קטגוריות בתפריט</div>
+        <div class="cats-wrap" id="ac-cats"></div>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--olive2);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.5rem;">🎁 מתנות לאירוע זה</div>
+        <div class="gifts-wrap" id="ac-gifts"></div>
+        <div id="ac-gifts-summary" style="margin-top:0.5rem;font-size:0.78rem;color:var(--olive2);min-height:1.2rem;"></div>
+      </div>
+
+      <!-- GIFT MODAL -->
+      <div id="gift-modal" style="display:none;position:fixed;inset:0;background:rgba(44,26,8,0.55);z-index:200;align-items:center;justify-content:center;padding:1rem;">
+        <div style="background:white;border-radius:18px;padding:1.4rem;max-width:440px;width:100%;box-shadow:0 12px 40px rgba(44,26,8,0.25);max-height:85vh;overflow-y:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.7rem;border-bottom:1px solid var(--border);">
+            <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;font-weight:900;color:var(--text);" id="modal-cat-title">🎁 סלטים</div>
+            <button onclick="closeGiftModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text2);">✕</button>
+          </div>
+          <div style="margin-bottom:1rem;">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:0.5rem;text-transform:uppercase;">סוג מתנה:</div>
+            <div style="display:flex;gap:0.5rem;">
+              <button class="mode-btn active" id="mode-free" onclick="setGiftMode('free')">✨ בחירה חופשית של הלקוח</button>
+              <button class="mode-btn" id="mode-specific" onclick="setGiftMode('specific')">📌 מנות ספציפיות</button>
+            </div>
+          </div>
+          <div id="gift-free-section">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:0.4rem;text-transform:uppercase;">כמה מנות לבחירה חופשית?</div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <button onclick="changeCount(-1)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--cream2);font-size:1.1rem;cursor:pointer;font-weight:700;color:var(--text2);">−</button>
+              <span id="free-count-val" style="font-size:1.5rem;font-weight:900;color:var(--text);min-width:2rem;text-align:center;">2</span>
+              <button onclick="changeCount(1)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--cream2);font-size:1.1rem;cursor:pointer;font-weight:700;color:var(--red2);">+</button>
+              <span style="font-size:0.82rem;color:var(--text2);">מנות לבחירת הלקוח</span>
+            </div>
+          </div>
+          <div id="gift-specific-section" style="display:none;">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:0.5rem;text-transform:uppercase;">בחר מנות ספציפיות:</div>
+            <div id="modal-items-list" style="display:flex;flex-direction:column;gap:0.35rem;"></div>
+          </div>
+          <button class="btn btn-green" onclick="confirmGift()" style="width:100%;margin-top:1.2rem;">✓ אשר מתנה</button>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem;display:flex;gap:0.6rem;align-items:center;">
+        <button class="btn btn-red" onclick="addClient()">+ הוסף לקוח</button>
+        <label style="font-size:0.8rem;color:var(--text2);display:flex;align-items:center;gap:0.35rem;cursor:pointer;">
+          <input type="checkbox" id="ac-hide-prices" style="accent-color:var(--gold2)">
+          🙈 הסתר מחירים מהלקוח
+        </label>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>לקוחות</h2>
+      <div id="adm-clients"><div class="empty">אין לקוחות עדיין</div></div>
+    </div>
+  </div>
+
+  <!-- ORDERS TAB -->
+  <div id="tab-orders" class="tab-content">
+    <div class="sec">
+      <h2>הזמנות שהתקבלו</h2>
+      <div class="filter-bar">
+        <button class="filter-btn" id="f-active" onclick="loadOrders(false)">פעילות</button>
+        <button class="filter-btn" id="f-done" onclick="loadOrders(true)">בוצע</button>
+      </div>
+      <div id="adm-orders"><div class="empty">טוען...</div></div>
+      <div id="veggies-wrap" style="display:none;margin-top:1rem;">
+        <button class="btn btn-green" onclick="sendToAmalfi()">🥦 שלח מסומנות לאמלפי</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU TAB -->
+  <div id="tab-menu" class="tab-content">
+    <div class="sec">
+      <h2>הוספת מנה</h2>
+      <div class="fg">
+        <div class="ff"><label>שם המנה</label><input type="text" id="ai-name" placeholder="שם המנה"></div>
+        <div class="ff"><label>קטגוריה</label>
+          <select id="ai-cat">
+            <option>סלטים</option><option>ראשונות</option><option>תנור – פיצה</option>
+            <option>פסטה</option><option>דגים</option><option>מתוקים</option>
+            <option>שתייה קלה</option><option>שתייה חמה</option>
+          </select>
+        </div>
+        <div class="ff full"><label>תיאור</label><input type="text" id="ai-desc" placeholder="תיאור קצר..."></div>
+      </div>
+      <div style="margin-top:0.75rem;"><button class="btn btn-red" onclick="addItem()">+ הוסף מנה</button></div>
+    </div>
+    <div class="sec">
+      <h2>כל המנות</h2>
+      <div id="adm-items"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const { createClient } = supabase;
+const db = createClient('https://qgmyaxxzebwcatetbngs.supabase.co','sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq');
+const ADMIN_PASSWORD = 'pizzaadmin';
+const MY_WHATSAPP = '972542031181';
+const VEGGIES_URL = 'https://chunkyzz.github.io/amalfi-orders/';
+const CLIENT_PAGE = 'catering-order.html';
+
+const CATS = ['סלטים','ראשונות','תנור – פיצה','פסטה','דגים','מתוקים','שתייה קלה','שתייה חמה'];
+const CAT_ICONS = {'סלטים':'🥗','ראשונות':'🫒','תנור – פיצה':'🍕','פסטה':'🍝','דגים':'🐟','מתוקים':'🍰','שתייה קלה':'🥤','שתייה חמה':'☕'};
+const GIFTABLE_CATS = ['סלטים','ראשונות','פסטה','מתוקים','שתייה קלה','שתייה חמה'];
+
+let menuItems = [
+  {id:1,name:'קיסר',cat:'סלטים',desc:'לבבות קיסר, קרוטונים, פרמזן, רוטב קיסר בייתי'},
+  {id:2,name:'קפרזה',cat:'סלטים',desc:'עגבניות שרי, בייבי מוצרלה, פסטו, בלסמי מצומצם'},
+  {id:3,name:'חציל קלוי',cat:'סלטים',desc:'חציל שרוף בטאבון, שמן זית, רכז רימונים, עגבנייה'},
+  {id:4,name:'בורגול סלק',cat:'סלטים',desc:'בורגול גס, סלק, פלפלים, עשבי תיבול, שקדים, צימוקים'},
+  {id:5,name:'עשבי תיבול',cat:'סלטים',desc:'עשבי תיבול קצוצים, נבטים, שקד, סילאן, שמן זית'},
+  {id:6,name:'סלט קינואה',cat:'סלטים',desc:'קינואה צבעונית, קישוא, בטטה, פטרוזיליה, רכז רימונים'},
+  {id:7,name:'סלט שורשים',cat:'סלטים',desc:'קולורבי, סלק, גזר, כרוב סגול, בוטנים קלויים'},
+  {id:8,name:'שוק איטלקי',cat:'סלטים',desc:'פלפלים, מלפפון, גזר, עגבנייה, צנונית, בצל סגול, שמן זית'},
+  {id:9,name:'אנטיפסטי',cat:'ראשונות',desc:'בטטה, קישוא, פלפלים, בצל צרובים בטאבון',price:15},
+  {id:10,name:'קרפציו סלק',cat:'ראשונות',desc:'פרוסות סלק, שמן זית, בלסמי, בולגרית, מיקרו בזיל',price:5},
+  {id:11,name:'תפו"א איטלקי',cat:'ראשונות',desc:'קרעי תפו"א בטאבון, שמנת חמוצה, פסטו, עירית',price:5},
+  {id:12,name:'ארנציני',cat:'ראשונות',desc:'כדור אורז מטוגן במילוי גבינות',price:15},
+  {id:13,name:'פיצה אדומה',cat:'תנור – פיצה',desc:'רוטב עגבניות, מוצרלה, נגיעות פסטו',included:true},
+  {id:14,name:'פיצה ירוקה',cat:'תנור – פיצה',desc:'קרם פסטו, מוצרלה, נגיעות עגבנייה',included:true},
+  {id:15,name:'פיצה צהובה',cat:'תנור – פיצה',desc:'קרם פולנטה, מוצרלה, פטריות טריות',included:true},
+  {id:16,name:'פיצה סגולה',cat:'תנור – פיצה',desc:'קרם סלק, מוצרלה, גבינה מלוחה, בלסמי',included:true},
+  {id:17,name:'פיצה לבנה',cat:'תנור – פיצה',desc:'מוצרלה, פטריות, שמן כמהין',included:true},
+  {id:18,name:'מאפייה מהטאבון',cat:'תנור – פיצה',desc:"פוגאס, פוקאצ'ה, פלוט, בייגלה בליווי ממרחים ומתבלים",price:10},
+  {id:19,name:'פסטה קצרה',cat:'פסטה',desc:'ברטבים קלאסיים לבחירה',price:10,pastaOpts:true},
+  {id:20,name:'ניוקי צבעוני',cat:'פסטה',desc:'ניוקי סלק ובטטה ברוטב חמאת מרווה',price:10},
+  {id:21,name:'פלין גבינות',cat:'פסטה',desc:'פלין במילוי גבינות ברוטב שמנת פטריות',price:12},
+  {id:22,name:'סביצה',cat:'דגים',desc:'קוביות דג, עשבי תיבול, בצל סגול, צנונית, פרי טרי',price:35,minCharge:700},
+  {id:23,name:'דג אפוי בטאבון',cat:'דגים',desc:'דג אפוי בתיבול בית, שמן זית ועשבי תיבול',price:40},
+  {id:24,name:'סשימי',cat:'דגים',desc:'פרוסות דג, רוטב לימוני ועשבי תיבול',price:35,minCharge:700},
+  {id:25,name:'סלמון כבוש',cat:'דגים',desc:'נתח סלמון בכבישה בייתית, גבינת שמנת, שמיר',price:15,minCharge:450},
+  {id:26,name:'קלצונה מתוק',cat:'מתוקים',desc:'בצק מקופל — שוקולד אגוזי לוז / בייגלה מלוח / לוטוס',included:true},
+  {id:27,name:'פירות העונה',cat:'מתוקים',desc:'פירות טריים עונתיים',price:15},
+  {id:28,name:'טירמיסו',cat:'מתוקים',desc:'טירמיסו קלאסי בייתי',flatPrice:240},
+  {id:29,name:'טראפלס שוקולד',cat:'מתוקים',desc:'טראפלס שוקולד בייתיים',flatPrice:150},
+  {id:30,name:'שתייה קלה',cat:'שתייה קלה',desc:'מים, לימונדה, תפוזים — 3 מיכלי סמובר מזכוכית',price:10,maxCharge:500},
+  {id:31,name:'שתייה חמה',cat:'שתייה חמה',desc:'מכונת אספרסו, קפה, תה, חלב, סוכר — ילדים ללא עלות',price:10,kidsPrice:0},
+];
+let nextId = 32;
+let clients = [];
+let nextCid = 1;
+
+// ===== LOGIN =====
+function doLogin(){
+  const v = document.getElementById('pw-input').value;
+  if(v === ADMIN_PASSWORD){
+    sessionStorage.setItem('pz-admin','1');
+    showApp();
+  } else {
+    document.getElementById('login-err').textContent = 'סיסמה שגויה';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+function logout(){
+  sessionStorage.removeItem('pz-admin');
+  location.reload();
+}
+function showApp(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initApp();
+}
+
+// ===== TABS =====
+function switchTab(id, el){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id === 'orders') loadOrders(false);
+}
+
+// ===== INIT =====
+function initApp(){
+  buildCatChips();
+  buildGiftChips();
+  renderClients();
+  renderItems();
+  loadOrders(false);
+}
+
+function buildCatChips(){
+  const w = document.getElementById('ac-cats');
+  w.innerHTML = '';
+  CATS.forEach(cat=>{
+    const chip = document.createElement('div');
+    chip.className = 'cat-chip selected';
+    chip.dataset.cat = cat;
+    chip.textContent = CAT_ICONS[cat] + ' ' + cat;
+    chip.onclick = ()=>{ chip.classList.toggle('selected'); };
+    w.appendChild(chip);
+  });
+}
+
+let giftState = {};
+let modalCurrentCat = null;
+let modalMode = 'free';
+let modalFreeCount = 2;
+let modalSelectedItems = [];
+
+function buildGiftChips(){
+  const w = document.getElementById('ac-gifts');
+  w.innerHTML = '';
+  GIFTABLE_CATS.forEach(cat=>{
+    const chip = document.createElement('div');
+    chip.className = 'gift-chip';
+    chip.dataset.cat = cat;
+    chip.textContent = '🎁 ' + cat;
+    chip.onclick = ()=> openGiftModal(cat);
+    w.appendChild(chip);
+  });
+  renderGiftSummary();
+}
+
+function openGiftModal(cat){
+  modalCurrentCat = cat;
+  const existing = giftState[cat];
+  modalMode = existing?.mode || 'free';
+  modalFreeCount = existing?.count || 2;
+  modalSelectedItems = existing?.items ? [...existing.items] : [];
+  document.getElementById('modal-cat-title').textContent = '🎁 ' + cat;
+  setGiftMode(modalMode);
+  document.getElementById('free-count-val').textContent = modalFreeCount;
+  const catItems = menuItems.filter(i=>i.cat===cat && !i.included);
+  const list = document.getElementById('modal-items-list');
+  list.innerHTML = '';
+  if(!catItems.length){
+    list.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;">אין מנות עם מחיר בקטגוריה זו</div>';
+  } else {
+    catItems.forEach(item=>{
+      const row = document.createElement('div');
+      row.className = 'modal-item-row' + (modalSelectedItems.includes(item.name)?' sel':'');
+      row.innerHTML = `<input type="checkbox" ${modalSelectedItems.includes(item.name)?'checked':''}> <span>${item.name}</span> <span style="margin-right:auto;font-size:0.72rem;color:var(--text2);">${item.price?item.price+' ₪ לאדם':item.flatPrice?item.flatPrice+' ₪':''}  </span>`;
+      row.onclick = ()=>{
+        if(modalSelectedItems.includes(item.name)) modalSelectedItems = modalSelectedItems.filter(x=>x!==item.name);
+        else modalSelectedItems.push(item.name);
+        row.classList.toggle('sel');
+        row.querySelector('input').checked = modalSelectedItems.includes(item.name);
+      };
+      list.appendChild(row);
+    });
+  }
+  document.getElementById('gift-modal').style.display = 'flex';
+}
+
+function closeGiftModal(){
+  document.getElementById('gift-modal').style.display = 'none';
+  modalCurrentCat = null;
+}
+
+function setGiftMode(mode){
+  modalMode = mode;
+  document.getElementById('mode-free').classList.toggle('active', mode==='free');
+  document.getElementById('mode-specific').classList.toggle('active', mode==='specific');
+  document.getElementById('gift-free-section').style.display = mode==='free' ? 'block' : 'none';
+  document.getElementById('gift-specific-section').style.display = mode==='specific' ? 'block' : 'none';
+}
+
+function changeCount(delta){
+  modalFreeCount = Math.max(1, modalFreeCount + delta);
+  document.getElementById('free-count-val').textContent = modalFreeCount;
+}
+
+function confirmGift(){
+  if(!modalCurrentCat) return;
+  if(modalMode==='specific' && !modalSelectedItems.length){ alert('בחר לפחות מנה אחת'); return; }
+  giftState[modalCurrentCat] = { mode: modalMode, count: modalFreeCount, items: [...modalSelectedItems] };
+  document.querySelectorAll('#ac-gifts .gift-chip').forEach(c=>{
+    if(c.dataset.cat === modalCurrentCat) c.classList.add('selected');
+  });
+  closeGiftModal();
+  renderGiftSummary();
+}
+
+function removeGift(cat){
+  delete giftState[cat];
+  document.querySelectorAll('#ac-gifts .gift-chip').forEach(c=>{
+    if(c.dataset.cat === cat) c.classList.remove('selected');
+  });
+  renderGiftSummary();
+}
+
+function renderGiftSummary(){
+  const el = document.getElementById('ac-gifts-summary');
+  const entries = Object.entries(giftState);
+  if(!entries.length){ el.innerHTML = ''; return; }
+  el.innerHTML = entries.map(([cat, g])=>{
+    const desc = g.mode==='free' ? `${g.count} מנות לבחירה` : g.items.join(', ');
+    return `<span class="gift-tag" onclick="openGiftModal('${cat}')"><span class="remove-gift" onclick="event.stopPropagation();removeGift('${cat}')">✕</span>🎁 ${cat}: ${desc}</span>`;
+  }).join(' ');
+}
+
+// ===== CLIENTS =====
+function buildClientLink(c, hidePrices=false){
+  const data = {
+    name: c.name, event: c.event, cats: c.cats,
+    phone: c.phone||'', guests: c.guests||'',
+    gifts: c.gifts||{}
+  };
+  const base = location.origin + location.pathname.replace('catering-admin.html','catering-order.html')
+    + '?c=' + btoa(encodeURIComponent(JSON.stringify(data)));
+  return hidePrices ? base + '&hp=1' : base;
+}
+
+function addClient(){
+  const name = document.getElementById('ac-name').value.trim();
+  if(!name){ alert('יש להזין שם לקוח'); return; }
+  const cats = [...document.querySelectorAll('#ac-cats .cat-chip.selected')].map(c=>c.dataset.cat);
+  const hideP = document.getElementById('ac-hide-prices').checked;
+  clients.push({
+    id: 'c'+nextCid++,
+    name,
+    phone: document.getElementById('ac-phone').value.trim(),
+    guests: document.getElementById('ac-guests').value.trim(),
+    event: document.getElementById('ac-event').value.trim(),
+    cats: cats.length ? cats : [...CATS],
+    gifts: {...giftState},
+    hidePrices: hideP
+  });
+  ['ac-name','ac-phone','ac-guests','ac-event'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ac-hide-prices').checked = false;
+  document.querySelectorAll('#ac-cats .cat-chip').forEach(c=>c.classList.add('selected'));
+  document.querySelectorAll('#ac-gifts .gift-chip').forEach(c=>c.classList.remove('selected'));
+  giftState = {};
+  renderGiftSummary();
+  renderClients();
+}
+
+function renderClients(){
+  const el = document.getElementById('adm-clients');
+  if(!clients.length){ el.innerHTML='<div class="empty">אין לקוחות עדיין</div>'; return; }
+  el.innerHTML = '';
+  clients.forEach(c=>{
+    const d = document.createElement('div');
+    d.className = 'cc-card';
+    const giftsObj = c.gifts || {};
+    const giftsStr = Object.entries(giftsObj).map(([cat,g])=> g.mode==='free' ? `${cat} (${g.count} לבחירה)` : `${cat}: ${g.items?.join(', ')}`).join(' · ');
+    d.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="cc-name">${c.name}</div>
+          <div class="cc-meta">${c.event||'אירוע'}${c.phone?' · 📞 '+c.phone:''}${c.guests?' · 👥 '+c.guests+' איש':''}</div>
+          ${giftsStr ? `<div class="cc-gifts">🎁 מתנות: ${giftsStr}</div>` : ''}
+          ${c.hidePrices ? '<div style="font-size:0.72rem;color:#aaa;margin-top:0.15rem;">🙈 ללא מחירים</div>' : ''}
+        </div>
+        <button class="btn btn-del" onclick="removeClient('${c.id}')">הסר</button>
+      </div>
+      <div class="cc-actions">
+        <button class="cc-btn" onclick="copyLink('${c.id}')">📋 העתק קישור</button>
+        <button class="cc-btn cc-btn-wa" onclick="sendWA('${c.id}')">💬 שלח בוואטסאפ</button>
+        ${!c.hidePrices ? `<button class="cc-btn cc-btn-noprice" onclick="copyLinkNP('${c.id}')">🙈 קישור ללא מחירים</button>` : ''}
+      </div>`;
+    el.appendChild(d);
+  });
+}
+
+function removeClient(id){ clients=clients.filter(c=>c.id!==id); renderClients(); }
+
+function copyLink(id){
+  const c=clients.find(x=>x.id===id); if(!c)return;
+  const link = buildClientLink(c, c.hidePrices);
+  navigator.clipboard.writeText(link).then(()=>alert('✓ הקישור הועתק!')).catch(()=>prompt('העתק:',link));
+}
+function copyLinkNP(id){
+  const c=clients.find(x=>x.id===id); if(!c)return;
+  const link = buildClientLink(c, true);
+  navigator.clipboard.writeText(link).then(()=>alert('✓ קישור ללא מחירים הועתק!')).catch(()=>prompt('העתק:',link));
+}
+function sendWA(id){
+  const c=clients.find(x=>x.id===id); if(!c)return;
+  const link = buildClientLink(c, c.hidePrices);
+  window.open('https://wa.me/?text='+encodeURIComponent('שלום '+c.name+' 🍕\n\nהנה הקישור לבחירת התפריט לאירוע שלכם:\n'+link+'\n\nPizza Zmani – אוכל איטלקי שמח'),'_blank');
+}
+
+// ===== ORDERS =====
+let _orders = [];
+async function loadOrders(showDone=false){
+  const el = document.getElementById('adm-orders');
+  el.innerHTML = '<div class="empty">טוען...</div>';
+  document.getElementById('f-active').style.cssText = !showDone ? 'background:var(--red2);color:white;border-color:var(--red2);' : '';
+  document.getElementById('f-done').style.cssText = showDone ? 'background:var(--olive);color:white;border-color:var(--olive);' : '';
+  let q = db.from('catering_orders').select('*').order('created_at',{ascending:false});
+  q = showDone ? q.eq('status','done') : q.neq('status','done');
+  const {data,error} = await q;
+  if(error){ el.innerHTML='<div class="empty" style="color:var(--red)">שגיאה בטעינה</div>'; return; }
+  _orders = data||[];
+  document.getElementById('veggies-wrap').style.display = (!showDone && _orders.length) ? 'block' : 'none';
+  if(!_orders.length){ el.innerHTML=`<div class="empty">${showDone?'אין הזמנות שבוצעו':'אין הזמנות פעילות'}</div>`; return; }
+  el.innerHTML='';
+  _orders.forEach(o=>{
+    const d=document.createElement('div'); d.className='oc';
+    d.innerHTML=`
+      <input type="checkbox" class="oc-check order-check" data-id="${o.id}">
+      <div style="flex:1">
+        <div class="oc-hd">
+          <div class="oc-name">🎉 ${o.client_name} — ${o.event_type}</div>
+          <div style="display:flex;gap:0.4rem;align-items:center;">
+            <div class="oc-date">${new Date(o.created_at).toLocaleString('he-IL')}</div>
+            ${!showDone?`<button class="badge-done" onclick="markDone('${o.id}')">✅ בוצע</button>`:''}
+          </div>
+        </div>
+        <div class="oc-info">📍 ${o.address||''} · 📅 ${o.event_date||''} ${o.event_time||''} · 👥 ${o.guests||''}</div>
+        <div class="oc-tags">${(o.items||[]).map(i=>`<span class="oc-tag">${i.name}</span>`).join('')}</div>
+        ${o.notes?`<div class="oc-notes">💬 ${o.notes}</div>`:''}
+        ${o.price_estimate?`<div class="oc-price">💰 ${Number(o.price_estimate).toLocaleString()} ₪</div>`:''}
+      </div>`;
+    el.appendChild(d);
+  });
+}
+
+async function markDone(id){
+  if(!confirm('לסמן כבוצעה?'))return;
+  const{error}=await db.from('catering_orders').update({status:'done'}).eq('id',id);
+  if(error){alert('שגיאה: '+error.message);return;}
+  loadOrders(false);
+}
+
+const DISH_MAP = {
+  'שוק איטלקי':'שוק איטלקי','אנטיפסטי':'אנטיפסטי','קרפציו סלק':'קרפציו סלק',
+  'ניוקי צבעוני':'ניוקי','פלין גבינות':'פלין','פסטה קצרה':'פסטה קצרה',
+  'דג אפוי בטאבון':'דג אפוי','סביצה':'סביצה','סשימי':'סשימי','סלמון כבוש':'סלמון כבוש',
+};
+
+async function sendToAmalfi(){
+  const checked=[...document.querySelectorAll('.order-check:checked')];
+  if(!checked.length){alert('יש לסמן לפחות הזמנה אחת');return;}
+  const selOrders=checked.map(cb=>_orders.find(o=>o.id==cb.dataset.id)).filter(Boolean);
+  const rows=selOrders.map(o=>{
+    const dishes=new Set();
+    (o.items||[]).forEach(item=>{const m=DISH_MAP[item.name];if(m)dishes.add(m);});
+    return{event_name:o.client_name+' — '+o.event_type,guests:parseInt(o.guests)||0,items:[...dishes],status:'pending'};
+  });
+  const{error}=await db.from('veggie_orders').insert(rows);
+  if(error){alert('שגיאה: '+error.message);return;}
+  alert(`✅ ${rows.length} הזמנות נשלחו לאמלפי!`);
+  window.open(VEGGIES_URL,'_blank');
+}
+
+// ===== MENU =====
+function renderItems(){
+  const el=document.getElementById('adm-items');
+  if(!menuItems.length){el.innerHTML='<div class="empty">אין מנות</div>';return;}
+  el.innerHTML='';
+  menuItems.forEach(item=>{
+    const r=document.createElement('div');r.className='arow';
+    r.innerHTML=`
+      <div class="arow-info">
+        <span class="cbadge">${CAT_ICONS[item.cat]} ${item.cat}</span>
+        <span class="arow-name">${item.name}${item.included?' ★':''}</span>
+        <span class="arow-desc">${item.desc}</span>
+      </div>
+      <button class="btn btn-del" onclick="removeItem(${item.id})">הסר</button>`;
+    el.appendChild(r);
+  });
+}
+function addItem(){
+  const n=document.getElementById('ai-name').value.trim();if(!n)return;
+  menuItems.push({id:nextId++,name:n,cat:document.getElementById('ai-cat').value,desc:document.getElementById('ai-desc').value.trim()});
+  document.getElementById('ai-name').value='';document.getElementById('ai-desc').value='';
+  renderItems();
+}
+function removeItem(id){menuItems=menuItems.filter(i=>i.id!==id);renderItems();}
+
+// ===== BOOT =====
+window.addEventListener('DOMContentLoaded',()=>{
+  if(sessionStorage.getItem('pz-admin')==='1') showApp();
+  else document.getElementById('pw-input').focus();
+});
+</script>
+</body>
+</html>
