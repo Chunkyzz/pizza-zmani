@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizza Zmani – ניהול תפריט v1.0.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --navy:   #1B2A4A;
+    --navy2:  #243660;
+    --gold:   #C9A84C;
+    --gold2:  #E8C56A;
+    --green:  #2E6B4F;
+    --cream:  #FDF8F0;
+    --white:  #FFFFFF;
+    --gray:   #F2F2F2;
+    --border: #E0D8CC;
+    --text:   #1a1a1a;
+    --muted:  #888;
+    --danger: #C0392B;
+    --shadow: 0 4px 24px rgba(27,42,74,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--navy);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+  }
+  .topbar-brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .topbar-brand .logo-text {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+  }
+  .topbar-brand .sub {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+  .topbar-version {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 1px;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: var(--navy2);
+    padding: 0 32px;
+    border-bottom: 2px solid var(--gold);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 14px 22px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+  }
+  .tab-btn:hover { color: var(--gold2); }
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+  }
+
+  /* ── MAIN ── */
+  .main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .section-title {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 1.6rem;
+    color: var(--navy);
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 20px; border-radius: 8px; border: none;
+    font-family: 'Heebo', sans-serif; font-size: 0.9rem; font-weight: 500;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .btn-primary { background: var(--gold); color: var(--navy); }
+  .btn-primary:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(201,168,76,0.3); }
+  .btn-navy { background: var(--navy); color: var(--white); }
+  .btn-navy:hover { background: var(--navy2); }
+  .btn-green { background: var(--green); color: var(--white); }
+  .btn-green:hover { filter: brightness(1.1); }
+  .btn-danger { background: var(--danger); color: var(--white); }
+  .btn-danger:hover { filter: brightness(1.1); }
+  .btn-ghost { background: none; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { border-color: var(--navy); }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+  /* ── FILTERS / SEARCH ── */
+  .filters {
+    display: flex; gap: 12px; align-items: center;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .search-input, .select-filter {
+    font-family: 'Heebo', sans-serif; font-size: 0.9rem;
+    padding: 9px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; background: var(--white);
+    color: var(--text); outline: none; transition: border 0.2s;
+  }
+  .search-input { width: 240px; }
+  .search-input:focus, .select-filter:focus { border-color: var(--gold); }
+
+  /* ── CATEGORY PILLS ── */
+  .cat-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .cat-pill {
+    padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: var(--white); font-size: 0.82rem; cursor: pointer;
+    transition: all 0.18s; font-family: 'Heebo', sans-serif;
+  }
+  .cat-pill:hover { border-color: var(--gold); }
+  .cat-pill.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+
+  /* ── TABLE ── */
+  .table-wrap { background: var(--white); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--navy); }
+  thead th {
+    color: var(--gold); font-weight: 600; font-size: 0.82rem;
+    padding: 13px 14px; text-align: right; letter-spacing: 0.3px;
+  }
+  tbody tr { border-bottom: 1px solid var(--gray); transition: background 0.15s; }
+  tbody tr:last-child { border: none; }
+  tbody tr:hover { background: #FFFDF5; }
+  tbody td { padding: 12px 14px; font-size: 0.88rem; vertical-align: middle; }
+  .td-name { font-weight: 600; color: var(--navy); }
+  .td-it { font-size: 0.78rem; color: var(--muted); font-style: italic; }
+  .td-desc { font-size: 0.8rem; color: #555; max-width: 220px; }
+  .td-price { font-weight: 700; color: var(--green); white-space: nowrap; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 600;
+  }
+  .badge-active { background: #E8F5E9; color: #2E7D32; }
+  .badge-inactive { background: #FFEBEE; color: #C62828; }
+  .badge-yes { background: #E3F2FD; color: #1565C0; }
+  .badge-no { background: #F5F5F5; color: #777; }
+  .cat-tag {
+    display: inline-block; padding: 3px 9px; border-radius: 6px;
+    font-size: 0.74rem; font-weight: 600;
+  }
+  .actions-cell { white-space: nowrap; display: flex; gap: 6px; }
+
+  /* ── MODAL ── */
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+    width: min(620px, 96vw); max-height: 92vh;
+    overflow-y: auto; padding: 32px;
+    animation: slideUp 0.22s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .modal-title {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 1.4rem; color: var(--navy); margin-bottom: 24px;
+    padding-bottom: 14px; border-bottom: 2px solid var(--gold);
+  }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 0.82rem; font-weight: 600; color: var(--navy); }
+  input, select, textarea {
+    font-family: 'Heebo', sans-serif; font-size: 0.9rem;
+    padding: 10px 13px; border: 1.5px solid var(--border);
+    border-radius: 8px; background: var(--white); color: var(--text);
+    outline: none; transition: border 0.2s; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+  textarea { resize: vertical; min-height: 70px; }
+  .toggle-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0;
+  }
+  .toggle {
+    width: 40px; height: 22px; border-radius: 11px;
+    background: #ccc; position: relative; cursor: pointer;
+    transition: background 0.2s; border: none; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--green); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; right: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: white; transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(-18px); }
+  .modal-footer {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);
+  }
+
+  /* ── CATEGORY COLORS ── */
+  .cat-סלטים   { background:#E8F5E9; color:#2E7D32; }
+  .cat-ראשונות { background:#FFF8E1; color:#F57F17; }
+  .cat-פיצות   { background:#FBE9E7; color:#BF360C; }
+  .cat-פסטה    { background:#E8EAF6; color:#283593; }
+  .cat-דגים    { background:#E0F7FA; color:#006064; }
+  .cat-מתוקים  { background:#FCE4EC; color:#880E4F; }
+  .cat-שתייה   { background:#F3E5F5; color:#4A148C; }
+
+  /* ── STATS ── */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--white); border-radius: 12px; padding: 18px 20px;
+    box-shadow: var(--shadow); border-right: 4px solid var(--gold);
+  }
+  .stat-val { font-family: 'Frank Ruhl Libre', serif; font-size: 2rem; color: var(--navy); font-weight: 900; }
+  .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(60px);
+    background: var(--navy); color: white; padding: 12px 24px; border-radius: 30px;
+    font-size: 0.88rem; z-index: 999; transition: transform 0.3s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--green); }
+  .toast.error { background: var(--danger); }
+
+  /* ── EMPTY ── */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+
+  /* ── SETTINGS ── */
+  .settings-card {
+    background: var(--white); border-radius: 12px;
+    padding: 28px; box-shadow: var(--shadow); margin-bottom: 20px;
+  }
+  .settings-title {
+    font-family: 'Frank Ruhl Libre', serif; font-size: 1.1rem;
+    color: var(--navy); margin-bottom: 18px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--gray); gap: 16px;
+  }
+  .settings-row:last-child { border: none; }
+  .settings-row label { font-size: 0.88rem; font-weight: 500; }
+  .settings-row input { max-width: 180px; }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 0 16px; }
+    .tabs { padding: 0 8px; }
+    .main { padding: 16px 12px; }
+    .form-grid { grid-template-columns: 1fr; }
+    thead th:nth-child(4), tbody td:nth-child(4),
+    thead th:nth-child(5), tbody td:nth-child(5) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div>
+      <div class="logo-text">🍕 Pizza Zmani</div>
+      <div class="sub">מערכת ניהול תפריט והצעות מחיר</div>
+    </div>
+  </div>
+  <div class="topbar-version">v1.0.0</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('dishes')">🍽️ מנות</button>
+  <button class="tab-btn" onclick="showTab('categories')">📂 קטגוריות</button>
+  <button class="tab-btn" onclick="showTab('settings')">⚙️ הגדרות</button>
+</div>
+
+<div class="main">
+
+  <!-- ════ DISHES TAB ════ -->
+  <div class="section active" id="tab-dishes">
+    <div id="stats-bar" class="stats-bar"></div>
+    <div class="section-header">
+      <div class="section-title">ניהול מנות</div>
+      <button class="btn btn-primary" onclick="openModal()">+ הוסף מנה</button>
+    </div>
+    <div class="filters">
+      <input type="text" class="search-input" placeholder="🔍 חיפוש מנה..." oninput="filterDishes()" id="searchInput">
+      <select class="select-filter" onchange="filterDishes()" id="activeFilter">
+        <option value="">הכל</option>
+        <option value="true">פעיל</option>
+        <option value="false">לא פעיל</option>
+      </select>
+    </div>
+    <div class="cat-pills" id="catPills"></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>קטגוריה</th>
+            <th>שם המנה</th>
+            <th>תיאור</th>
+            <th>מחיר בסיס</th>
+            <th>תוספת/אדם</th>
+            <th>סטטוס</th>
+            <th>טבעוני</th>
+            <th>ללא גלוטן</th>
+            <th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody id="dishesBody">
+          <tr><td colspan="9" class="empty"><div class="empty-icon">⏳</div><div>טוען...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════ CATEGORIES TAB ════ -->
+  <div class="section" id="tab-categories">
+    <div class="section-header">
+      <div class="section-title">קטגוריות תפריט</div>
+      <button class="btn btn-primary" onclick="openCatModal()">+ קטגוריה חדשה</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>סדר</th><th>שם קטגוריה</th><th>שם איטלקי</th><th>מנות</th><th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody id="catsBody">
+          <tr><td colspan="5" class="empty"><div class="empty-icon">⏳</div><div>טוען...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════ SETTINGS TAB ════ -->
+  <div class="section" id="tab-settings">
+    <div class="section-title" style="margin-bottom:24px">הגדרות מערכת</div>
+    <div class="settings-card">
+      <div class="settings-title">💰 תמחור ומחירים</div>
+      <div class="settings-row">
+        <label>מחיר בסיס לאדם (₪)</label>
+        <input type="number" id="set-base-price" value="100">
+      </div>
+      <div class="settings-row">
+        <label>מע"מ (%)</label>
+        <input type="number" id="set-vat" value="18">
+      </div>
+      <div class="settings-row">
+        <label>הנחת ילדים 3-13 (%)</label>
+        <input type="number" id="set-kids-disc" value="15">
+      </div>
+      <div class="settings-row">
+        <label>מקדמה נדרשת (%)</label>
+        <input type="number" id="set-deposit" value="10">
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-title">🚚 לוגיסטיקה</div>
+      <div class="settings-row">
+        <label>טווח הובלה חינם</label>
+        <input type="text" id="set-delivery" value="גדרה – נתניה – מודיעין">
+      </div>
+      <div class="settings-row">
+        <label>שעות הגשה</label>
+        <input type="text" id="set-hours" value="שעתיים: 1.5 שעות בופה מלא + 0.5 שעה קינוחים">
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-title">📄 טקסט ותנאים</div>
+      <div class="settings-row" style="flex-direction:column; align-items:flex-start;">
+        <label>דיסקליימר אלרגיות</label>
+        <textarea id="set-allergy" style="margin-top:8px;width:100%">אין ביכולתינו להתחייב על אלרגן מכל סוג שהוא (אגוזים, חלב, גלוטן, שומשום וכל אלרגן אחר).</textarea>
+      </div>
+      <div class="settings-row" style="flex-direction:column; align-items:flex-start;">
+        <label>תנאי ביטול</label>
+        <textarea id="set-cancel" style="margin-top:8px;width:100%">עד 72 שעות: 10% | 72-24 שעות: 30% | פחות מ-24 שעות: 100%</textarea>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px">💾 שמור הגדרות</button>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ════ DISH MODAL ════ -->
+<div class="modal-bg" id="dishModal" onclick="e=>e.target===this&&closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modalTitle">הוספת מנה חדשה</div>
+    <input type="hidden" id="editId">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>שם המנה (עברית) *</label>
+        <input type="text" id="f-name" placeholder="פיצה אדומה">
+      </div>
+      <div class="form-group">
+        <label>שם איטלקי</label>
+        <input type="text" id="f-name-it" placeholder="Pizza Rossa">
+      </div>
+      <div class="form-group full">
+        <label>תיאור</label>
+        <textarea id="f-desc" placeholder="רוטב עגבניות, מוצרלה, נגיעות פסטו..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>קטגוריה *</label>
+        <select id="f-cat"></select>
+      </div>
+      <div class="form-group">
+        <label>מחיר בסיס (₪)</label>
+        <input type="number" id="f-base" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>תוספת לאדם (₪)</label>
+        <input type="number" id="f-addon" placeholder="0" min="0">
+      </div>
+      <div class="form-group full">
+        <label>אלרגנים (מופרדים בפסיק)</label>
+        <input type="text" id="f-allergens" placeholder="חלב, גלוטן, אגוזים...">
+      </div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <button class="toggle on" id="f-active" onclick="toggleBtn(this)"></button>
+          <label>פעיל בתפריט</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <button class="toggle" id="f-vegan" onclick="toggleBtn(this)"></button>
+          <label>טבעוני</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <button class="toggle" id="f-gf" onclick="toggleBtn(this)"></button>
+          <label>ללא גלוטן</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <button class="toggle" id="f-kids" onclick="toggleBtn(this)"></button>
+          <label>מתאים לילדים</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveDish()">💾 שמור מנה</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CAT MODAL ════ -->
+<div class="modal-bg" id="catModal" onclick="e=>e.target===this&&closeCatModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <div class="modal-title" id="catModalTitle">קטגוריה חדשה</div>
+    <input type="hidden" id="editCatId">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>שם (עברית) *</label>
+        <input type="text" id="fc-name" placeholder="פיצות">
+      </div>
+      <div class="form-group">
+        <label>שם איטלקי</label>
+        <input type="text" id="fc-name-it" placeholder="Forno">
+      </div>
+      <div class="form-group">
+        <label>סדר תצוגה</label>
+        <input type="number" id="fc-order" placeholder="1" min="1">
+      </div>
+      <div class="form-group">
+        <label>צבע (HEX)</label>
+        <input type="color" id="fc-color" value="#1B2A4A" style="height:42px;padding:4px">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCatModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveCat()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  SUPABASE CONFIG – החלף עם הפרטים שלך
+// ═══════════════════════════════════════════════
+const SUPABASE_URL = 'https://qgmyaxxzebwcatetbngs.supabase.co';
+const SUPABASE_KEY = 'YOUR_ANON_KEY'; // ← שים כאן את ה-anon key מ-Supabase
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let allDishes = [];
+let allCats   = [];
+let activeCatFilter = '';
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+async function init() {
+  await loadCategories();
+  await loadDishes();
+  buildStats();
+}
+init();
+
+// ═══════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+//  CATEGORIES
+// ═══════════════════════════════════════════════
+async function loadCategories() {
+  const { data, error } = await sb.from('qz_categories').select('*').order('sort_order');
+  if (error) {
+    // Demo mode – use static list if table doesn't exist yet
+    allCats = [
+      {id:1,name:'סלטים',name_it:'Insalata',sort_order:1,color:'#2E6B4F'},
+      {id:2,name:'ראשונות',name_it:'Primato',sort_order:2,color:'#C9A84C'},
+      {id:3,name:'פיצות',name_it:'Forno',sort_order:3,color:'#BF360C'},
+      {id:4,name:'פסטה',name_it:'Linguine',sort_order:4,color:'#283593'},
+      {id:5,name:'דגים',name_it:'Pesce',sort_order:5,color:'#006064'},
+      {id:6,name:'מתוקים',name_it:'Dolci',sort_order:6,color:'#880E4F'},
+      {id:7,name:'שתייה',name_it:'Bevande',sort_order:7,color:'#4A148C'},
+    ];
+  } else {
+    allCats = data;
+  }
+  renderCatPills();
+  renderCatTable();
+  populateCatSelect();
+}
+
+function renderCatPills() {
+  const el = document.getElementById('catPills');
+  el.innerHTML = `<button class="cat-pill active" onclick="filterByCat('',this)">הכל</button>` +
+    allCats.map(c => `<button class="cat-pill" onclick="filterByCat('${c.name}',this)">${c.name}</button>`).join('');
+}
+
+function filterByCat(name, btn) {
+  activeCatFilter = name;
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderDishTable();
+}
+
+function populateCatSelect() {
+  const sel = document.getElementById('f-cat');
+  sel.innerHTML = allCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+}
+
+function renderCatTable() {
+  const body = document.getElementById('catsBody');
+  if (!allCats.length) {
+    body.innerHTML = '<tr><td colspan="5" class="empty"><div class="empty-icon">📂</div><div>אין קטגוריות</div></td></tr>';
+    return;
+  }
+  const dishCount = cat => allDishes.filter(d => d.category === cat).length;
+  body.innerHTML = allCats.map(c => `
+    <tr>
+      <td>${c.sort_order}</td>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-style:italic;color:#888">${c.name_it||''}</td>
+      <td><span class="badge badge-active">${dishCount(c.name)} מנות</span></td>
+      <td><div class="actions-cell">
+        <button class="btn btn-navy btn-sm" onclick="editCat(${c.id})">✏️ ערוך</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function openCatModal() {
+  document.getElementById('catModalTitle').textContent = 'קטגוריה חדשה';
+  document.getElementById('editCatId').value = '';
+  document.getElementById('fc-name').value = '';
+  document.getElementById('fc-name-it').value = '';
+  document.getElementById('fc-order').value = allCats.length + 1;
+  document.getElementById('catModal').classList.add('open');
+}
+function closeCatModal() { document.getElementById('catModal').classList.remove('open'); }
+
+function editCat(id) {
+  const c = allCats.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('catModalTitle').textContent = 'עריכת קטגוריה';
+  document.getElementById('editCatId').value = id;
+  document.getElementById('fc-name').value = c.name;
+  document.getElementById('fc-name-it').value = c.name_it || '';
+  document.getElementById('fc-order').value = c.sort_order;
+  if (c.color) document.getElementById('fc-color').value = c.color;
+  document.getElementById('catModal').classList.add('open');
+}
+
+async function saveCat() {
+  const id = document.getElementById('editCatId').value;
+  const payload = {
+    name: document.getElementById('fc-name').value.trim(),
+    name_it: document.getElementById('fc-name-it').value.trim(),
+    sort_order: parseInt(document.getElementById('fc-order').value) || 1,
+    color: document.getElementById('fc-color').value,
+  };
+  if (!payload.name) { showToast('שם קטגוריה חובה', 'error'); return; }
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from('qz_categories').update(payload).eq('id', id));
+  } else {
+    ({ error } = await sb.from('qz_categories').insert(payload));
+  }
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  showToast('קטגוריה נשמרה ✓', 'success');
+  closeCatModal();
+  await loadCategories();
+}
+
+// ═══════════════════════════════════════════════
+//  DISHES
+// ═══════════════════════════════════════════════
+async function loadDishes() {
+  const { data, error } = await sb.from('qz_dishes').select('*').order('category').order('name');
+  if (error) {
+    // Demo mode with static menu
+    allDishes = getDemoMenu();
+  } else {
+    allDishes = data;
+  }
+  renderDishTable();
+  renderCatTable();
+  buildStats();
+}
+
+function renderDishTable() {
+  const body = document.getElementById('dishesBody');
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const activeF = document.getElementById('activeFilter').value;
+
+  let rows = allDishes.filter(d => {
+    if (activeCatFilter && d.category !== activeCatFilter) return false;
+    if (activeF === 'true' && !d.is_active) return false;
+    if (activeF === 'false' && d.is_active) return false;
+    if (search && !d.name.includes(search) && !(d.description||'').includes(search)) return false;
+    return true;
+  });
+
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="9" class="empty"><div class="empty-icon">🔍</div><div>לא נמצאו מנות</div></td></tr>';
+    return;
+  }
+
+  body.innerHTML = rows.map(d => `
+    <tr>
+      <td><span class="cat-tag cat-${d.category}">${d.category}</span></td>
+      <td>
+        <div class="td-name">${d.name}</div>
+        <div class="td-it">${d.name_it||''}</div>
+      </td>
+      <td class="td-desc">${(d.description||'').slice(0,80)}${(d.description||'').length>80?'...':''}</td>
+      <td class="td-price">${d.base_price ? '₪' + d.base_price : '—'}</td>
+      <td class="td-price">${d.addon_per_person ? '+₪' + d.addon_per_person + '/אדם' : '—'}</td>
+      <td><span class="badge ${d.is_active ? 'badge-active' : 'badge-inactive'}">${d.is_active ? 'פעיל' : 'לא פעיל'}</span></td>
+      <td><span class="badge ${d.is_vegan ? 'badge-yes' : 'badge-no'}">${d.is_vegan ? '🌱' : '—'}</span></td>
+      <td><span class="badge ${d.is_gluten_free ? 'badge-yes' : 'badge-no'}">${d.is_gluten_free ? '✓' : '—'}</span></td>
+      <td><div class="actions-cell">
+        <button class="btn btn-navy btn-sm" onclick="editDish(${d.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDish(${d.id}, '${d.name}')">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function filterDishes() { renderDishTable(); }
+
+function buildStats() {
+  const bar = document.getElementById('stats-bar');
+  const total = allDishes.length;
+  const active = allDishes.filter(d => d.is_active).length;
+  const vegan = allDishes.filter(d => d.is_vegan).length;
+  const gf = allDishes.filter(d => d.is_gluten_free).length;
+  bar.innerHTML = [
+    ['סה"כ מנות', total, '🍽️'],
+    ['פעילות', active, '✅'],
+    ['טבעוניות', vegan, '🌱'],
+    ['ללא גלוטן', gf, '🌾'],
+  ].map(([label, val, icon]) => `
+    <div class="stat-card">
+      <div class="stat-val">${icon} ${val}</div>
+      <div class="stat-label">${label}</div>
+    </div>`).join('');
+}
+
+// ── MODAL ──
+function openModal() {
+  document.getElementById('modalTitle').textContent = 'הוספת מנה חדשה';
+  document.getElementById('editId').value = '';
+  ['f-name','f-name-it','f-desc','f-allergens'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-base').value = '';
+  document.getElementById('f-addon').value = '';
+  setToggle('f-active', true);
+  setToggle('f-vegan', false);
+  setToggle('f-gf', false);
+  setToggle('f-kids', false);
+  document.getElementById('dishModal').classList.add('open');
+}
+function closeModal() { document.getElementById('dishModal').classList.remove('open'); }
+
+function editDish(id) {
+  const d = allDishes.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('modalTitle').textContent = 'עריכת מנה: ' + d.name;
+  document.getElementById('editId').value = d.id;
+  document.getElementById('f-name').value = d.name || '';
+  document.getElementById('f-name-it').value = d.name_it || '';
+  document.getElementById('f-desc').value = d.description || '';
+  document.getElementById('f-cat').value = d.category || '';
+  document.getElementById('f-base').value = d.base_price || '';
+  document.getElementById('f-addon').value = d.addon_per_person || '';
+  document.getElementById('f-allergens').value = (d.allergens||[]).join(', ');
+  setToggle('f-active', d.is_active);
+  setToggle('f-vegan', d.is_vegan);
+  setToggle('f-gf', d.is_gluten_free);
+  setToggle('f-kids', d.is_kids_friendly);
+  document.getElementById('dishModal').classList.add('open');
+}
+
+async function saveDish() {
+  const id = document.getElementById('editId').value;
+  const allergenStr = document.getElementById('f-allergens').value;
+  const payload = {
+    name:             document.getElementById('f-name').value.trim(),
+    name_it:          document.getElementById('f-name-it').value.trim(),
+    description:      document.getElementById('f-desc').value.trim(),
+    category:         document.getElementById('f-cat').value,
+    base_price:       parseFloat(document.getElementById('f-base').value) || null,
+    addon_per_person: parseFloat(document.getElementById('f-addon').value) || null,
+    allergens:        allergenStr ? allergenStr.split(',').map(s=>s.trim()).filter(Boolean) : [],
+    is_active:        isOn('f-active'),
+    is_vegan:         isOn('f-vegan'),
+    is_gluten_free:   isOn('f-gf'),
+    is_kids_friendly: isOn('f-kids'),
+  };
+  if (!payload.name) { showToast('שם המנה חובה', 'error'); return; }
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from('qz_dishes').update(payload).eq('id', id));
+  } else {
+    ({ error } = await sb.from('qz_dishes').insert(payload));
+  }
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  showToast(id ? 'מנה עודכנה ✓' : 'מנה נוספה ✓', 'success');
+  closeModal();
+  await loadDishes();
+}
+
+async function deleteDish(id, name) {
+  if (!confirm(`למחוק את "${name}"?`)) return;
+  const { error } = await sb.from('qz_dishes').delete().eq('id', id);
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  showToast('מנה נמחקה', 'success');
+  await loadDishes();
+}
+
+// ── TOGGLE HELPERS ──
+function toggleBtn(btn) { btn.classList.toggle('on'); }
+function setToggle(id, val) {
+  const el = document.getElementById(id);
+  val ? el.classList.add('on') : el.classList.remove('on');
+}
+function isOn(id) { return document.getElementById(id).classList.contains('on'); }
+
+// ── SETTINGS ──
+function saveSettings() {
+  const keys = ['base-price','vat','kids-disc','deposit','delivery','hours','allergy','cancel'];
+  const vals = {};
+  keys.forEach(k => vals[k] = document.getElementById('set-' + k).value);
+  localStorage.setItem('pz_settings', JSON.stringify(vals));
+  showToast('הגדרות נשמרו ✓', 'success');
+}
+function loadSettings() {
+  const saved = JSON.parse(localStorage.getItem('pz_settings') || '{}');
+  Object.entries(saved).forEach(([k,v]) => {
+    const el = document.getElementById('set-' + k);
+    if (el) el.value = v;
+  });
+}
+loadSettings();
+
+// ── TOAST ──
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════════
+//  DEMO DATA (used if Supabase tables not yet created)
+// ══════════════════════════════════════════════
+function getDemoMenu() {
+  return [
+    {id:1,name:'קיסר',name_it:'Caesar',description:'לבבות קיסר, קרוטונים, פרמזן',category:'סלטים',base_price:null,addon_per_person:20,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
+    {id:2,name:'קפרזה',name_it:'Caprese',description:'עגבניות שרי, מוצרלה טריה, פסטו בזיליקום',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
+    {id:3,name:'חציל',name_it:'Melanzane',description:'חציל שרוף, שמן פסטו, שמנת חמוצה',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:false},
+    {id:4,name:'בורגול סלקים',name_it:'Barbabietola',description:'קוביות סלק, בורגול גס, שקדים, צימוקים',category:'סלטים',base_price:null,addon_per_person:0,allergens:['גלוטן','אגוזים'],is_active:true,is_vegan:true,is_gluten_free:false,is_kids_friendly:false},
+    {id:5,name:'קינואה',name_it:'Quinoa',description:'קינואה, פלפלים, חמוציות, קישוא',category:'סלטים',base_price:null,addon_per_person:0,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
+    {id:6,name:'שורשים',name_it:'Radici',description:'קולורבי, סלק, גזר, כרוב סגול, בוטנים',category:'סלטים',base_price:null,addon_per_person:0,allergens:['בוטנים'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:false},
+    {id:7,name:'יווני',name_it:'Greco',description:'מלפפון, עגבניה, זיתי קלמטה, גבינה בולגרית',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
+    {id:8,name:'אנטיפסטי',name_it:'Antipasti',description:'קישואים, פלפל, בצל, בטטה, תפו"א צלויים',category:'ראשונות',base_price:null,addon_per_person:15,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
+    {id:9,name:'ארנצ\'יני',name_it:'Arancini',description:'כדור אורז במילוי גבינות מצופה פירורי לחם',category:'ראשונות',base_price:null,addon_per_person:10,allergens:['חלב','גלוטן','ביצה'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
+    {id:10,name:'פיצה אדומה',name_it:'Pizza Rossa',description:'רוטב עגבניות, מוצרלה, נגיעות פסטו',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
+    {id:11,name:'פיצה ירוקה',name_it:'Pizza Verde',description:'קרם פסטו, מוצרלה, נגיעות רוטב עגבניות',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
+    {id:12,name:'פיצה צהובה',name_it:'Pizza Gialla',description:'קרם פולנטה, מוצרלה, פטריות, שמן כמהין',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
+    {id:13,name:'פיצה סגולה',name_it:'Pizza Viola',description:'קרם סלק, מוצרלה, גבינה מלוחה, בלסמי',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
+    {id:14,name:'פיצה לבנה',name_it:'Pizza Bianca',description:'מוצרלה, פטריות, שמן כמהין',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
+    {id:15,name:'מאפייה מהטאבון',name_it:'Pane dal Forno',description:'פוגאס, פוקאצ\'ה, פלוט, בייגלה',category:'פיצות',base_price:null,addon_per_person:10,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
+    {id:16,name:'פסטה קצרה',name_it:'Pasta Corta',description:'ברוטב עגבניות / רוזה / שמנת / פסטו',category:'פסטה',base_price:null,addon_per_person:10,allergens:['חלב','גלוטן','ביצה'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
+    {id:17,name:'ניוקי צבעוני',name_it:'Gnocchi Colorati',description:'ניוקי סלק ובטטה, חמאת מרווה, אגוזי לוז',category:'פסטה',base_price:null,addon_per_person:10,allergens:['חלב','גלוטן','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
+    {id:18,name:'פלין גבינות',name_it:'Plin di Formaggi',description:'רביולי במילוי גבינה, שמנת פטריות',category:'פסטה',base_price:null,addon_per_person:12,allergens:['חלב','גלוטן','ביצה'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
+    {id:19,name:'סביצ\'ה דג ים',name_it:'Ceviche di Mare',description:'דג ים, עשבי תיבול, בצל סגול, פרי טרי',category:'דגים',base_price:null,addon_per_person:35,allergens:['דגים'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:false},
+    {id:20,name:'פילה דג / סלמון',name_it:'Filetto di Pesce',description:'בתיבול שמן זית, לימון, עשבי תיבול',category:'דגים',base_price:null,addon_per_person:45,allergens:['דגים'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:true},
+    {id:21,name:'דג כבוש',name_it:'Salmone Marinato',description:'סלמון בכבישה ביתית, סלק, שמיר, גבינת שמנת',category:'דגים',base_price:450,addon_per_person:0,allergens:['דגים','חלב'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:false},
+    {id:22,name:'קלצונה מתוק',name_it:'Calzone Dolce',description:'בצק אוורירי, שוקולד-אגוזים / אוראו / קרם לימון',category:'מתוקים',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן','ביצה','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
+    {id:23,name:'פירות העונה',name_it:'Frutta di Stagione',description:'פירות טריים עונתיים',category:'מתוקים',base_price:null,addon_per_person:15,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
+    {id:24,name:'טירמיסו',name_it:'Tiramisù',description:'קינוח איטלקי קלאסי',category:'מתוקים',base_price:250,addon_per_person:0,allergens:['חלב','גלוטן','ביצה'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
+    {id:25,name:'מלבי',name_it:'Malabi',description:'קינוח מזרחי עדין',category:'מתוקים',base_price:160,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
+    {id:26,name:'שתייה קלה',name_it:'Bevande Fredde',description:'מים, לימונדה, תפוזים, סמובר זכוכית',category:'שתייה',base_price:null,addon_per_person:10,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
+    {id:27,name:'שתייה חמה',name_it:'Bevande Calde',description:'נספרסו, מיחם, תה, קפה (ילדים ללא עלות)',category:'שתייה',base_price:null,addon_per_person:10,allergens:['חלב'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:true},
+  ];
+}
+</script>
+</body>
+</html>
