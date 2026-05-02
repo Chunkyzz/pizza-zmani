@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v1.2.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v1.3.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -107,6 +107,8 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .btn-navy{background:var(--navy);color:white;}
 .btn-navy:hover{background:var(--navy2);}
 .btn-ghost{background:none;border:1.5px solid rgba(255,255,255,0.3);color:white;}
+.btn-green{background:#2E6B4F;color:white;}
+.btn-green:hover{filter:brightness(1.15);}
 .btn-ghost:hover{background:rgba(255,255,255,0.1);}
 .btn-sm{padding:7px 13px;font-size:0.78rem;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--navy);color:white;padding:10px 22px;border-radius:30px;font-size:0.85rem;z-index:999;transition:transform 0.3s;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
@@ -125,8 +127,9 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
     <button class="btn btn-ghost btn-sm" onclick="resetAll()">🔄 איפוס</button>
     <button class="btn btn-ghost btn-sm" onclick="saveQuote()">💾 שמור</button>
     <button class="btn btn-gold btn-sm" onclick="generatePDF()">📄 PDF</button>
+    <button class="btn btn-green btn-sm" onclick="sendApproval()">📨 שלח לאישור</button>
   </div>
-  <div class="version">v1.2.0</div>
+  <div class="version">v1.3.0</div>
 </div>
 <div class="layout">
   <div class="panel-left">
@@ -606,6 +609,73 @@ function getDemoMenu(){
     {id:28,name:'שתייה קלה',name_it:'Bevande Fredde',description:'מים, לימונדה, תפוזים, סמובר',category:'שתייה',base_price:null,addon_per_person:10,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
     {id:29,name:'שתייה חמה',name_it:'Bevande Calde',description:'נספרסו, תה, קפה (ילדים ללא עלות)',category:'שתייה',base_price:null,addon_per_person:10,allergens:['חלב'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:true}
   ];
+}
+
+async function sendApproval() {
+  const name = document.getElementById('cl-name').value.trim();
+  if (!name) { showToast('נא להזין שם לקוח קודם', 'error'); return; }
+
+  const g = getGuests();
+  const billed = g.adults + g.kids;
+  const sel = allDishes.filter(d => selectedDishes.has(d.id));
+  let base = 0, addon = 0;
+  sel.forEach(d => { base += d.base_price||0; addon += (d.addon_per_person||0)*billed; });
+  const sub0 = base + addon;
+  const kDisc = billed > 0 ? (g.kids/billed)*sub0*0.15 : 0;
+  const sub = sub0 - kDisc;
+  const grand = sub + (includeVat ? sub*0.18 : 0);
+
+  // Generate unique quote_id
+  const quoteId = 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+  const payload = {
+    quote_id:        quoteId,
+    client_name:     name,
+    client_phone:    document.getElementById('cl-phone').value,
+    event_date:      document.getElementById('cl-date').value || null,
+    event_time:      document.getElementById('cl-time').value || null,
+    event_type:      getEventType(),
+    address:         document.getElementById('cl-address').value,
+    notes:           document.getElementById('cl-notes').value,
+    guests_adults:   g.adults,
+    guests_kids:     g.kids,
+    guests_babies:   g.babies,
+    menu_items:      sel.map(d => d.name),
+    price_before_vat: Math.round(sub),
+    price_after_vat:  Math.round(grand),
+    status:          'pending',
+    created_at:      new Date().toISOString(),
+  };
+
+  showToast('יוצר לינק...', '');
+  const { error } = await sb.from('quote_approvals').insert(payload);
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+
+  const link = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + quoteId;
+  const waMsg = encodeURIComponent(
+    'שלום ' + name + ' 👋
+
+' +
+    'מצורפת הצעת המחיר שלנו לאירוע שלך 🍕
+' +
+    'אנא עיין/י בפרטים וחתום/י על ההצעה:
+
+' +
+    link + '
+
+' +
+    'Pizza Zmani • 054-203-1181'
+  );
+
+  // Copy link to clipboard
+  navigator.clipboard.writeText(link).catch(()=>{});
+
+  // Open WhatsApp
+  const phone = document.getElementById('cl-phone').value.replace(/\D/g,'').replace(/^0/,'972');
+  const waPhone = phone.length > 5 ? phone : '972542031181';
+  window.open('https://wa.me/' + waPhone + '?text=' + waMsg, '_blank');
+
+  showToast('לינק נוצר ונשלח בוואטסאפ ✓', 'success');
 }
 
 init();
