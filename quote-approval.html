@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizza Zmani – אישור הצעת מחיר</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --navy:#1B2A4A;--navy2:#243660;--gold:#C9A84C;--gold2:#E8C56A;
+  --green:#2E6B4F;--cream:#FDF8F0;--cream2:#FAF3E4;--white:#fff;
+  --border:#E0D5C0;--text:#1a1a1a;--muted:#888;--danger:#C0392B;
+  --shadow:0 4px 32px rgba(27,42,74,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;padding-bottom:60px;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#1B2A4A 0%,#2A4070 100%);padding:24px 20px 20px;text-align:center;}
+.header-logo{font-family:'Frank Ruhl Libre',serif;font-size:2rem;color:var(--gold);margin-bottom:4px;}
+.header-sub{font-size:0.78rem;color:rgba(255,255,255,0.5);}
+.header-title{font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;color:white;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.15);}
+.version{font-size:0.6rem;color:rgba(255,255,255,0.2);margin-top:6px;}
+
+/* CONTAINER */
+.container{max-width:540px;margin:0 auto;padding:20px 16px;}
+
+/* CARD */
+.card{background:var(--white);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px;overflow:hidden;}
+.card-header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;gap:8px;}
+.card-header h3{font-family:'Frank Ruhl Libre',serif;font-size:0.95rem;color:var(--gold);margin:0;}
+.card-body{padding:18px;}
+
+/* EVENT DETAILS */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;}
+.detail-item label{font-size:0.68rem;color:var(--muted);display:block;margin-bottom:2px;}
+.detail-item span{font-size:0.92rem;font-weight:700;color:var(--navy);}
+.detail-item.full{grid-column:1/-1;}
+
+/* PRICE */
+.price-rows{display:flex;flex-direction:column;gap:0;}
+.price-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F0EDE5;font-size:0.88rem;}
+.price-row:last-child{border:none;}
+.price-row.total{font-weight:700;font-size:1rem;color:var(--navy);padding-top:12px;border-top:2px solid var(--border);}
+.price-row.grand{font-weight:900;font-size:1.15rem;color:var(--gold);border-top:none;}
+.price-row .val{font-weight:700;}
+.price-row.disc .val{color:var(--danger);}
+.deposit-box{margin-top:12px;background:var(--cream2);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border:1.5px dashed var(--gold);}
+.deposit-box span{font-size:0.78rem;color:var(--muted);}
+.deposit-box strong{font-size:0.95rem;color:var(--navy);}
+
+/* CHECKBOXES */
+.checks{display:flex;flex-direction:column;gap:10px;}
+.check-item{display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:9px;border:1.5px solid var(--border);cursor:pointer;transition:all 0.18s;background:white;}
+.check-item:hover{border-color:var(--gold);background:#FFFDF5;}
+.check-item.checked{border-color:var(--green);background:#F0FFF4;}
+.check-item input[type="checkbox"]{display:none;}
+.checkmark{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.18s;margin-top:1px;}
+.check-item.checked .checkmark{background:var(--green);border-color:var(--green);color:white;font-size:0.85rem;}
+.check-text{font-size:0.84rem;line-height:1.5;color:var(--text);}
+.check-text strong{color:var(--navy);}
+
+/* SIGNATURE */
+.sig-wrap{position:relative;border:2px solid var(--border);border-radius:10px;overflow:hidden;background:white;cursor:crosshair;}
+.sig-wrap canvas{display:block;width:100%;touch-action:none;}
+.sig-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.85rem;pointer-events:none;transition:opacity 0.2s;}
+.sig-placeholder.hidden{opacity:0;}
+.sig-clear{margin-top:8px;font-size:0.78rem;color:var(--muted);text-align:left;cursor:pointer;text-decoration:underline;}
+.sig-clear:hover{color:var(--danger);}
+
+/* SUBMIT */
+.submit-btn{width:100%;padding:16px;border-radius:12px;border:none;background:var(--gold);color:var(--navy);font-family:'Frank Ruhl Libre',serif;font-size:1.2rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;}
+.submit-btn:hover:not(:disabled){background:var(--gold2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,0.3);}
+.submit-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.submit-note{text-align:center;font-size:0.72rem;color:var(--muted);margin-top:8px;}
+
+/* STATES */
+.loading-state,.error-state,.success-state,.locked-state{text-align:center;padding:60px 20px;}
+.state-icon{font-size:3.5rem;margin-bottom:16px;}
+.state-title{font-family:'Frank Ruhl Libre',serif;font-size:1.5rem;color:var(--navy);margin-bottom:8px;}
+.state-sub{font-size:0.88rem;color:var(--muted);line-height:1.6;}
+.success-state .state-title{color:var(--green);}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 20px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:white;padding:12px 24px;border-radius:30px;font-size:0.85rem;z-index:999;transition:transform 0.3s;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.error{background:var(--danger);}
+.toast.success{background:var(--green);}
+
+/* TERMS */
+.terms-box{background:#FFF8F0;border:1px solid #F0DCC0;border-radius:8px;padding:12px 14px;font-size:0.74rem;color:#666;line-height:1.65;margin-bottom:8px;}
+.terms-box h5{color:var(--navy);margin-bottom:4px;font-size:0.78rem;}
+
+@media(max-width:400px){
+  .detail-grid{grid-template-columns:1fr;}
+  .detail-item.full{grid-column:1;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">🍕 Pizza Zmani</div>
+  <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
+  <div class="header-title">אישור הצעת מחיר</div>
+  <div class="version">v1.0.0</div>
+</div>
+
+<div class="container" id="appContainer">
+  <!-- Loading -->
+  <div class="loading-state" id="loadingState">
+    <div class="spinner"></div>
+    <div class="state-title">טוען את ההצעה...</div>
+    <div class="state-sub">רגע אחד בבקשה</div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-state" id="errorState" style="display:none">
+    <div class="state-icon">😕</div>
+    <div class="state-title">הצעה לא נמצאה</div>
+    <div class="state-sub">הלינק שגוי או שפג תוקפו.<br>פנה לגל לקבלת לינק חדש.</div>
+  </div>
+
+  <!-- Locked -->
+  <div class="locked-state" id="lockedState" style="display:none">
+    <div class="state-icon">🔒</div>
+    <div class="state-title">ההצעה כבר אושרה</div>
+    <div class="state-sub" id="lockedSub">הצעה זו נחתמה כבר.<br>לא ניתן לחתום פעמיים.</div>
+  </div>
+
+  <!-- Success -->
+  <div class="success-state" id="successState" style="display:none">
+    <div class="state-icon">✅</div>
+    <div class="state-title">תודה רבה!</div>
+    <div class="state-sub">ההצעה אושרה בהצלחה.<br>גל יצור איתך קשר בקרוב לתיאום פרטים.<br><br>
+      <strong style="color:var(--navy)">📞 054-203-1181</strong>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div id="mainContent" style="display:none">
+
+    <!-- פרטי אירוע -->
+    <div class="card">
+      <div class="card-header"><h3>📅 פרטי האירוע</h3></div>
+      <div class="card-body">
+        <div class="detail-grid">
+          <div class="detail-item full"><label>שם לקוח</label><span id="d-name">—</span></div>
+          <div class="detail-item"><label>תאריך</label><span id="d-date">—</span></div>
+          <div class="detail-item"><label>שעת הגשה</label><span id="d-time">—</span></div>
+          <div class="detail-item full"><label>כתובת האירוע</label><span id="d-address">—</span></div>
+          <div class="detail-item"><label>סוג אירוע</label><span id="d-type">—</span></div>
+          <div class="detail-item"><label>מספר סועדים</label><span id="d-guests">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- תפריט -->
+    <div class="card" id="menuCard" style="display:none">
+      <div class="card-header"><h3>🍽️ תפריט האירוע</h3></div>
+      <div class="card-body" id="d-menu"></div>
+    </div>
+
+    <!-- מחיר -->
+    <div class="card">
+      <div class="card-header"><h3>💰 סיכום מחירים</h3></div>
+      <div class="card-body">
+        <div class="price-rows">
+          <div class="price-row"><span>מחיר לפני מע"מ</span><span class="val" id="d-before-vat">—</span></div>
+          <div class="price-row"><span>מע"מ (18%)</span><span class="val" id="d-vat">—</span></div>
+          <div class="price-row grand"><span>💰 סה"כ לתשלום</span><span class="val" id="d-total">—</span></div>
+        </div>
+        <div class="deposit-box">
+          <span>מקדמה לסגירת תאריך (10%)</span>
+          <strong id="d-deposit">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- הערות -->
+    <div class="card" id="notesCard" style="display:none">
+      <div class="card-header"><h3>📝 הערות מיוחדות</h3></div>
+      <div class="card-body" id="d-notes" style="font-size:0.88rem;color:var(--navy);line-height:1.6;"></div>
+    </div>
+
+    <!-- תנאים -->
+    <div class="card">
+      <div class="card-header"><h3>📋 תנאים עיקריים</h3></div>
+      <div class="card-body">
+        <div class="terms-box">
+          <h5>ביטולים</h5>
+          עד 72 שעות לפני: 10% | 72–24 שעות לפני: 30% | פחות מ-24 שעות: 100%
+        </div>
+        <div class="terms-box">
+          <h5>⚠️ אלרגיות</h5>
+          אין ביכולתינו להתחייב על אלרגן מכל סוג שהוא. נא לעדכן על רגישויות מוקדם ככל האפשר.
+        </div>
+        <div class="terms-box">
+          <h5>לוגיסטיקה</h5>
+          על המזמין לדאוג לשטח הקמה, צל מלא, כיור, חשמל, 2 חניות ואזור פריקה.
+          הובלה כלולה בין גדרה–נתניה–מודיעין.
+        </div>
+      </div>
+    </div>
+
+    <!-- Checkboxes -->
+    <div class="card">
+      <div class="card-header"><h3>✅ אישורים נדרשים</h3></div>
+      <div class="card-body">
+        <div class="checks">
+          <div class="check-item" id="chk0" onclick="toggleCheck(0)">
+            <input type="checkbox" id="cb0">
+            <div class="checkmark" id="cm0"></div>
+            <div class="check-text">קראתי את ההצעה ואני מאשר/ת את כל הפרטים — שם, תאריך, שעה, כתובת ומספר סועדים</div>
+          </div>
+          <div class="check-item" id="chk1" onclick="toggleCheck(1)">
+            <input type="checkbox" id="cb1">
+            <div class="checkmark" id="cm1"></div>
+            <div class="check-text">הבנתי שהמחיר המוצג הוא <strong>לפני מע"מ</strong>, והמחיר הסופי כולל מע"מ הוא <strong id="cb1-price">—</strong></div>
+          </div>
+          <div class="check-item" id="chk2" onclick="toggleCheck(2)">
+            <input type="checkbox" id="cb2">
+            <div class="checkmark" id="cm2"></div>
+            <div class="check-text">קראתי והבנתי את תנאי הביטול: עד 72 שעות — 10%, 72–24 שעות — 30%, פחות מ-24 שעות — 100%</div>
+          </div>
+          <div class="check-item" id="chk3" onclick="toggleCheck(3)">
+            <input type="checkbox" id="cb3">
+            <div class="checkmark" id="cm3"></div>
+            <div class="check-text">אני מבין/ה שאישור זה מהווה התחייבות לאירוע ומקדמה של 10% תידרש לסגירת התאריך</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- חתימה -->
+    <div class="card">
+      <div class="card-header"><h3>✍️ חתימה</h3></div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">חתום/י בתיבה למטה באצבע (מובייל) או בעכבר (מחשב)</p>
+        <div class="sig-wrap">
+          <canvas id="sigCanvas" height="160"></canvas>
+          <div class="sig-placeholder" id="sigPlaceholder">חתימה כאן ↓</div>
+        </div>
+        <div class="sig-clear" onclick="clearSignature()">🗑️ נקה חתימה</div>
+      </div>
+    </div>
+
+    <!-- כפתור אישור -->
+    <button class="submit-btn" id="submitBtn" onclick="submitApproval()" disabled>
+      ✅ אני מאשר/ת את ההצעה
+    </button>
+    <div class="submit-note">לחיצה על הכפתור מהווה אישור מחייב ויישמר עם חותמת זמן</div>
+
+  </div><!-- /mainContent -->
+</div><!-- /container -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://arqxoyxobjudccskfwyt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let quoteData = null;
+let checks = [false, false, false, false];
+let hasSig = false;
+let sigCanvas, sigCtx, isDrawing = false;
+
+// ── INIT ──
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+
+  if (!id) { showError(); return; }
+
+  const { data, error } = await sb.from('quote_approvals').select('*').eq('quote_id', id).single();
+
+  if (error || !data) { showError(); return; }
+
+  if (data.status === 'approved') {
+    showLocked(data.approved_at);
+    return;
+  }
+
+  quoteData = data;
+  fillData(data);
+  initCanvas();
+  show('mainContent');
+  hide('loadingState');
+}
+
+function fillData(d) {
+  setText('d-name', d.client_name || '—');
+  setText('d-address', d.address || '—');
+  setText('d-type', d.event_type || '—');
+
+  if (d.event_date) {
+    const dt = new Date(d.event_date + 'T12:00:00');
+    setText('d-date', dt.toLocaleDateString('he-IL', {weekday:'long',day:'numeric',month:'long',year:'numeric'}));
+  }
+  setText('d-time', d.event_time ? d.event_time.slice(0,5) : '—');
+
+  const billed = (d.guests_adults||0) + (d.guests_kids||0);
+  const total = (d.guests_adults||0) + (d.guests_kids||0) + (d.guests_babies||0);
+  let guestStr = total + ' אנשים';
+  if (d.guests_kids) guestStr += ' (כולל ' + d.guests_kids + ' ילדים בהנחה)';
+  if (d.guests_babies) guestStr += ' + ' + d.guests_babies + ' פעוטות';
+  setText('d-guests', guestStr);
+
+  const beforeVat = d.price_before_vat || 0;
+  const afterVat  = d.price_after_vat  || 0;
+  const vat       = afterVat - beforeVat;
+  const deposit   = Math.round(afterVat * 0.10);
+
+  setText('d-before-vat', '₪' + beforeVat.toLocaleString());
+  setText('d-vat',        '₪' + Math.round(vat).toLocaleString());
+  setText('d-total',      '₪' + afterVat.toLocaleString());
+  setText('d-deposit',    '₪' + deposit.toLocaleString());
+  setText('cb1-price',    '₪' + afterVat.toLocaleString());
+
+  // Menu items
+  if (d.menu_items && d.menu_items.length) {
+    const menuEl = document.getElementById('d-menu');
+    menuEl.innerHTML = d.menu_items.map(item =>
+      '<div style="padding:7px 0;border-bottom:1px solid #F0EDE5;font-size:0.86rem;color:var(--navy);display:flex;justify-content:space-between;">' +
+        '<span>' + item + '</span>' +
+      '</div>'
+    ).join('').replace(/border-bottom[^;]+;(?=[^<]*<\/div>\s*$)/, '');
+    show('menuCard');
+  }
+
+  // Notes
+  if (d.notes) {
+    document.getElementById('d-notes').textContent = d.notes;
+    show('notesCard');
+  }
+}
+
+// ── CHECKS ──
+function toggleCheck(i) {
+  checks[i] = !checks[i];
+  const item = document.getElementById('chk'+i);
+  const mark = document.getElementById('cm'+i);
+  item.classList.toggle('checked', checks[i]);
+  mark.textContent = checks[i] ? '✓' : '';
+  updateSubmitBtn();
+}
+
+function updateSubmitBtn() {
+  const allChecked = checks.every(c => c);
+  document.getElementById('submitBtn').disabled = !(allChecked && hasSig);
+}
+
+// ── SIGNATURE ──
+function initCanvas() {
+  sigCanvas = document.getElementById('sigCanvas');
+  sigCanvas.width = sigCanvas.offsetWidth;
+  sigCtx = sigCanvas.getContext('2d');
+  sigCtx.strokeStyle = '#1B2A4A';
+  sigCtx.lineWidth = 2.5;
+  sigCtx.lineCap = 'round';
+  sigCtx.lineJoin = 'round';
+
+  // Mouse
+  sigCanvas.addEventListener('mousedown', e => { isDrawing=true; startDraw(getPos(e,'mouse')); });
+  sigCanvas.addEventListener('mousemove', e => { if(isDrawing) draw(getPos(e,'mouse')); });
+  sigCanvas.addEventListener('mouseup',   () => stopDraw());
+  sigCanvas.addEventListener('mouseleave',() => stopDraw());
+
+  // Touch
+  sigCanvas.addEventListener('touchstart', e => { e.preventDefault(); isDrawing=true; startDraw(getPos(e,'touch')); }, {passive:false});
+  sigCanvas.addEventListener('touchmove',  e => { e.preventDefault(); if(isDrawing) draw(getPos(e,'touch')); }, {passive:false});
+  sigCanvas.addEventListener('touchend',   e => { e.preventDefault(); stopDraw(); }, {passive:false});
+}
+
+function getPos(e, type) {
+  const r = sigCanvas.getBoundingClientRect();
+  const src = type==='touch' ? e.touches[0] : e;
+  return { x:(src.clientX-r.left)*(sigCanvas.width/r.width), y:(src.clientY-r.top)*(sigCanvas.height/r.height) };
+}
+function startDraw(p) { sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); }
+function draw(p) {
+  sigCtx.lineTo(p.x,p.y); sigCtx.stroke();
+  document.getElementById('sigPlaceholder').classList.add('hidden');
+  hasSig = true; updateSubmitBtn();
+}
+function stopDraw() { isDrawing = false; }
+function clearSignature() {
+  sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  document.getElementById('sigPlaceholder').classList.remove('hidden');
+  hasSig = false; updateSubmitBtn();
+}
+
+// ── SUBMIT ──
+async function submitApproval() {
+  if (!quoteData) return;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ שומר...';
+
+  const sigImage = sigCanvas.toDataURL('image/png');
+  const now = new Date().toISOString();
+
+  const { error } = await sb.from('quote_approvals')
+    .update({
+      status: 'approved',
+      approved_at: now,
+      signature_image: sigImage,
+    })
+    .eq('quote_id', quoteData.quote_id);
+
+  if (error) {
+    showToast('שגיאה בשמירה: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '✅ אני מאשר/ת את ההצעה';
+    return;
+  }
+
+  // WhatsApp notification to Gal
+  const msg = encodeURIComponent(
+    '✅ הצעת מחיר אושרה!\n' +
+    '👤 ' + quoteData.client_name + '\n' +
+    '📅 ' + (quoteData.event_date || '') + '\n' +
+    '📍 ' + (quoteData.address || '') + '\n' +
+    '💰 ₪' + (quoteData.price_after_vat || '') + ' כולל מע"מ\n' +
+    '🕐 ' + new Date(now).toLocaleString('he-IL')
+  );
+  window.open('https://wa.me/972542031181?text=' + msg, '_blank');
+
+  hide('mainContent');
+  show('successState');
+  hide('loadingState');
+}
+
+// ── HELPERS ──
+function show(id){ document.getElementById(id).style.display=''; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function setText(id, val){ const el=document.getElementById(id); if(el) el.textContent=val; }
+
+function showError() { hide('loadingState'); show('errorState'); }
+
+function showLocked(ts) {
+  hide('loadingState');
+  if (ts) {
+    const d = new Date(ts);
+    document.getElementById('lockedSub').textContent =
+      'הצעה זו נחתמה ב-' + d.toLocaleDateString('he-IL') + ' בשעה ' + d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}) + '.\nלא ניתן לחתום פעמיים.';
+  }
+  show('lockedState');
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+init();
+</script>
+</body>
+</html>
