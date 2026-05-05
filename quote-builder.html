@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v1.3.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v1.3.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -129,7 +129,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
     <button class="btn btn-gold btn-sm" onclick="generatePDF()">📄 PDF</button>
     <button class="btn btn-green btn-sm" onclick="sendApproval()">📨 שלח לאישור</button>
   </div>
-  <div class="version">v1.3.0</div>
+  <div class="version">v1.3.1</div>
 </div>
 <div class="layout">
   <div class="panel-left">
@@ -652,20 +652,7 @@ async function sendApproval() {
   if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
 
   const link = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + quoteId;
-  const waMsg = encodeURIComponent(
-    'שלום ' + name + ' 👋
-
-' +
-    'מצורפת הצעת המחיר שלנו לאירוע שלך 🍕
-' +
-    'אנא עיין/י בפרטים וחתום/י על ההצעה:
-
-' +
-    link + '
-
-' +
-    'Pizza Zmani • 054-203-1181'
-  );
+  const waMsg = encodeURIComponent("שלום " + name + " 👋\n\nמצורפת הצעת המחיר שלנו לאירוע שלך 🍕\nאנא עיין/י בפרטים וחתום/י על ההצעה:\n\n" + link + "\n\nPizza Zmani - 054-203-1181");
 
   // Copy link to clipboard
   navigator.clipboard.writeText(link).catch(()=>{});
