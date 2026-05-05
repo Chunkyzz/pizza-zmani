@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v1.3.1</title>
+<title>Pizza Zmani – בונה הצעת מחיר v1.4.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -16,6 +16,12 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .topbar-actions{display:flex;gap:8px;}
 .version{font-size:0.65rem;color:rgba(255,255,255,0.3);align-self:center;}
 .layout{display:grid;grid-template-columns:400px 1fr;min-height:calc(100vh - 58px);}
+.layout.build-mode .panel-right{display:none;}
+.layout.build-mode .panel-left{width:100%;max-width:100%;height:calc(100vh - 58px);}
+.layout.build-mode{grid-template-columns:1fr;}
+.layout.preview-mode .panel-left{display:none;}
+.layout.preview-mode{grid-template-columns:1fr;}
+.layout.preview-mode .panel-right{max-width:800px;margin:0 auto;width:100%;}
 .panel-left{background:var(--white);border-left:1px solid var(--border);overflow-y:auto;height:calc(100vh - 58px);position:sticky;top:58px;}
 .panel-right{padding:24px 28px;overflow-y:auto;}
 .panel-section{border-bottom:1px solid var(--border);padding:16px 18px;}
@@ -124,14 +130,16 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 <div class="topbar">
   <div class="brand">🍕 Pizza Zmani — בונה הצעת מחיר</div>
   <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm" id="modeBuildBtn" onclick="setMode('build')" style="border-color:var(--gold);color:var(--gold);">✏️ בנייה</button>
+    <button class="btn btn-ghost btn-sm" id="modePreviewBtn" onclick="setMode('preview')">👁️ תצוגה מקדימה</button>
     <button class="btn btn-ghost btn-sm" onclick="resetAll()">🔄 איפוס</button>
     <button class="btn btn-ghost btn-sm" onclick="saveQuote()">💾 שמור</button>
     <button class="btn btn-gold btn-sm" onclick="generatePDF()">📄 PDF</button>
     <button class="btn btn-green btn-sm" onclick="sendApproval()">📨 שלח לאישור</button>
   </div>
-  <div class="version">v1.3.1</div>
+  <div class="version">v1.4.1</div>
 </div>
-<div class="layout">
+<div class="layout build-mode">
   <div class="panel-left">
 
     <div class="panel-section">
@@ -337,7 +345,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 const SUPABASE_URL='https://arqxoyxobjudccskfwyt.supabase.co';
 const SUPABASE_KEY='sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let allDishes=[],allCats=[],selectedDishes=new Set(),activeCat='',includeVat=true,hidePrices=false;
+let allDishes=[],allCats=[],selectedDishes=new Set(),activeCats=new Set(),includeVat=true,hidePrices=false;
 
 async function init(){
   document.getElementById('quoteDate').textContent=new Date().toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});
@@ -361,15 +369,11 @@ function renderCatTabs(){
     allCats.map(c=>'<button class="cat-tab" onclick="filterCat(\''+c.name+'\',this)">'+c.name+'</button>').join('');
 }
 
-function filterCat(name,btn){
-  activeCat=name;
-  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');renderDishes();
-}
+// filterCat moved to setMode section
 
 function renderDishes(){
   const grid=document.getElementById('dishesGrid');
-  const list=activeCat?allDishes.filter(d=>d.category===activeCat):allDishes;
+  const list=activeCats.size>0?allDishes.filter(d=>activeCats.has(d.category)):allDishes;
   if(!list.length){grid.innerHTML='<div class="empty-dishes">אין מנות</div>';return;}
   grid.innerHTML=list.map(d=>{
     const sel=selectedDishes.has(d.id);
@@ -475,19 +479,39 @@ function updatePreview(){
   if(!sel.length){body.innerHTML='<div class="empty-dishes">בחר מנות מהתפריט משמאל</div>';clearTotals();return;}
 
   let baseTotal=0,addonTotal=0;
-  body.innerHTML=sel.map(d=>{
-    const base=d.base_price||0;
-    const addon=(d.addon_per_person||0)*billed;
-    baseTotal+=base;addonTotal+=addon;
-    const total=base+addon;
-    const priceHtml=hidePrices?'':'<div class="sd-price">'+(total?'₪'+total.toLocaleString():'—')+'</div>';
-    return '<div class="selected-dish-row">'+
-      '<div class="sd-left">'+
-        '<div class="sd-name">'+d.name+(d.name_it?' <span style="font-weight:400;font-style:italic;font-size:0.72rem;color:#aaa">('+d.name_it+')</span>':'')+'</div>'+
-        (d.description?'<div class="sd-desc">'+d.description+'</div>':'')+
-        (d.allergens&&d.allergens.length?'<div class="sd-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'')+
-      '</div>'+priceHtml+'</div>';
-  }).join('');
+  // קבץ לפי קטגוריות לפי הסדר של allCats
+  const catOrder = allCats.map(c=>c.name);
+  const bycat = {};
+  sel.forEach(d=>{
+    if(!bycat[d.category]) bycat[d.category]=[];
+    bycat[d.category].push(d);
+  });
+
+  const catNameIt = {};
+  allCats.forEach(c=>{ catNameIt[c.name]=c.name_it||''; });
+
+  let html = '';
+  catOrder.forEach(cat=>{
+    if(!bycat[cat]||!bycat[cat].length) return;
+    html += '<div style="margin-bottom:4px;padding:8px 0 4px;border-bottom:2px solid var(--gold);">' +
+      '<span style="font-family:Frank Ruhl Libre,serif;font-size:1rem;font-weight:700;color:var(--navy);">' + cat + '</span>' +
+      (catNameIt[cat]?' <span style="font-size:0.78rem;font-style:italic;color:var(--muted);font-weight:400;">— '+catNameIt[cat]+'</span>':'') +
+      '</div>';
+    bycat[cat].forEach(d=>{
+      const base=d.base_price||0;
+      const addon=(d.addon_per_person||0)*billed;
+      baseTotal+=base;addonTotal+=addon;
+      const total=base+addon;
+      const priceHtml=hidePrices?'':'<div class="sd-price">'+(total?'₪'+total.toLocaleString():'—')+'</div>';
+      html += '<div class="selected-dish-row">'+
+        '<div class="sd-left">'+
+          '<div class="sd-name">'+d.name+(d.name_it?' <span style="font-weight:400;font-style:italic;font-size:0.72rem;color:#aaa">('+d.name_it+')</span>':'')+'</div>'+
+          (d.description?'<div class="sd-desc">'+d.description+'</div>':'')+
+          (d.allergens&&d.allergens.length?'<div class="sd-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'')+
+        '</div>'+priceHtml+'</div>';
+    });
+  });
+  body.innerHTML = html;
 
   const sub0=baseTotal+addonTotal;
   const kDisc=billed>0?(g.kids/billed)*sub0*0.15:0;
@@ -664,6 +688,48 @@ async function sendApproval() {
 
   showToast('לינק נוצר ונשלח בוואטסאפ ✓', 'success');
 }
+
+
+// ══ MODE ══
+function setMode(mode) {
+  const layout = document.querySelector('.layout');
+  layout.classList.remove('build-mode','preview-mode');
+  layout.classList.add(mode + '-mode');
+  document.getElementById('modeBuildBtn').style.borderColor   = mode==='build'   ? 'var(--gold)' : '';
+  document.getElementById('modeBuildBtn').style.color         = mode==='build'   ? 'var(--gold)' : '';
+  document.getElementById('modePreviewBtn').style.borderColor = mode==='preview' ? 'var(--gold)' : '';
+  document.getElementById('modePreviewBtn').style.color       = mode==='preview' ? 'var(--gold)' : '';
+  if (mode==='preview') updatePreview();
+}
+
+// ══ MULTI-SELECT CATEGORY FILTER ══
+let activeCats = new Set();
+function filterCat(name, btn) {
+  if (name === '') {
+    // הכל — נקה הכל
+    activeCats.clear();
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    // הסר "הכל"
+    document.querySelector('.cat-tab').classList.remove('active');
+    if (activeCats.has(name)) {
+      activeCats.delete(name);
+      btn.classList.remove('active');
+    } else {
+      activeCats.add(name);
+      btn.classList.add('active');
+    }
+    // אם כלום לא נבחר — חזור להכל
+    if (activeCats.size === 0) {
+      document.querySelector('.cat-tab').classList.add('active');
+    }
+  }
+  renderDishes();
+}
+
+// Override renderDishes to use activeCats
+const _origRenderDishes = renderDishes;
 
 init();
 </script>
