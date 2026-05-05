@@ -3,78 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v1.4.1</title>
+<title>Pizza Zmani – בונה הצעת מחיר v1.5.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
-:root{--navy:#1B2A4A;--navy2:#243660;--gold:#C9A84C;--gold2:#E8C56A;--green:#2E6B4F;--cream:#FDF8F0;--cream2:#FAF3E4;--white:#FFFFFF;--border:#E0D5C0;--text:#1a1a1a;--muted:#888;--shadow:0 4px 32px rgba(27,42,74,0.10);--danger:#C0392B;}
+:root{--navy:#1B2A4A;--navy2:#243660;--gold:#C9A84C;--gold2:#E8C56A;--green:#2E6B4F;--cream:#FDF8F0;--cream2:#FAF3E4;--white:#fff;--border:#E0D5C0;--text:#1a1a1a;--muted:#888;--shadow:0 4px 32px rgba(27,42,74,0.10);--danger:#C0392B;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
-.topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.2);}
-.brand{font-family:'Frank Ruhl Libre',serif;font-size:1.2rem;color:var(--gold);}
-.topbar-actions{display:flex;gap:8px;}
-.version{font-size:0.65rem;color:rgba(255,255,255,0.3);align-self:center;}
-.layout{display:grid;grid-template-columns:400px 1fr;min-height:calc(100vh - 58px);}
-.layout.build-mode .panel-right{display:none;}
-.layout.build-mode .panel-left{width:100%;max-width:100%;height:calc(100vh - 58px);}
-.layout.build-mode{grid-template-columns:1fr;}
-.layout.preview-mode .panel-left{display:none;}
-.layout.preview-mode{grid-template-columns:1fr;}
-.layout.preview-mode .panel-right{max-width:800px;margin:0 auto;width:100%;}
-.panel-left{background:var(--white);border-left:1px solid var(--border);overflow-y:auto;height:calc(100vh - 58px);position:sticky;top:58px;}
-.panel-right{padding:24px 28px;overflow-y:auto;}
-.panel-section{border-bottom:1px solid var(--border);padding:16px 18px;}
-.panel-section:last-child{border:none;}
-.panel-heading{font-family:'Frank Ruhl Libre',serif;font-size:0.95rem;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+
+/* TOPBAR */
+.topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.2);}
+.brand{font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;color:var(--gold);white-space:nowrap;}
+.topbar-actions{display:flex;gap:6px;align-items:center;}
+.version{font-size:0.6rem;color:rgba(255,255,255,0.25);white-space:nowrap;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;border:none;font-family:'Heebo',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.18s;}
+.btn-gold{background:var(--gold);color:var(--navy);}
+.btn-gold:hover{background:var(--gold2);}
+.btn-green{background:var(--green);color:white;}
+.btn-green:hover{filter:brightness(1.1);}
+.btn-ghost{background:none;border:1.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);}
+.btn-ghost:hover{border-color:white;color:white;}
+.btn-mode{background:none;border:1.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);padding:7px 14px;}
+.btn-mode.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.1);}
+
+/* LAYOUT MODES */
+.build-panel{display:block;}
+.preview-panel{display:none;}
+body.preview-mode .build-panel{display:none;}
+body.preview-mode .preview-panel{display:block;}
+
+/* BUILD PANEL */
+.build-wrap{max-width:900px;margin:0 auto;padding:20px 16px;}
+.section-card{background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden;box-shadow:0 2px 12px rgba(27,42,74,0.06);}
+.section-head{background:var(--navy);padding:11px 18px;display:flex;align-items:center;gap:8px;}
+.section-head h3{font-family:'Frank Ruhl Libre',serif;font-size:0.9rem;color:var(--gold);margin:0;}
+.section-body{padding:16px 18px;}
+
+/* FORM */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
 .form-row.single{grid-template-columns:1fr;}
+.form-row.triple{grid-template-columns:1fr 1fr 1fr;}
 .fg{display:flex;flex-direction:column;gap:3px;}
 .fg label{font-size:0.72rem;font-weight:700;color:var(--navy);}
 .fg input,.fg select,.fg textarea{font-family:'Heebo',sans-serif;font-size:0.85rem;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;background:var(--cream);color:var(--text);outline:none;transition:border 0.2s;width:100%;}
 .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--gold);background:white;}
 .fg textarea{resize:none;height:56px;}
-.fg input[type="number"]{-moz-appearance:textfield;}
-.fg input[type="number"]::-webkit-outer-spin-button,.fg input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;}
-.guests-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.guest-box{background:var(--cream2);border:1.5px solid var(--border);border-radius:9px;padding:8px 6px;text-align:center;}
-.guest-box label{font-size:0.68rem;font-weight:700;color:var(--navy);display:block;margin-bottom:1px;}
-.guest-box .bl{font-size:0.58rem;color:var(--muted);display:block;margin-bottom:5px;line-height:1.3;}
-.guest-counter{display:flex;align-items:center;justify-content:center;gap:5px;}
-.gcbtn{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);background:white;font-size:1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:700;transition:all 0.15s;flex-shrink:0;padding:0;}
+
+/* GUESTS */
+.guests-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.guest-box{background:var(--cream2);border:1.5px solid var(--border);border-radius:9px;padding:10px 8px;text-align:center;}
+.guest-box label{font-size:0.7rem;font-weight:700;color:var(--navy);display:block;margin-bottom:1px;}
+.guest-box .bl{font-size:0.6rem;color:var(--muted);display:block;margin-bottom:6px;line-height:1.4;}
+.guest-counter{display:flex;align-items:center;justify-content:center;gap:6px;}
+.gcbtn{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:white;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:700;transition:all 0.15s;padding:0;line-height:1;}
 .gcbtn:hover{background:var(--navy);color:white;border-color:var(--navy);}
-.gcval{font-family:'Frank Ruhl Libre',serif;font-size:1.2rem;font-weight:700;color:var(--navy);min-width:28px;text-align:center;border:none;background:transparent;outline:none;-moz-appearance:textfield;width:34px;}
+.gcval{font-family:'Frank Ruhl Libre',serif;font-size:1.3rem;font-weight:700;color:var(--navy);text-align:center;border:none;background:transparent;outline:none;width:36px;-moz-appearance:textfield;}
 .gcval::-webkit-outer-spin-button,.gcval::-webkit-inner-spin-button{-webkit-appearance:none;}
 .guest-total{text-align:center;margin-top:8px;font-size:0.8rem;color:var(--muted);}
 .guest-total strong{color:var(--navy);}
-.cat-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
-.cat-tab{padding:4px 10px;border-radius:20px;border:1.5px solid var(--border);background:white;font-size:0.74rem;cursor:pointer;transition:all 0.15s;font-family:'Heebo',sans-serif;font-weight:500;}
+
+/* CATEGORY TABS - multi select */
+.cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.cat-tab{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:white;font-size:0.76rem;cursor:pointer;transition:all 0.15s;font-family:'Heebo',sans-serif;font-weight:500;}
 .cat-tab:hover{border-color:var(--gold);}
 .cat-tab.active{background:var(--navy);color:white;border-color:var(--navy);}
+
+/* DISH CARDS */
 .dishes-grid{display:flex;flex-direction:column;gap:6px;}
-.dish-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);background:white;cursor:pointer;transition:all 0.15s;}
+.dish-card{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:9px;border:1.5px solid var(--border);background:white;cursor:pointer;transition:all 0.15s;}
 .dish-card:hover{border-color:var(--gold);background:#FFFDF5;}
 .dish-card.selected{border-color:var(--gold);background:#FFFBEE;box-shadow:0 2px 8px rgba(201,168,76,0.15);}
-.dish-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:0.75rem;}
+.dish-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;transition:all 0.15s;}
 .dish-card.selected .dish-check{background:var(--gold);border-color:var(--gold);color:white;}
 .dish-info{flex:1;min-width:0;}
-.dish-name{font-weight:700;font-size:0.84rem;color:var(--navy);}
+.dish-name{font-weight:700;font-size:0.85rem;color:var(--navy);}
 .dish-name-it{font-size:0.68rem;color:var(--muted);font-style:italic;}
-.dish-desc{font-size:0.72rem;color:#666;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
+.dish-desc{font-size:0.73rem;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px;}
 .dish-badges{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;}
 .dbadge{font-size:0.6rem;padding:1px 5px;border-radius:3px;font-weight:600;}
 .dbadge-vegan{background:#E8F5E9;color:#2E7D32;}
 .dbadge-gf{background:#E3F2FD;color:#1565C0;}
 .dbadge-kids{background:#FFF3E0;color:#E65100;}
 .dbadge-allergy{background:#FFEBEE;color:#B71C1C;}
-.dish-price{text-align:left;flex-shrink:0;}
+.dish-price{text-align:left;flex-shrink:0;min-width:70px;}
 .dish-price-base{font-weight:700;font-size:0.82rem;color:var(--green);}
 .dish-price-addon{font-size:0.68rem;color:var(--muted);}
-.option-toggle{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:7px;border:1.5px solid var(--border);cursor:pointer;font-size:0.8rem;background:white;transition:all 0.15s;font-family:'Heebo',sans-serif;margin-bottom:6px;}
+
+/* OPTIONS */
+.option-toggle{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:7px;border:1.5px solid var(--border);cursor:pointer;font-size:0.82rem;background:white;transition:all 0.15s;font-family:'Heebo',sans-serif;margin-bottom:6px;}
 .option-toggle input{display:none;}
 .option-toggle.checked{background:#EEF7FF;border-color:#1565C0;color:#1565C0;font-weight:600;}
-.summary-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
-.summary-title{font-family:'Frank Ruhl Libre',serif;font-size:1.4rem;color:var(--navy);}
+
+/* PREVIEW PANEL */
+.preview-wrap{max-width:760px;margin:0 auto;padding:24px 16px;}
 .quote-card{background:white;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px;border:1px solid var(--border);}
 .quote-card-header{background:var(--navy);padding:12px 20px;display:flex;align-items:center;gap:10px;}
 .quote-card-header h3{color:var(--gold);font-family:'Frank Ruhl Libre',serif;font-size:0.95rem;margin:0;}
@@ -86,13 +110,21 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .gs-item span{font-size:0.68rem;color:var(--muted);display:block;}
 .gs-item strong{font-size:0.95rem;font-weight:700;color:var(--navy);}
 .gs-item.hl strong{color:var(--gold);font-size:1.1rem;}
-.selected-dish-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #F0EDE5;}
+
+/* PDF dish rows */
+.cat-section-title{padding:8px 0 4px;border-bottom:2px solid var(--gold);margin-bottom:4px;margin-top:10px;}
+.cat-section-title:first-child{margin-top:0;}
+.cat-section-title .cat-he{font-family:'Frank Ruhl Libre',serif;font-size:1rem;font-weight:700;color:var(--navy);}
+.cat-section-title .cat-it{font-size:0.78rem;font-style:italic;color:var(--muted);font-weight:400;}
+.selected-dish-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #F0EDE5;}
 .selected-dish-row:last-child{border:none;}
 .sd-left{flex:1;}
 .sd-name{font-weight:700;font-size:0.86rem;color:var(--navy);}
 .sd-desc{font-size:0.72rem;color:#666;margin-top:1px;}
 .sd-allergy{font-size:0.68rem;color:#B71C1C;margin-top:2px;}
 .sd-price{font-weight:700;color:var(--green);font-size:0.88rem;white-space:nowrap;padding-right:16px;min-width:70px;text-align:left;}
+
+/* TOTALS */
 .totals-table{width:100%;border-collapse:collapse;}
 .totals-table td{padding:6px 0;font-size:0.86rem;}
 .totals-table td:last-child{text-align:left;font-weight:600;}
@@ -107,50 +139,46 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .disclaimer h4:first-child{margin-top:0;}
 .disclaimer ul{padding-right:14px;}
 .disclaimer li{margin-bottom:3px;}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:7px;border:none;font-family:'Heebo',sans-serif;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all 0.18s;}
-.btn-gold{background:var(--gold);color:var(--navy);}
-.btn-gold:hover{background:var(--gold2);transform:translateY(-1px);box-shadow:0 4px 10px rgba(201,168,76,0.3);}
-.btn-navy{background:var(--navy);color:white;}
-.btn-navy:hover{background:var(--navy2);}
-.btn-ghost{background:none;border:1.5px solid rgba(255,255,255,0.3);color:white;}
-.btn-green{background:#2E6B4F;color:white;}
-.btn-green:hover{filter:brightness(1.15);}
-.btn-ghost:hover{background:rgba(255,255,255,0.1);}
-.btn-sm{padding:7px 13px;font-size:0.78rem;}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--navy);color:white;padding:10px 22px;border-radius:30px;font-size:0.85rem;z-index:999;transition:transform 0.3s;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:white;padding:10px 22px;border-radius:30px;font-size:0.85rem;z-index:999;transition:transform 0.3s;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .toast.success{background:var(--green);}
 .toast.error{background:var(--danger);}
-.empty-dishes{text-align:center;padding:24px;color:var(--muted);font-size:0.84rem;}
-@media print{.topbar,.panel-left,.summary-header .btn{display:none!important;}.layout{display:block;}.panel-right{padding:0;}.quote-card{box-shadow:none;border:1px solid #ccc;}}
-@media(max-width:860px){.layout{grid-template-columns:1fr;}.panel-left{position:static;height:auto;}}
+
+@media(max-width:600px){.form-row{grid-template-columns:1fr;}.guests-grid{grid-template-columns:1fr 1fr 1fr;}.brand{font-size:0.9rem;}}
 </style>
 </head>
 <body>
+
 <div class="topbar">
   <div class="brand">🍕 Pizza Zmani — בונה הצעת מחיר</div>
   <div class="topbar-actions">
-    <button class="btn btn-ghost btn-sm" id="modeBuildBtn" onclick="setMode('build')" style="border-color:var(--gold);color:var(--gold);">✏️ בנייה</button>
-    <button class="btn btn-ghost btn-sm" id="modePreviewBtn" onclick="setMode('preview')">👁️ תצוגה מקדימה</button>
-    <button class="btn btn-ghost btn-sm" onclick="resetAll()">🔄 איפוס</button>
-    <button class="btn btn-ghost btn-sm" onclick="saveQuote()">💾 שמור</button>
-    <button class="btn btn-gold btn-sm" onclick="generatePDF()">📄 PDF</button>
-    <button class="btn btn-green btn-sm" onclick="sendApproval()">📨 שלח לאישור</button>
+    <button class="btn btn-mode active" id="btnBuild" onclick="setMode('build')">✏️ בנייה</button>
+    <button class="btn btn-mode" id="btnPreview" onclick="setMode('preview')">👁️ תצוגה מקדימה</button>
+    <button class="btn btn-ghost" onclick="resetAll()">🔄</button>
+    <button class="btn btn-ghost" onclick="saveQuote()">💾 שמור</button>
+    <button class="btn btn-gold" onclick="generatePDF()">📄 PDF</button>
+    <button class="btn btn-green" onclick="sendApproval()">📨 שלח לאישור</button>
   </div>
-  <div class="version">v1.4.1</div>
+  <div class="version">v1.5.0</div>
 </div>
-<div class="layout build-mode">
-  <div class="panel-left">
 
-    <div class="panel-section">
-      <div class="panel-heading">👤 פרטי לקוח ואירוע</div>
+<!-- ════ BUILD MODE ════ -->
+<div class="build-panel">
+<div class="build-wrap">
+
+  <!-- פרטי לקוח -->
+  <div class="section-card">
+    <div class="section-head"><h3>👤 פרטי לקוח ואירוע</h3></div>
+    <div class="section-body">
       <div class="form-row">
-        <div class="fg"><label>שם לקוח *</label><input type="text" id="cl-name" placeholder="ישראל ישראלי" oninput="updatePreview()"></div>
-        <div class="fg"><label>טלפון</label><input type="text" id="cl-phone" placeholder="05X-XXXXXXX" oninput="updatePreview()"></div>
+        <div class="fg"><label>שם לקוח *</label><input type="text" id="cl-name" placeholder="ישראל ישראלי" oninput="syncPreview()"></div>
+        <div class="fg"><label>טלפון</label><input type="text" id="cl-phone" placeholder="05X-XXXXXXX" oninput="syncPreview()"></div>
       </div>
       <div class="form-row">
-        <div class="fg"><label>תאריך אירוע</label><input type="date" id="cl-date" oninput="updatePreview()"></div>
-        <div class="fg"><label>שעת הגשה</label><input type="time" id="cl-time" oninput="updatePreview()"></div>
+        <div class="fg"><label>תאריך אירוע</label><input type="date" id="cl-date" oninput="syncPreview()"></div>
+        <div class="fg"><label>שעת הגשה</label><input type="time" id="cl-time" oninput="syncPreview()"></div>
       </div>
       <div class="form-row">
         <div class="fg"><label>סוג אירוע</label>
@@ -163,22 +191,25 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
         </div>
         <div class="fg" id="custom-type-wrap" style="display:none">
           <label>פרט סוג אירוע</label>
-          <input type="text" id="cl-type-custom" placeholder="תאר את האירוע..." oninput="updatePreview()">
+          <input type="text" id="cl-type-custom" placeholder="תאר את האירוע..." oninput="syncPreview()">
         </div>
       </div>
       <div class="form-row single">
-        <div class="fg"><label>כתובת האירוע</label><input type="text" id="cl-address" placeholder="רחוב ומספר, עיר" oninput="updatePreview()"></div>
+        <div class="fg"><label>כתובת האירוע</label><input type="text" id="cl-address" placeholder="רחוב ומספר, עיר" oninput="syncPreview()"></div>
       </div>
       <div class="form-row single">
-        <div class="fg"><label>הערות / בקשות מיוחדות / אלרגיות</label><textarea id="cl-notes" placeholder="אלרגיות ידועות, בקשות מיוחדות..." oninput="updatePreview()"></textarea></div>
+        <div class="fg"><label>הערות / בקשות מיוחדות / אלרגיות</label><textarea id="cl-notes" placeholder="אלרגיות ידועות, בקשות מיוחדות..." oninput="syncPreview()"></textarea></div>
       </div>
       <div class="form-row single">
-        <div class="fg"><label>שם קובץ PDF (אופציונלי)</label><input type="text" id="cl-filename" placeholder='הצעה_כהן_מאי_2026' oninput="updatePreview()"></div>
+        <div class="fg"><label>שם קובץ PDF (אופציונלי)</label><input type="text" id="cl-filename" placeholder="הצעה_כהן_מאי_2026"></div>
       </div>
     </div>
+  </div>
 
-    <div class="panel-section">
-      <div class="panel-heading">👥 כמות אורחים</div>
+  <!-- אורחים -->
+  <div class="section-card">
+    <div class="section-head"><h3>👥 כמות אורחים</h3></div>
+    <div class="section-body">
       <div class="guests-grid">
         <div class="guest-box">
           <label>מבוגרים</label><span class="bl">גיל 14+</span>
@@ -207,15 +238,21 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
       </div>
       <div class="guest-total" id="guest-lbl">סה"כ: <strong>0</strong> אנשים | מחויבים: <strong>0</strong></div>
     </div>
+  </div>
 
-    <div class="panel-section">
-      <div class="panel-heading">🍽️ בחירת מנות</div>
-      <div class="cat-tabs" id="catTabs"><button class="cat-tab active" onclick="filterCat('',this)">הכל</button></div>
-      <div class="dishes-grid" id="dishesGrid"><div class="empty-dishes">⏳ טוען...</div></div>
+  <!-- מנות -->
+  <div class="section-card">
+    <div class="section-head"><h3>🍽️ בחירת מנות</h3></div>
+    <div class="section-body">
+      <div class="cat-tabs" id="catTabs"></div>
+      <div class="dishes-grid" id="dishesGrid"><div style="text-align:center;padding:20px;color:var(--muted);">⏳ טוען מנות...</div></div>
     </div>
+  </div>
 
-    <div class="panel-section">
-      <div class="panel-heading">⚙️ אפשרויות</div>
+  <!-- אפשרויות -->
+  <div class="section-card">
+    <div class="section-head"><h3>⚙️ אפשרויות</h3></div>
+    <div class="section-body">
       <div><label class="option-toggle checked" id="tog-vat">
         <input type="checkbox" checked onchange="toggleOpt(this,'tog-vat','vat')">
         <span>כולל מע"מ 18%</span>
@@ -225,361 +262,446 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
         <span>הסתר מחירים (גרסת לקוח)</span>
       </label></div>
     </div>
-
   </div>
 
-  <div class="panel-right">
-    <div class="summary-header">
-      <div class="summary-title">תצוגה מקדימה</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-navy btn-sm" onclick="saveQuote()">💾 שמור</button>
-        <button class="btn btn-gold btn-sm" onclick="generatePDF()">📄 הורד PDF</button>
-      </div>
-    </div>
-
-    <div id="pdfContent">
-
-      <div class="quote-card">
-        <div style="background:linear-gradient(135deg,#1B2A4A 0%,#2A4070 100%);padding:16px 22px;display:flex;align-items:flex-start;justify-content:space-between;">
-          <div>
-            <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.7rem;color:#C9A84C;line-height:1.1;">🍕 Pizza Zmani</div>
-            <div style="font-size:0.74rem;color:rgba(255,255,255,0.55);margin-top:3px;">אוכל איטלקי שמח • פיצה • אירודים • סרדנאות</div>
-          </div>
-          <div style="text-align:left;">
-            <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);">הצעת מחיר מס׳</div>
-            <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.3rem;color:white;" id="quoteNum">#0001</div>
-            <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);" id="quoteDate"></div>
-          </div>
-        </div>
-        <div class="quote-card-body">
-          <div class="client-grid">
-            <div class="client-item"><label>שם לקוח</label><span id="pr-name">—</span></div>
-            <div class="client-item"><label>טלפון</label><span id="pr-phone">—</span></div>
-            <div class="client-item"><label>תאריך אירוע</label><span id="pr-date">—</span></div>
-            <div class="client-item"><label>שעת הגשה</label><span id="pr-time">—</span></div>
-            <div class="client-item"><label>סוג אירוע</label><span id="pr-type">—</span></div>
-            <div class="client-item"><label>כתובת</label><span id="pr-address">—</span></div>
-          </div>
-          <div id="pr-notes-wrap" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-            <div style="font-size:0.68rem;color:var(--muted);">הערות / בקשות מיוחדות</div>
-            <div style="font-size:0.85rem;color:var(--navy);font-weight:600;" id="pr-notes"></div>
-          </div>
-          <div class="guests-summary">
-            <div class="gs-item"><span>מבוגרים</span><strong id="pr-adults">0</strong></div>
-            <div class="gs-item"><span>ילדים (15% הנחה)</span><strong id="pr-kids">0</strong></div>
-            <div class="gs-item"><span>פעוטות (חינם)</span><strong id="pr-babies">0</strong></div>
-            <div class="gs-item hl"><span>סה"כ מחויבים</span><strong id="pr-billed">0</strong></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="quote-card">
-        <div class="quote-card-header"><h3>🍽️ תפריט האירוע</h3></div>
-        <div class="quote-card-body" id="selectedDishesBody"><div class="empty-dishes">בחר מנות מהתפריט משמאל</div></div>
-      </div>
-
-      <div class="quote-card" id="priceCard">
-        <div class="quote-card-header"><h3>💰 סיכום מחירים</h3></div>
-        <div class="quote-card-body">
-          <table class="totals-table">
-            <tr><td>בסיס (פיצה + קלצונה)</td><td id="t-base">—</td></tr>
-            <tr><td>תוספות נבחרות</td><td id="t-addons">—</td></tr>
-            <tr class="disc-row"><td>הנחת ילדים (15%)</td><td id="t-kids-disc">—</td></tr>
-            <tr class="subtotal-row"><td>סה"כ לפני מע"מ</td><td id="t-subtotal">—</td></tr>
-            <tr><td>מע"מ (18%)</td><td id="t-vat">—</td></tr>
-            <tr class="grand-row"><td>💰 סה"כ לתשלום</td><td id="t-grand">—</td></tr>
-          </table>
-          <div class="deposit-box">
-            <span>מקדמה לסגירת תאריך (10%)</span>
-            <strong id="t-deposit">—</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="quote-card">
-        <div class="quote-card-header"><h3>📋 תנאים ומדיניות</h3></div>
-        <div class="quote-card-body">
-          <div class="disclaimer">
-            <h4>כללי</h4>
-            <ul>
-              <li>ההצעה תקפה לאחר אישורה בכתב ותשלום מקדמה של 10%.</li>
-              <li>ההצעה עלולה להשתנות לאחר שיחת וידאו/פגישה במקום האירוע.</li>
-              <li>המחירים לפני מע"מ (18%). נדרשים דיוקים ושיחה עם הלקוח.</li>
-              <li>שינוי בכמות האורחים – ברף הסביר בלבד, לא יותר מ-10%.</li>
-            </ul>
-            <h4>ביטולים</h4>
-            <ul>
-              <li>שינויים – עד 72 שעות לפני האירוע.</li>
-              <li>ביטול עד 72 שעות לפני: 10% מהסכום.</li>
-              <li>ביטול 72–24 שעות לפני: 30% מהסכום.</li>
-              <li>ביטול פחות מ-24 שעות לפני: 100% מהסכום.</li>
-              <li>ביטול מכל סיבה (מגיפה, כח עליון, מלחמה) – למעט הנחיות פיקוד העורף.</li>
-            </ul>
-            <h4>⚠️ אלרגיות</h4>
-            <p>אין ביכולתינו להתחייב על אלרגן מכל סוג שהוא (אגוזים, חלב, גלוטן, שומשום וכל אלרגן אחר). נא לעדכן על רגישויות ידועות מוקדם ככל האפשר.</p>
-            <h4>לוגיסטיקה</h4>
-            <ul>
-              <li>הובלה כלולה בין גדרה–נתניה–מודיעין. אזורים אחרים לפי מרחק.</li>
-              <li>נגיע עם כל הציוד: כלי הגשה, עיצוב, אנשי צוות.</li>
-              <li>כלי אוכל – סכו"ם, צלחות, מפיות – כלולים.</li>
-              <li>על המזמין: שטח הקמה, צל מלא, כיור, חשמל, 2 חניות, אזור פריקה.</li>
-              <li>הגשה: שעה וחצי בופה מלא + חצי שעה קינוחים.</li>
-            </ul>
-            <h4>תשלום</h4>
-            <ul>
-              <li>מקדמה 10% במעמד סגירת העסקה. יתרה – ביום האירוע.</li>
-              <li>חשבונית מס תישלח רק לאחר תשלום.</li>
-            </ul>
-          </div>
-          <div style="margin-top:14px;text-align:center;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">
-            Pizza Zmani • 📞 054-203-1181 • אוכל איטלקי שמח
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
 </div>
+</div><!-- /build-panel -->
+
+<!-- ════ PREVIEW MODE ════ -->
+<div class="preview-panel">
+<div class="preview-wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.4rem;color:var(--navy);">תצוגה מקדימה</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" style="border-color:var(--navy);color:var(--navy);" onclick="saveQuote()">💾 שמור</button>
+      <button class="btn btn-gold" onclick="generatePDF()">📄 הורד PDF</button>
+    </div>
+  </div>
+
+  <div id="pdfContent">
+
+    <!-- כותרת -->
+    <div class="quote-card">
+      <div style="background:linear-gradient(135deg,#1B2A4A 0%,#2A4070 100%);padding:16px 22px;display:flex;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.7rem;color:#C9A84C;line-height:1.1;">🍕 Pizza Zmani</div>
+          <div style="font-size:0.74rem;color:rgba(255,255,255,0.55);margin-top:3px;">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
+        </div>
+        <div style="text-align:left;">
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);">הצעת מחיר מס׳</div>
+          <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.3rem;color:white;" id="quoteNum">#0001</div>
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);" id="quoteDate"></div>
+        </div>
+      </div>
+      <div class="quote-card-body">
+        <div class="client-grid">
+          <div class="client-item"><label>שם לקוח</label><span id="pr-name">—</span></div>
+          <div class="client-item"><label>טלפון</label><span id="pr-phone">—</span></div>
+          <div class="client-item"><label>תאריך אירוע</label><span id="pr-date">—</span></div>
+          <div class="client-item"><label>שעת הגשה</label><span id="pr-time">—</span></div>
+          <div class="client-item"><label>סוג אירוע</label><span id="pr-type">—</span></div>
+          <div class="client-item"><label>כתובת</label><span id="pr-address">—</span></div>
+        </div>
+        <div id="pr-notes-wrap" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          <div style="font-size:0.68rem;color:var(--muted);">הערות / בקשות מיוחדות</div>
+          <div style="font-size:0.85rem;color:var(--navy);font-weight:600;" id="pr-notes"></div>
+        </div>
+        <div class="guests-summary">
+          <div class="gs-item"><span>מבוגרים</span><strong id="pr-adults">0</strong></div>
+          <div class="gs-item"><span>ילדים (15% הנחה)</span><strong id="pr-kids">0</strong></div>
+          <div class="gs-item"><span>פעוטות (חינם)</span><strong id="pr-babies">0</strong></div>
+          <div class="gs-item hl"><span>סה"כ מחויבים</span><strong id="pr-billed">0</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- תפריט -->
+    <div class="quote-card">
+      <div class="quote-card-header"><h3>🍽️ תפריט האירוע</h3></div>
+      <div class="quote-card-body" id="selectedDishesBody"><div style="text-align:center;color:var(--muted);padding:20px;font-size:0.85rem;">בחר מנות במצב בנייה</div></div>
+    </div>
+
+    <!-- מחיר -->
+    <div class="quote-card" id="priceCard">
+      <div class="quote-card-header"><h3>💰 סיכום מחירים</h3></div>
+      <div class="quote-card-body">
+        <table class="totals-table">
+          <tr><td>בסיס (פיצה + קלצונה)</td><td id="t-base">—</td></tr>
+          <tr><td>תוספות נבחרות</td><td id="t-addons">—</td></tr>
+          <tr class="disc-row"><td>הנחת ילדים (15%)</td><td id="t-kids-disc">—</td></tr>
+          <tr class="subtotal-row"><td>סה"כ לפני מע"מ</td><td id="t-subtotal">—</td></tr>
+          <tr><td>מע"מ (18%)</td><td id="t-vat">—</td></tr>
+          <tr class="grand-row"><td>💰 סה"כ לתשלום</td><td id="t-grand">—</td></tr>
+        </table>
+        <div class="deposit-box">
+          <span>מקדמה לסגירת תאריך (10%)</span>
+          <strong id="t-deposit">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- תנאים -->
+    <div class="quote-card">
+      <div class="quote-card-header"><h3>📋 תנאים ומדיניות</h3></div>
+      <div class="quote-card-body">
+        <div class="disclaimer">
+          <h4>כללי</h4>
+          <ul>
+            <li>ההצעה תקפה לאחר אישורה בכתב ותשלום מקדמה של 10%.</li>
+            <li>ההצעה עלולה להשתנות לאחר שיחת וידאו/פגישה במקום האירוע.</li>
+            <li>המחירים לפני מע"מ (18%). נדרשים דיוקים ושיחה עם הלקוח.</li>
+            <li>שינוי בכמות האורחים – לא יותר מ-10%.</li>
+          </ul>
+          <h4>ביטולים</h4>
+          <ul>
+            <li>שינויים – עד 72 שעות לפני האירוע.</li>
+            <li>ביטול עד 72 שעות לפני: 10%.</li>
+            <li>ביטול 72–24 שעות לפני: 30%.</li>
+            <li>ביטול פחות מ-24 שעות: 100%.</li>
+            <li>ביטול מכל סיבה (מגיפה, כח עליון, מלחמה) – למעט הנחיות פיקוד העורף.</li>
+          </ul>
+          <h4>⚠️ אלרגיות</h4>
+          <p>אין ביכולתינו להתחייב על אלרגן מכל סוג (אגוזים, חלב, גלוטן, שומשום וכו'). נא לעדכן מוקדם ככל האפשר.</p>
+          <h4>לוגיסטיקה</h4>
+          <ul>
+            <li>הובלה כלולה בין גדרה–נתניה–מודיעין. אזורים אחרים לפי מרחק.</li>
+            <li>על המזמין: שטח הקמה, צל מלא, כיור, חשמל, 2 חניות, אזור פריקה.</li>
+            <li>הגשה: שעה וחצי בופה מלא + חצי שעה קינוחים.</li>
+          </ul>
+          <h4>תשלום</h4>
+          <ul>
+            <li>מקדמה 10% במעמד סגירת העסקה. יתרה – ביום האירוע.</li>
+            <li>חשבונית מס תישלח רק לאחר תשלום.</li>
+          </ul>
+        </div>
+        <div style="margin-top:14px;text-align:center;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">
+          Pizza Zmani • 📞 054-203-1181 • אוכל איטלקי שמח
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pdfContent -->
+</div>
+</div><!-- /preview-panel -->
+
 <div class="toast" id="toast"></div>
+
 <script>
-const SUPABASE_URL='https://arqxoyxobjudccskfwyt.supabase.co';
-const SUPABASE_KEY='sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let allDishes=[],allCats=[],selectedDishes=new Set(),activeCats=new Set(),includeVat=true,hidePrices=false;
+const SUPABASE_URL = 'https://arqxoyxobjudccskfwyt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function init(){
-  document.getElementById('quoteDate').textContent=new Date().toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('quoteNum').textContent='#'+String(Date.now()).slice(-4);
+// STATE
+let allDishes = [], allCats = [], selectedDishes = new Set(), activeCats = new Set();
+let includeVat = true, hidePrices = false;
+
+// INIT
+async function init() {
+  document.getElementById('quoteDate').textContent = new Date().toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('quoteNum').textContent = '#' + String(Date.now()).slice(-4);
   await loadData();
-  updatePreview();
 }
 
-async function loadData(){
-  const{data:cats,error:ce}=await sb.from('qz_categories').select('*').order('sort_order');
-  allCats=(!ce&&cats&&cats.length)?cats:getDefaultCats();
-  const{data:dishes,error:de}=await sb.from('qz_dishes').select('*').eq('is_active',true).order('category');
-  allDishes=(!de&&dishes&&dishes.length)?dishes:getDemoMenu();
-  allDishes.forEach(d=>{if(d.name==='פיצה אדומה'||d.name==='קלצונה מתוק')selectedDishes.add(d.id);});
-  renderCatTabs();renderDishes();
+// LOAD
+async function loadData() {
+  const {data:cats, error:ce} = await sb.from('qz_categories').select('*').order('sort_order');
+  allCats = (!ce && cats && cats.length) ? cats : getDefaultCats();
+
+  const {data:dishes, error:de} = await sb.from('qz_dishes').select('*').eq('is_active',true).order('category');
+  allDishes = (!de && dishes && dishes.length) ? dishes : getDemoMenu();
+
+  // auto-select pizza + calzone
+  allDishes.forEach(d => {
+    if (d.name === 'פיצה אדומה' || d.name === 'קלצונה מתוק') selectedDishes.add(d.id);
+  });
+
+  renderCatTabs();
+  renderDishes();
 }
 
-function renderCatTabs(){
-  const el=document.getElementById('catTabs');
-  el.innerHTML='<button class="cat-tab active" onclick="filterCat(\'\',this)">הכל</button>'+
-    allCats.map(c=>'<button class="cat-tab" onclick="filterCat(\''+c.name+'\',this)">'+c.name+'</button>').join('');
+// MODE
+function setMode(mode) {
+  document.body.classList.toggle('preview-mode', mode === 'preview');
+  document.getElementById('btnBuild').classList.toggle('active', mode === 'build');
+  document.getElementById('btnPreview').classList.toggle('active', mode === 'preview');
+  if (mode === 'preview') updatePreview();
 }
 
-// filterCat moved to setMode section
+// CATS - multi select
+function renderCatTabs() {
+  const el = document.getElementById('catTabs');
+  el.innerHTML = '<button class="cat-tab active" onclick="filterCat(\'\',this)">הכל</button>' +
+    allCats.map(c => '<button class="cat-tab" onclick="filterCat(\'' + c.name + '\',this)">' + c.name + '</button>').join('');
+}
 
-function renderDishes(){
-  const grid=document.getElementById('dishesGrid');
-  const list=activeCats.size>0?allDishes.filter(d=>activeCats.has(d.category)):allDishes;
-  if(!list.length){grid.innerHTML='<div class="empty-dishes">אין מנות</div>';return;}
-  grid.innerHTML=list.map(d=>{
-    const sel=selectedDishes.has(d.id);
-    const badges=[];
-    if(d.is_vegan)badges.push('<span class="dbadge dbadge-vegan">🌱</span>');
-    if(d.is_gluten_free)badges.push('<span class="dbadge dbadge-gf">GF</span>');
-    if(d.is_kids_friendly)badges.push('<span class="dbadge dbadge-kids">👶</span>');
-    if(d.allergens&&d.allergens.length)badges.push('<span class="dbadge dbadge-allergy">⚠️ '+d.allergens.join(', ')+'</span>');
-    return '<div class="dish-card'+(sel?' selected':'')+'" onclick="toggleDish('+d.id+')">'+
-      '<div class="dish-check">'+(sel?'✓':'')+'</div>'+
-      '<div class="dish-info">'+
-        '<div class="dish-name">'+d.name+'</div>'+
-        (d.name_it?'<div class="dish-name-it">'+d.name_it+'</div>':'')+
-        (d.description?'<div class="dish-desc">'+d.description+'</div>':'')+
-        (badges.length?'<div class="dish-badges">'+badges.join('')+'</div>':'')+
-      '</div>'+
-      '<div class="dish-price">'+
-        (d.base_price?'<div class="dish-price-base">₪'+d.base_price+'</div>':'')+
-        (d.addon_per_person?'<div class="dish-price-addon">+₪'+d.addon_per_person+'/אדם</div>':'')+
+function filterCat(name, btn) {
+  if (name === '') {
+    activeCats.clear();
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    document.querySelector('.cat-tab').classList.remove('active');
+    if (activeCats.has(name)) { activeCats.delete(name); btn.classList.remove('active'); }
+    else { activeCats.add(name); btn.classList.add('active'); }
+    if (activeCats.size === 0) document.querySelector('.cat-tab').classList.add('active');
+  }
+  renderDishes();
+}
+
+// DISHES
+function renderDishes() {
+  const grid = document.getElementById('dishesGrid');
+  const list = activeCats.size > 0 ? allDishes.filter(d => activeCats.has(d.category)) : allDishes;
+  if (!list.length) { grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">אין מנות</div>'; return; }
+
+  grid.innerHTML = list.map(d => {
+    const sel = selectedDishes.has(d.id);
+    const badges = [];
+    if (d.is_vegan) badges.push('<span class="dbadge dbadge-vegan">🌱</span>');
+    if (d.is_gluten_free) badges.push('<span class="dbadge dbadge-gf">GF</span>');
+    if (d.is_kids_friendly) badges.push('<span class="dbadge dbadge-kids">👶</span>');
+    if (d.allergens && d.allergens.length) badges.push('<span class="dbadge dbadge-allergy">⚠️ ' + d.allergens.join(', ') + '</span>');
+    return '<div class="dish-card' + (sel?' selected':'') + '" onclick="toggleDish(' + d.id + ')">' +
+      '<div class="dish-check">' + (sel?'✓':'') + '</div>' +
+      '<div class="dish-info">' +
+        '<div class="dish-name">' + d.name + (d.name_it ? ' <span style="font-weight:400;font-style:italic;font-size:0.7rem;color:#aaa">(' + d.name_it + ')</span>' : '') + '</div>' +
+        (d.description ? '<div class="dish-desc">' + d.description + '</div>' : '') +
+        (badges.length ? '<div class="dish-badges">' + badges.join('') + '</div>' : '') +
+      '</div>' +
+      '<div class="dish-price">' +
+        (d.base_price ? '<div class="dish-price-base">₪' + d.base_price + '</div>' : '') +
+        (d.addon_per_person ? '<div class="dish-price-addon">+₪' + d.addon_per_person + '/אדם</div>' : '') +
       '</div></div>';
   }).join('');
 }
 
-function toggleDish(id){
-  selectedDishes.has(id)?selectedDishes.delete(id):selectedDishes.add(id);
-  renderDishes();updatePreview();
+function toggleDish(id) {
+  selectedDishes.has(id) ? selectedDishes.delete(id) : selectedDishes.add(id);
+  renderDishes();
 }
 
-function getGuests(){
-  return{
-    adults:parseInt(document.getElementById('g-adults').value)||0,
-    kids:parseInt(document.getElementById('g-kids').value)||0,
-    babies:parseInt(document.getElementById('g-babies').value)||0
+// GUESTS
+function getGuests() {
+  return {
+    adults: parseInt(document.getElementById('g-adults').value)||0,
+    kids:   parseInt(document.getElementById('g-kids').value)||0,
+    babies: parseInt(document.getElementById('g-babies').value)||0
   };
 }
-
-function changeG(type,delta){
-  const el=document.getElementById('g-'+type);
-  el.value=Math.max(0,(parseInt(el.value)||0)+delta);
+function changeG(type, delta) {
+  const el = document.getElementById('g-' + type);
+  el.value = Math.max(0, (parseInt(el.value)||0) + delta);
   updateGuests();
 }
-function updateGuests(){
-  const g=getGuests();
-  const total=g.adults+g.kids+g.babies,billed=g.adults+g.kids;
-  document.getElementById('guest-lbl').innerHTML='סה"כ: <strong>'+total+'</strong> אנשים | מחויבים: <strong>'+billed+'</strong>';
-  updatePreview();
+function updateGuests() {
+  const g = getGuests();
+  const total = g.adults + g.kids + g.babies, billed = g.adults + g.kids;
+  document.getElementById('guest-lbl').innerHTML = 'סה"כ: <strong>' + total + '</strong> אנשים | מחויבים: <strong>' + billed + '</strong>';
 }
 
-function onTypeChange(){
-  const val=document.getElementById('cl-type').value;
-  document.getElementById('custom-type-wrap').style.display=(val==='אחר')?'':'none';
-  if(val!=='אחר')document.getElementById('cl-type-custom').value='';
-  updatePreview();
+// EVENT TYPE
+function onTypeChange() {
+  const val = document.getElementById('cl-type').value;
+  document.getElementById('custom-type-wrap').style.display = (val==='אחר') ? '' : 'none';
+  if (val !== 'אחר') document.getElementById('cl-type-custom').value = '';
 }
-
-function getEventType(){
-  const sel=document.getElementById('cl-type').value;
-  if(sel==='אחר')return document.getElementById('cl-type-custom').value||'אחר';
+function getEventType() {
+  const sel = document.getElementById('cl-type').value;
+  if (sel === 'אחר') return document.getElementById('cl-type-custom').value || 'אחר';
   return sel;
 }
 
-function toggleOpt(cb,id,key){
-  document.getElementById(id).classList.toggle('checked',cb.checked);
-  if(key==='vat')includeVat=cb.checked;
-  if(key==='hide')hidePrices=cb.checked;
-  updatePreview();
+// OPTIONS
+function toggleOpt(cb, id, key) {
+  document.getElementById(id).classList.toggle('checked', cb.checked);
+  if (key==='vat') includeVat = cb.checked;
+  if (key==='hide') hidePrices = cb.checked;
 }
+function syncPreview() { /* placeholder - updates only on preview mode switch */ }
 
-function updatePreview(){
-  const g=getGuests();
-  const billed=g.adults+g.kids;
-  const name=document.getElementById('cl-name').value;
-  const phone=document.getElementById('cl-phone').value;
-  const dateVal=document.getElementById('cl-date').value;
-  const timeVal=document.getElementById('cl-time').value;
-  const address=document.getElementById('cl-address').value;
-  const notes=document.getElementById('cl-notes').value;
+// UPDATE PREVIEW
+function updatePreview() {
+  const g = getGuests();
+  const billed = g.adults + g.kids;
 
-  document.getElementById('pr-name').textContent=name||'—';
-  document.getElementById('pr-phone').textContent=phone||'—';
-  document.getElementById('pr-address').textContent=address||'—';
-  document.getElementById('pr-type').textContent=getEventType()||'—';
+  // client info
+  document.getElementById('pr-name').textContent    = document.getElementById('cl-name').value || '—';
+  document.getElementById('pr-phone').textContent   = document.getElementById('cl-phone').value || '—';
+  document.getElementById('pr-address').textContent = document.getElementById('cl-address').value || '—';
+  document.getElementById('pr-type').textContent    = getEventType() || '—';
 
-  if(dateVal){
-    const d=new Date(dateVal+'T12:00:00');
-    document.getElementById('pr-date').textContent=d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  } else document.getElementById('pr-date').textContent='—';
+  const dateVal = document.getElementById('cl-date').value;
+  if (dateVal) {
+    const d = new Date(dateVal + 'T12:00:00');
+    document.getElementById('pr-date').textContent = d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  } else document.getElementById('pr-date').textContent = '—';
 
-  document.getElementById('pr-time').textContent=timeVal?timeVal.slice(0,5)+' (הגשה)':'—';
+  const timeVal = document.getElementById('cl-time').value;
+  document.getElementById('pr-time').textContent = timeVal ? timeVal.slice(0,5) + ' (הגשה)' : '—';
 
-  const nw=document.getElementById('pr-notes-wrap');
-  if(notes){nw.style.display='';document.getElementById('pr-notes').textContent=notes;}
+  const notes = document.getElementById('cl-notes').value;
+  const nw = document.getElementById('pr-notes-wrap');
+  if (notes) { nw.style.display=''; document.getElementById('pr-notes').textContent=notes; }
   else nw.style.display='none';
 
-  document.getElementById('pr-adults').textContent=g.adults;
-  document.getElementById('pr-kids').textContent=g.kids;
-  document.getElementById('pr-babies').textContent=g.babies;
-  document.getElementById('pr-billed').textContent=billed;
+  document.getElementById('pr-adults').textContent  = g.adults;
+  document.getElementById('pr-kids').textContent    = g.kids;
+  document.getElementById('pr-babies').textContent  = g.babies;
+  document.getElementById('pr-billed').textContent  = billed;
 
-  const sel=allDishes.filter(d=>selectedDishes.has(d.id));
-  const body=document.getElementById('selectedDishesBody');
+  // dishes grouped by category
+  const sel = allDishes.filter(d => selectedDishes.has(d.id));
+  const body = document.getElementById('selectedDishesBody');
 
-  if(!sel.length){body.innerHTML='<div class="empty-dishes">בחר מנות מהתפריט משמאל</div>';clearTotals();return;}
-
-  let baseTotal=0,addonTotal=0;
-  // קבץ לפי קטגוריות לפי הסדר של allCats
-  const catOrder = allCats.map(c=>c.name);
-  const bycat = {};
-  sel.forEach(d=>{
-    if(!bycat[d.category]) bycat[d.category]=[];
-    bycat[d.category].push(d);
-  });
+  if (!sel.length) {
+    body.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:0.85rem;">בחר מנות במצב בנייה</div>';
+    clearTotals(); return;
+  }
 
   const catNameIt = {};
-  allCats.forEach(c=>{ catNameIt[c.name]=c.name_it||''; });
+  allCats.forEach(c => { catNameIt[c.name] = c.name_it || ''; });
+  const catOrder = allCats.map(c => c.name);
+  const bycat = {};
+  sel.forEach(d => { if(!bycat[d.category]) bycat[d.category]=[]; bycat[d.category].push(d); });
 
-  let html = '';
-  catOrder.forEach(cat=>{
-    if(!bycat[cat]||!bycat[cat].length) return;
-    html += '<div style="margin-bottom:4px;padding:8px 0 4px;border-bottom:2px solid var(--gold);">' +
-      '<span style="font-family:Frank Ruhl Libre,serif;font-size:1rem;font-weight:700;color:var(--navy);">' + cat + '</span>' +
-      (catNameIt[cat]?' <span style="font-size:0.78rem;font-style:italic;color:var(--muted);font-weight:400;">— '+catNameIt[cat]+'</span>':'') +
+  let html = '', baseTotal = 0, addonTotal = 0;
+  catOrder.forEach(cat => {
+    if (!bycat[cat] || !bycat[cat].length) return;
+    html += '<div class="cat-section-title">' +
+      '<span class="cat-he">' + cat + '</span>' +
+      (catNameIt[cat] ? ' <span class="cat-it">— ' + catNameIt[cat] + '</span>' : '') +
       '</div>';
-    bycat[cat].forEach(d=>{
-      const base=d.base_price||0;
-      const addon=(d.addon_per_person||0)*billed;
-      baseTotal+=base;addonTotal+=addon;
-      const total=base+addon;
-      const priceHtml=hidePrices?'':'<div class="sd-price">'+(total?'₪'+total.toLocaleString():'—')+'</div>';
-      html += '<div class="selected-dish-row">'+
-        '<div class="sd-left">'+
-          '<div class="sd-name">'+d.name+(d.name_it?' <span style="font-weight:400;font-style:italic;font-size:0.72rem;color:#aaa">('+d.name_it+')</span>':'')+'</div>'+
-          (d.description?'<div class="sd-desc">'+d.description+'</div>':'')+
-          (d.allergens&&d.allergens.length?'<div class="sd-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'')+
-        '</div>'+priceHtml+'</div>';
+    bycat[cat].forEach(d => {
+      const base  = d.base_price || 0;
+      const addon = (d.addon_per_person || 0) * billed;
+      baseTotal  += base; addonTotal += addon;
+      const total = base + addon;
+      const priceHtml = hidePrices ? '' : '<div class="sd-price">' + (total ? '₪' + total.toLocaleString() : '—') + '</div>';
+      html += '<div class="selected-dish-row">' +
+        '<div class="sd-left">' +
+          '<div class="sd-name">' + d.name + (d.name_it ? ' <span style="font-weight:400;font-style:italic;font-size:0.72rem;color:#aaa">(' + d.name_it + ')</span>' : '') + '</div>' +
+          (d.description ? '<div class="sd-desc">' + d.description + '</div>' : '') +
+          (d.allergens && d.allergens.length ? '<div class="sd-allergy">⚠️ ' + d.allergens.join(', ') + '</div>' : '') +
+        '</div>' + priceHtml + '</div>';
     });
   });
   body.innerHTML = html;
 
-  const sub0=baseTotal+addonTotal;
-  const kDisc=billed>0?(g.kids/billed)*sub0*0.15:0;
-  const sub=sub0-kDisc;
-  const vat=includeVat?sub*0.18:0;
-  const grand=sub+vat;
-  const dep=grand*0.10;
+  // totals
+  const sub0 = baseTotal + addonTotal;
+  const kDisc = billed > 0 ? (g.kids/billed)*sub0*0.15 : 0;
+  const sub = sub0 - kDisc;
+  const vat = includeVat ? sub*0.18 : 0;
+  const grand = sub + vat;
+  const dep = grand * 0.10;
 
-  document.getElementById('priceCard').style.display=hidePrices?'none':'';
-  if(!hidePrices){
-    document.getElementById('t-base').textContent='₪'+baseTotal.toLocaleString();
-    document.getElementById('t-addons').textContent=addonTotal?'₪'+addonTotal.toLocaleString():'—';
-    document.getElementById('t-kids-disc').textContent=kDisc?'−₪'+Math.round(kDisc).toLocaleString():'—';
-    document.getElementById('t-subtotal').textContent='₪'+Math.round(sub).toLocaleString();
-    document.getElementById('t-vat').textContent=includeVat?'₪'+Math.round(vat).toLocaleString():'—';
-    document.getElementById('t-grand').textContent='₪'+Math.round(grand).toLocaleString();
-    document.getElementById('t-deposit').textContent='₪'+Math.round(dep).toLocaleString();
+  document.getElementById('priceCard').style.display = hidePrices ? 'none' : '';
+  if (!hidePrices) {
+    document.getElementById('t-base').textContent       = '₪' + baseTotal.toLocaleString();
+    document.getElementById('t-addons').textContent     = addonTotal ? '₪' + addonTotal.toLocaleString() : '—';
+    document.getElementById('t-kids-disc').textContent  = kDisc ? '−₪' + Math.round(kDisc).toLocaleString() : '—';
+    document.getElementById('t-subtotal').textContent   = '₪' + Math.round(sub).toLocaleString();
+    document.getElementById('t-vat').textContent        = includeVat ? '₪' + Math.round(vat).toLocaleString() : '—';
+    document.getElementById('t-grand').textContent      = '₪' + Math.round(grand).toLocaleString();
+    document.getElementById('t-deposit').textContent    = '₪' + Math.round(dep).toLocaleString();
   }
 }
 
-function clearTotals(){
-  ['t-base','t-addons','t-kids-disc','t-subtotal','t-vat','t-grand','t-deposit'].forEach(id=>document.getElementById(id).textContent='—');
+function clearTotals() {
+  ['t-base','t-addons','t-kids-disc','t-subtotal','t-vat','t-grand','t-deposit'].forEach(id => document.getElementById(id).textContent = '—');
 }
 
-async function saveQuote(){
-  const name=document.getElementById('cl-name').value.trim();
-  if(!name){showToast('נא להזין שם לקוח','error');return;}
-  const g=getGuests(),billed=g.adults+g.kids;
-  const sel=allDishes.filter(d=>selectedDishes.has(d.id));
-  let base=0,addon=0;
-  sel.forEach(d=>{base+=d.base_price||0;addon+=(d.addon_per_person||0)*billed;});
-  const sub=(base+addon)-(billed>0?(g.kids/billed)*(base+addon)*0.15:0);
-  const grand=sub+(includeVat?sub*0.18:0);
-  const{error}=await sb.from('qz_quotes').insert({
-    client_name:name,client_phone:document.getElementById('cl-phone').value,
+// SAVE
+async function saveQuote() {
+  const name = document.getElementById('cl-name').value.trim();
+  if (!name) { showToast('נא להזין שם לקוח', 'error'); return; }
+  const g = getGuests(), billed = g.adults + g.kids;
+  const sel = allDishes.filter(d => selectedDishes.has(d.id));
+  let base = 0, addon = 0;
+  sel.forEach(d => { base += d.base_price||0; addon += (d.addon_per_person||0)*billed; });
+  const sub = (base+addon) - (billed>0?(g.kids/billed)*(base+addon)*0.15:0);
+  const grand = sub + (includeVat ? sub*0.18 : 0);
+  const {error} = await sb.from('qz_quotes').insert({
+    client_name:name, client_phone:document.getElementById('cl-phone').value,
     event_date:document.getElementById('cl-date').value||null,
     event_time:document.getElementById('cl-time').value||null,
-    event_type:getEventType(),event_address:document.getElementById('cl-address').value,
+    event_type:getEventType(), event_address:document.getElementById('cl-address').value,
     notes:document.getElementById('cl-notes').value,
-    guests_adults:g.adults,guests_kids:g.kids,guests_babies:g.babies,
+    guests_adults:g.adults, guests_kids:g.kids, guests_babies:g.babies,
     selected_dishes:[...selectedDishes],
-    total_before_vat:Math.round(sub),total_with_vat:Math.round(grand),
-    include_vat:includeVat,status:'draft',created_at:new Date().toISOString()
+    total_before_vat:Math.round(sub), total_with_vat:Math.round(grand),
+    include_vat:includeVat, status:'draft', created_at:new Date().toISOString()
   });
-  if(error){showToast('שגיאה: '+error.message,'error');return;}
+  if (error) { showToast('שגיאה: '+error.message,'error'); return; }
   showToast('הצעה נשמרה ✓','success');
 }
 
-function generatePDF(){
-  const clientName=document.getElementById('cl-name').value||'לקוח';
-  const customName=document.getElementById('cl-filename').value.trim();
-  const dateVal=document.getElementById('cl-date').value;
-  const dateStr=dateVal?new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').replace(/\//g,'-'):new Date().toLocaleDateString('he-IL').replace(/\//g,'-');
-  const filename=customName?(customName.endsWith('.pdf')?customName:customName+'.pdf'):'Pizza_Zmani_'+clientName+'_'+dateStr+'.pdf';
-  const el=document.getElementById('pdfContent');
-  const opt={
-    margin:[10,8,10,8],filename,
-    image:{type:'jpeg',quality:0.97},
-    html2canvas:{scale:2,useCORS:true,letterRendering:true,scrollY:0},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-    pagebreak:{mode:['avoid-all','css','legacy']}
+// SEND APPROVAL
+async function sendApproval() {
+  const name = document.getElementById('cl-name').value.trim();
+  if (!name) { showToast('נא להזין שם לקוח קודם','error'); return; }
+  const g = getGuests(), billed = g.adults + g.kids;
+  const sel = allDishes.filter(d => selectedDishes.has(d.id));
+  let base = 0, addon = 0;
+  sel.forEach(d => { base += d.base_price||0; addon += (d.addon_per_person||0)*billed; });
+  const sub0 = base + addon;
+  const kDisc = billed>0?(g.kids/billed)*sub0*0.15:0;
+  const sub = sub0 - kDisc;
+  const grand = sub + (includeVat ? sub*0.18 : 0);
+  const quoteId = 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const payload = {
+    quote_id:quoteId, client_name:name,
+    client_phone:document.getElementById('cl-phone').value,
+    event_date:document.getElementById('cl-date').value||null,
+    event_time:document.getElementById('cl-time').value||null,
+    event_type:getEventType(), address:document.getElementById('cl-address').value,
+    notes:document.getElementById('cl-notes').value,
+    guests_adults:g.adults, guests_kids:g.kids, guests_babies:g.babies,
+    menu_items:sel.map(d=>d.name),
+    price_before_vat:Math.round(sub), price_after_vat:Math.round(grand),
+    status:'pending', created_at:new Date().toISOString()
   };
-  showToast('מייצר PDF...','');
-  html2pdf().set(opt).from(el).save().then(()=>showToast('PDF הורד ✓','success'));
+  showToast('יוצר לינק...','');
+  const {error} = await sb.from('quote_approvals').insert(payload);
+  if (error) { showToast('שגיאה: '+error.message,'error'); return; }
+  const link = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + quoteId;
+  navigator.clipboard.writeText(link).catch(()=>{});
+  const phone = document.getElementById('cl-phone').value.replace(/\D/g,'').replace(/^0/,'972');
+  const waPhone = phone.length > 8 ? phone : '972542031181';
+  const waMsg = encodeURIComponent("שלום " + name + "!\n\nמצורפת הצעת המחיר שלנו לאירוע שלך.\nאנא עיין/י בפרטים וחתום/י:\n\n" + link + "\n\nPizza Zmani - 054-203-1181");
+  window.open('https://wa.me/' + waPhone + '?text=' + waMsg, '_blank');
+  showToast('לינק נוצר ונשלח ✓','success');
 }
 
-function resetAll(){
-  if(!confirm('לאפס?'))return;
+// PDF
+function generatePDF() {
+  const clientName = document.getElementById('cl-name').value || 'לקוח';
+  const customName = document.getElementById('cl-filename').value.trim();
+  const dateVal = document.getElementById('cl-date').value;
+  const dateStr = dateVal ? new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').replace(/\//g,'-') : new Date().toLocaleDateString('he-IL').replace(/\//g,'-');
+  const filename = customName ? (customName.endsWith('.pdf')?customName:customName+'.pdf') : 'Pizza_Zmani_'+clientName+'_'+dateStr+'.pdf';
+  if (document.body.classList.contains('preview-mode')) {
+    updatePreview();
+  } else {
+    updatePreview();
+    setMode('preview');
+  }
+  setTimeout(() => {
+    const el = document.getElementById('pdfContent');
+    html2pdf().set({
+      margin:[10,8,10,8], filename,
+      image:{type:'jpeg',quality:0.97},
+      html2canvas:{scale:2,useCORS:true,letterRendering:true,scrollY:0},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+      pagebreak:{mode:['avoid-all','css','legacy']}
+    }).from(el).save().then(()=>showToast('PDF הורד ✓','success'));
+    showToast('מייצר PDF...','');
+  }, 300);
+}
+
+// RESET
+function resetAll() {
+  if (!confirm('לאפס את כל הנתונים?')) return;
   selectedDishes.clear();
   ['cl-name','cl-phone','cl-address','cl-notes','cl-filename','cl-type-custom'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cl-date').value='';
@@ -588,148 +710,25 @@ function resetAll(){
   document.getElementById('custom-type-wrap').style.display='none';
   ['g-adults','g-kids','g-babies'].forEach(id=>document.getElementById(id).value=0);
   document.getElementById('guest-lbl').innerHTML='סה"כ: <strong>0</strong> אנשים | מחויבים: <strong>0</strong>';
-  renderDishes();updatePreview();
-}
-
-function showToast(msg,type=''){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast show '+type;
-  setTimeout(()=>t.classList.remove('show'),3000);
-}
-
-function getDefaultCats(){
-  return [{id:1,name:'סלטים'},{id:2,name:'ראשונות'},{id:3,name:'פיצות'},
-          {id:4,name:'פסטה'},{id:5,name:'דגים'},{id:6,name:'מתוקים'},{id:7,name:'שתייה'}];
-}
-function getDemoMenu(){
-  return [
-    {id:1,name:'קיסר',name_it:'Caesar',description:'לבבות קיסר, קרוטונים, פרמזן',category:'סלטים',base_price:null,addon_per_person:20,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
-    {id:2,name:'קפרזה',name_it:'Caprese',description:'עגבניות שרי, מוצרלה, פסטו',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
-    {id:3,name:'חציל',name_it:'Melanzane',description:'חציל שרוף, שמן פסטו, שמנת חמוצה',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:false},
-    {id:4,name:'בורגול סלקים',name_it:'Barbabietola',description:'סלק, בורגול גס, שקדים, צימוקים',category:'סלטים',base_price:null,addon_per_person:0,allergens:['גלוטן','אגוזים'],is_active:true,is_vegan:true,is_gluten_free:false,is_kids_friendly:false},
-    {id:5,name:'קינואה',name_it:'Quinoa',description:'קינואה, פלפלים, חמוציות, קישוא',category:'סלטים',base_price:null,addon_per_person:0,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
-    {id:6,name:'שורשים',name_it:'Radici',description:'קולורבי, סלק, גזר, כרוב סגול',category:'סלטים',base_price:null,addon_per_person:0,allergens:['בוטנים'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:false},
-    {id:7,name:'יווני',name_it:'Greco',description:'מלפפון, עגבניה, זיתי קלמטה, גבינה',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
-    {id:8,name:'אנטיפסטי',name_it:'Antipasti',description:'קישואים, פלפל, בצל, בטטה',category:'ראשונות',base_price:null,addon_per_person:15,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
-    {id:9,name:'קרפציו סלק',name_it:'Carpaccio',description:'סלק דק, גבינה מלוחה, אגוזים, בלסמי',category:'ראשונות',base_price:null,addon_per_person:5,allergens:['חלב','אגוזים'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:false},
-    {id:10,name:'תפו"א איטלקי',name_it:'Patate',description:'תפו"א אפוי, שמנת חמוצה, פסטו, עירית',category:'ראשונות',base_price:null,addon_per_person:5,allergens:['חלב'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:true},
-    {id:11,name:'ארנציני',name_it:'Arancini',description:'כדור אורז, גבינות, פירורי לחם',category:'ראשונות',base_price:null,addon_per_person:10,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
-    {id:12,name:'פיצה אדומה',name_it:'Pizza Rossa',description:'רוטב עגבניות, מוצרלה, נגיעות פסטו',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
-    {id:13,name:'פיצה ירוקה',name_it:'Pizza Verde',description:'קרם פסטו, מוצרלה',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
-    {id:14,name:'פיצה צהובה',name_it:'Pizza Gialla',description:'קרם פולנטה, מוצרלה, פטריות, כמהין',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
-    {id:15,name:'פיצה סגולה',name_it:'Pizza Viola',description:'קרם סלק, מוצרלה, גבינה מלוחה, בלסמי',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
-    {id:16,name:'פיצה לבנה',name_it:'Pizza Bianca',description:'מוצרלה, פטריות, שמן כמהין',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
-    {id:17,name:'מאפייה מהטאבון',name_it:'Pane dal Forno',description:'פוגאס, פוקאצה, פלוט, בייגלה',category:'פיצות',base_price:null,addon_per_person:10,allergens:['גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
-    {id:18,name:'פסטה קצרה',name_it:'Pasta Corta',description:'רוטב עגבניות / רוזה / שמנת / פסטו',category:'פסטה',base_price:null,addon_per_person:10,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
-    {id:19,name:'ניוקי צבעוני',name_it:'Gnocchi Colorati',description:'ניוקי סלק ובטטה, חמאת מרווה, לוז',category:'פסטה',base_price:null,addon_per_person:10,allergens:['חלב','גלוטן','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
-    {id:20,name:'פלין גבינות',name_it:'Plin di Formaggi',description:'רביולי גבינה, שמנת פטריות',category:'פסטה',base_price:null,addon_per_person:12,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
-    {id:21,name:'סביצה דג ים',name_it:'Ceviche di Mare',description:'דג ים, עשבי תיבול, בצל סגול',category:'דגים',base_price:null,addon_per_person:35,allergens:['דגים'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:false},
-    {id:22,name:'פילה דג / סלמון',name_it:'Filetto di Pesce',description:'שמן זית, לימון, עשבי תיבול',category:'דגים',base_price:null,addon_per_person:45,allergens:['דגים'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:true},
-    {id:23,name:'דג כבוש',name_it:'Salmone Marinato',description:'סלמון בכבישה, סלק, שמיר, גבינת שמנת',category:'דגים',base_price:450,addon_per_person:0,allergens:['דגים','חלב'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:false},
-    {id:24,name:'קלצונה מתוק',name_it:'Calzone Dolce',description:'שוקולד-אגוזים / אוראו / קרם לימון / טופי',category:'מתוקים',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
-    {id:25,name:'פירות העונה',name_it:'Frutta',description:'פירות טריים עונתיים',category:'מתוקים',base_price:null,addon_per_person:15,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
-    {id:26,name:'טירמיסו',name_it:'Tiramisù',description:'קינוח איטלקי קלאסי',category:'מתוקים',base_price:250,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
-    {id:27,name:'מלבי',name_it:'Malabi',description:'קינוח מזרחי עדין',category:'מתוקים',base_price:160,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
-    {id:28,name:'שתייה קלה',name_it:'Bevande Fredde',description:'מים, לימונדה, תפוזים, סמובר',category:'שתייה',base_price:null,addon_per_person:10,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
-    {id:29,name:'שתייה חמה',name_it:'Bevande Calde',description:'נספרסו, תה, קפה (ילדים ללא עלות)',category:'שתייה',base_price:null,addon_per_person:10,allergens:['חלב'],is_active:true,is_vegan:false,is_gluten_free:true,is_kids_friendly:true}
-  ];
-}
-
-async function sendApproval() {
-  const name = document.getElementById('cl-name').value.trim();
-  if (!name) { showToast('נא להזין שם לקוח קודם', 'error'); return; }
-
-  const g = getGuests();
-  const billed = g.adults + g.kids;
-  const sel = allDishes.filter(d => selectedDishes.has(d.id));
-  let base = 0, addon = 0;
-  sel.forEach(d => { base += d.base_price||0; addon += (d.addon_per_person||0)*billed; });
-  const sub0 = base + addon;
-  const kDisc = billed > 0 ? (g.kids/billed)*sub0*0.15 : 0;
-  const sub = sub0 - kDisc;
-  const grand = sub + (includeVat ? sub*0.18 : 0);
-
-  // Generate unique quote_id
-  const quoteId = 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-
-  const payload = {
-    quote_id:        quoteId,
-    client_name:     name,
-    client_phone:    document.getElementById('cl-phone').value,
-    event_date:      document.getElementById('cl-date').value || null,
-    event_time:      document.getElementById('cl-time').value || null,
-    event_type:      getEventType(),
-    address:         document.getElementById('cl-address').value,
-    notes:           document.getElementById('cl-notes').value,
-    guests_adults:   g.adults,
-    guests_kids:     g.kids,
-    guests_babies:   g.babies,
-    menu_items:      sel.map(d => d.name),
-    price_before_vat: Math.round(sub),
-    price_after_vat:  Math.round(grand),
-    status:          'pending',
-    created_at:      new Date().toISOString(),
-  };
-
-  showToast('יוצר לינק...', '');
-  const { error } = await sb.from('quote_approvals').insert(payload);
-  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
-
-  const link = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + quoteId;
-  const waMsg = encodeURIComponent("שלום " + name + " 👋\n\nמצורפת הצעת המחיר שלנו לאירוע שלך 🍕\nאנא עיין/י בפרטים וחתום/י על ההצעה:\n\n" + link + "\n\nPizza Zmani - 054-203-1181");
-
-  // Copy link to clipboard
-  navigator.clipboard.writeText(link).catch(()=>{});
-
-  // Open WhatsApp
-  const phone = document.getElementById('cl-phone').value.replace(/\D/g,'').replace(/^0/,'972');
-  const waPhone = phone.length > 5 ? phone : '972542031181';
-  window.open('https://wa.me/' + waPhone + '?text=' + waMsg, '_blank');
-
-  showToast('לינק נוצר ונשלח בוואטסאפ ✓', 'success');
-}
-
-
-// ══ MODE ══
-function setMode(mode) {
-  const layout = document.querySelector('.layout');
-  layout.classList.remove('build-mode','preview-mode');
-  layout.classList.add(mode + '-mode');
-  document.getElementById('modeBuildBtn').style.borderColor   = mode==='build'   ? 'var(--gold)' : '';
-  document.getElementById('modeBuildBtn').style.color         = mode==='build'   ? 'var(--gold)' : '';
-  document.getElementById('modePreviewBtn').style.borderColor = mode==='preview' ? 'var(--gold)' : '';
-  document.getElementById('modePreviewBtn').style.color       = mode==='preview' ? 'var(--gold)' : '';
-  if (mode==='preview') updatePreview();
-}
-
-// ══ MULTI-SELECT CATEGORY FILTER ══
-let activeCats = new Set();
-function filterCat(name, btn) {
-  if (name === '') {
-    // הכל — נקה הכל
-    activeCats.clear();
-    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-  } else {
-    // הסר "הכל"
-    document.querySelector('.cat-tab').classList.remove('active');
-    if (activeCats.has(name)) {
-      activeCats.delete(name);
-      btn.classList.remove('active');
-    } else {
-      activeCats.add(name);
-      btn.classList.add('active');
-    }
-    // אם כלום לא נבחר — חזור להכל
-    if (activeCats.size === 0) {
-      document.querySelector('.cat-tab').classList.add('active');
-    }
-  }
+  activeCats.clear();
   renderDishes();
 }
 
-// Override renderDishes to use activeCats
-const _origRenderDishes = renderDishes;
+// TOAST
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+type;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// DEMO DATA
+function getDefaultCats(){return [{id:1,name:'סלטים',name_it:'Insalata'},{id:2,name:'ראשונות',name_it:'Primato'},{id:3,name:'פיצות',name_it:'Forno'},{id:4,name:'פסטה',name_it:'Linguine'},{id:5,name:'דגים',name_it:'Pesce'},{id:6,name:'מתוקים',name_it:'Dolci'},{id:7,name:'שתייה',name_it:'Bevande'}];}
+function getDemoMenu(){return [
+  {id:1,name:'קיסר',name_it:'Caesar',description:'לבבות קיסר, קרוטונים, פרמזן',category:'סלטים',base_price:null,addon_per_person:20,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:false},
+  {id:2,name:'קפרזה',name_it:'Caprese',description:'עגבניות שרי, מוצרלה, פסטו',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,is_kids_friendly:true},
+  {id:12,name:'פיצה אדומה',name_it:'Pizza Rossa',description:'רוטב עגבניות, מוצרלה, נגיעות פסטו',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true},
+  {id:24,name:'קלצונה מתוק',name_it:'Calzone Dolce',description:'שוקולד אגוזי לוז / בייגלה מלוח / קרם קרמל עוגיות',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,is_kids_friendly:true}
+];}
 
 init();
 </script>
