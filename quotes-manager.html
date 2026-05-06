@@ -112,6 +112,22 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .toast.show{transform:translateX(-50%) translateY(0);}
 .toast.success{background:var(--green);}
 .toast.error{background:var(--danger);}
+
+/* ══ UNIVERSAL NAV ══ */
+.unav-btn{position:fixed;bottom:24px;left:24px;width:52px;height:52px;border-radius:50%;background:#1B2A4A;color:#C9A84C;border:none;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9000;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
+.unav-btn:hover{transform:scale(1.1);background:#243660;}
+.unav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:8999;backdrop-filter:blur(3px);}
+.unav-overlay.open{display:block;}
+.unav-menu{position:fixed;bottom:88px;left:24px;background:#1B2A4A;border-radius:16px;padding:16px;z-index:9001;width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.35);animation:unavUp 0.2s ease;display:none;}
+.unav-menu.open{display:block;}
+@keyframes unavUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.unav-title{font-family:'Frank Ruhl Libre',serif;font-size:0.78rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.unav-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;text-decoration:none;color:white;font-family:'Heebo',sans-serif;font-size:0.85rem;font-weight:500;transition:all 0.15s;margin-bottom:3px;}
+.unav-link:hover{background:rgba(255,255,255,0.1);}
+.unav-link.current{background:rgba(201,168,76,0.15);color:#C9A84C;}
+.unav-link .icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0;}
+.unav-sep{height:1px;background:rgba(255,255,255,0.1);margin:8px 0;}
+.unav-label{font-size:0.68rem;color:rgba(255,255,255,0.3);padding:4px 12px 2px;text-transform:uppercase;letter-spacing:0.8px;}
 </style>
 </head>
 <body>
@@ -495,6 +511,73 @@ function showToast(msg, type='') {
 }
 
 init();
+</script>
+
+<!-- ══ UNIVERSAL NAV ══ -->
+<div class="unav-overlay" id="unavOverlay" onclick="closeUnav()"></div>
+<div class="unav-menu" id="unavMenu">
+  <div class="unav-title">🍕 Pizza Zmani — ניווט מהיר</div>
+
+  <div class="unav-label">הצעות מחיר</div>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quotes-manager.html" id="nav-quotes-manager">
+    <span class="icon">📋</span>ניהול הצעות מחיר
+  </a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-builder.html" id="nav-quote-builder">
+    <span class="icon">📝</span>בונה הצעה חדשה
+  </a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-admin.html" id="nav-quote-admin">
+    <span class="icon">🍽️</span>ניהול תפריט מנות
+  </a>
+
+  <div class="unav-sep"></div>
+  <div class="unav-label">קייטרינג</div>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/catering-order.html" id="nav-catering-order">
+    <span class="icon">🍽️</span>הזמנת קייטרינג
+  </a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/catering-admin.html" id="nav-catering-admin">
+    <span class="icon">🗂️</span>ניהול קייטרינג
+  </a>
+
+  <div class="unav-sep"></div>
+  <div class="unav-label">מערכות נוספות</div>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-approval.html" id="nav-approval">
+    <span class="icon">✅</span>אישור הצעה (לקוח)
+  </a>
+  <a class="unav-link" href="https://chunkyzz.github.io/amalfi-orders/" id="nav-amalfi">
+    <span class="icon">🥦</span>אמלפי — הזמנת ירקות
+  </a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-order.html/" id="nav-home">
+    <span class="icon">🏠</span>דף הבית — כל המערכות
+  </a>
+</div>
+<button class="unav-btn" onclick="toggleUnav()" title="ניווט מהיר">🍕</button>
+
+<script>
+function toggleUnav(){
+  document.getElementById('unavMenu').classList.toggle('open');
+  document.getElementById('unavOverlay').classList.toggle('open');
+}
+function closeUnav(){
+  document.getElementById('unavMenu').classList.remove('open');
+  document.getElementById('unavOverlay').classList.remove('open');
+}
+// Mark current page
+(function(){
+  const page = window.location.pathname.split('/').pop();
+  const map = {
+    'quotes-manager.html':'nav-quotes-manager',
+    'quote-builder.html':'nav-quote-builder',
+    'quote-admin.html':'nav-quote-admin',
+    'quote-approval.html':'nav-approval',
+    'catering-order.html':'nav-catering-order',
+    'catering-admin.html':'nav-catering-admin',
+  };
+  const id = map[page];
+  if(id){
+    const el=document.getElementById(id);
+    if(el) el.classList.add('current');
+  }
+})();
 </script>
 </body>
 </html>
