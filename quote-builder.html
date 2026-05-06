@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.1.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.1.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -228,7 +228,7 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.1.0</div>
+  <div class="version">v2.1.1</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -943,13 +943,16 @@ async function sendToAmalfi() {
     .filter(Boolean);
 
   const payload = {
-    name:    name + (dateVal ? ' — ' + new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL') : ''),
-    people:  total,
-    dishIds: dishIds,
-    notes:   note || null,
-    date:    dateVal || null,
-    source:  'quote-builder',
-    created_at: new Date().toISOString(),
+    client_name: name,
+    guests:      total,
+    items:       dishIds,
+    notes:       [note, document.getElementById('cl-notes').value].filter(Boolean).join(' | ') || null,
+    event_date:  dateVal || null,
+    event_time:  document.getElementById('cl-time').value || null,
+    event_type:  getEventType() || null,
+    address:     document.getElementById('cl-address').value || null,
+    status:      'pending',
+    created_at:  new Date().toISOString(),
   };
 
   const { error } = await sbA.from('orders').insert(payload);
