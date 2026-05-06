@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.0.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.0.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -211,7 +211,7 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
     <button class="btn btn-gold" onclick="generatePDF()">📄 PDF</button>
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
   </div>
-  <div class="version">v2.0.0</div>
+  <div class="version">v2.0.2</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -605,15 +605,21 @@ function updatePreview() {
     if(!bycat[cat]||!bycat[cat].length) return;
     const dishes=bycat[cat];
 
-    // calc addon for this category (show in title)
-    const catAddonVal=dishes.reduce((sum,d)=>d.addon_per_person?d.addon_per_person:sum,0);
-    const catBaseVal=dishes.reduce((sum,d)=>d.base_price?d.base_price:sum,0);
-
     // price label for category header
     let catPriceLabel='';
     if(!hidePrices){
-      if(catAddonVal>0) catPriceLabel='+₪'+catAddonVal+'/אדם';
-      else if(catBaseVal>0) catPriceLabel='₪'+catBaseVal+' בסיס';
+      if(cat==='פיצות'){
+        catPriceLabel='₪100/אדם בסיס';
+      } else if(cat==='סלטים'){
+        const sc=bycat[cat]?bycat[cat].length:0;
+        if(sc<=4) catPriceLabel='₪20/אדם (עד 4 סלטים)';
+        else catPriceLabel='₪20/אדם + ₪'+(sc-4)*5+'/אדם תוספת ('+sc+' סלטים)';
+      } else {
+        const catAddonVal=dishes.find(d=>d.addon_per_person>0);
+        const catBaseVal=dishes.find(d=>d.base_price>0);
+        if(catAddonVal) catPriceLabel='+₪'+catAddonVal.addon_per_person+'/אדם';
+        else if(catBaseVal) catPriceLabel='₪'+catBaseVal.base_price+' בסיס';
+      }
     }
 
     html+='<div class="pdf-cat-title">' +
@@ -662,6 +668,18 @@ function updatePreview() {
   body.innerHTML=html;
 
   // totals
+  // פיצות: 100/אדם בסיס אם בחרו לפחות פיצה אחת
+  const hasPizzas=allDishes.filter(d=>selectedDishes.has(d.id)&&d.category==='פיצות').length>0;
+  if(hasPizzas) baseTotal+=100*billed;
+
+  // סלטים: עד 4 = 20/אדם, כל סלט נוסף = +5/אדם
+  const saladCount=allDishes.filter(d=>selectedDishes.has(d.id)&&d.category==='סלטים').length;
+  if(saladCount>0){
+    const saladBase=20*billed;
+    const saladExtra=saladCount>4?(saladCount-4)*5*billed:0;
+    addonTotal+=saladBase+saladExtra;
+  }
+
   const sub0=baseTotal+addonTotal;
   const kDisc=billed>0?(g.kids/billed)*sub0*0.15:0;
   const sub=sub0-kDisc;
@@ -793,15 +811,16 @@ function showToast(msg,type=''){
 // DEMO DATA
 function getDefaultCats(){return[{id:1,name:'סלטים',name_it:'Insalata'},{id:2,name:'ראשונות',name_it:'Primato'},{id:3,name:'פיצות',name_it:'Forno'},{id:4,name:'פסטה',name_it:'Linguine'},{id:5,name:'דגים',name_it:'Pesce'},{id:6,name:'מתוקים',name_it:'Dolci'},{id:7,name:'שתייה',name_it:'Bevande'}];}
 function getDemoMenu(){return[
-  {id:1,name:'קיסר',name_it:'Caesar',description:'לבבות קיסר, קרוטונים, פרמזן',category:'סלטים',base_price:null,addon_per_person:20,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:2,name:'קפרזה',name_it:'Caprese',description:'עגבניות שרי, מוצרלה, פסטו',category:'סלטים',base_price:null,addon_per_person:20,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true},
-  {id:3,name:'חציל',name_it:'Melanzane',description:'חציל שרוף, שמן זית, רכז רימונים',category:'סלטים',base_price:null,addon_per_person:20,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true},
-  {id:4,name:'יווני',name_it:'Greco',description:'מלפפון, זיתי קלמטה, גבינה בולגרית',category:'סלטים',base_price:null,addon_per_person:20,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true},
-  {id:12,name:'פיצה אדומה',name_it:'Pizza Rossa',description:'רוטב עגבניות, מוצרלה, נגיעות פסטו',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:13,name:'פיצה ירוקה',name_it:'Pizza Verde',description:'קרם פסטו, מוצרלה',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:14,name:'פיצה צהובה',name_it:'Pizza Gialla',description:'פולנטה, מוצרלה, פטריות, כמהין',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:15,name:'פיצה סגולה',name_it:'Pizza Viola',description:'קרם סלק, מוצרלה, גבינה מלוחה',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:16,name:'פיצה לבנה',name_it:'Pizza Bianca',description:'מוצרלה, פטריות, שמן כמהין',category:'פיצות',base_price:100,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
+  {id:1,name:'קיסר',name_it:'Caesar',description:'לבבות קיסר, קרוטונים, פרמזן',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
+  {id:2,name:'קפרזה',name_it:'Caprese',description:'עגבניות שרי, מוצרלה, פסטו',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true},
+  {id:3,name:'חציל',name_it:'Melanzane',description:'חציל שרוף, שמן זית, רכז רימונים',category:'סלטים',base_price:null,addon_per_person:0,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true},
+  {id:4,name:'יווני',name_it:'Greco',description:'מלפפון, זיתי קלמטה, גבינה בולגרית',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true},
+  {id:12,name:'פיצה אדומה',name_it:'Pizza Rossa',description:'רוטב עגבניות, מוצרלה, נגיעות פסטו',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
+  {id:13,name:'פיצה ירוקה',name_it:'Pizza Verde',description:'קרם פסטו, מוצרלה',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
+  {id:14,name:'פיצה צהובה',name_it:'Pizza Gialla',description:'פולנטה, מוצרלה, פטריות, כמהין',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
+  {id:15,name:'פיצה סגולה',name_it:'Pizza Viola',description:'קרם סלק, מוצרלה, גבינה מלוחה',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
+  {id:16,name:'פיצה לבנה',name_it:'Pizza Bianca',description:'מוצרלה, פטריות, שמן כמהין',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
+  {id:17,name:'מאפייה מהטאבון',name_it:'Pane dal Forno',description:'פוגאס, פוקאצה, פלוט, בייגלה לצד מתבלים',category:'פיצות',base_price:null,addon_per_person:10,allergens:['גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
   {id:22,name:'פילה מיקס סלמון + דג לבן',name_it:'Filetto Misto',description:'חצי מהאורחים סלמון, חצי דג לבן',category:'דגים',base_price:null,addon_per_person:53,allergens:['דגים'],is_active:true,is_vegan:false,is_gluten_free:true},
   {id:24,name:'קלצונה מתוק',name_it:'Calzone Dolce',description:'שוקולד-אגוזים / בייגלה מלוח / קרמל עוגיות',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false},
   {id:26,name:'טירמיסו',name_it:'Tiramisù',description:'קינוח איטלקי קלאסי',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
