@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.0.2</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.1.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -210,8 +210,9 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
     <button class="btn btn-ghost" onclick="saveQuote()">💾</button>
     <button class="btn btn-gold" onclick="generatePDF()">📄 PDF</button>
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
+    <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.0.2</div>
+  <div class="version">v2.1.0</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -426,12 +427,48 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 
 </div><!-- /split-layout -->
 
+<!-- EVENT MODAL -->
+<div id="eventModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;padding:28px;width:min(500px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.2);font-family:'Heebo',sans-serif;" onclick="event.stopPropagation()">
+    <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.3rem;color:#1B2A4A;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #C9A84C;">🎉 הפקת אירוע — שליחה לאמלפי</div>
+
+    <div style="background:#F8F5EE;border-radius:10px;padding:14px;margin-bottom:16px;font-size:0.85rem;line-height:1.7;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;">
+        <div><span style="color:#888;font-size:0.72rem;">לקוח</span><br><strong id="ev-name" style="color:#1B2A4A;">—</strong></div>
+        <div><span style="color:#888;font-size:0.72rem;">תאריך</span><br><strong id="ev-date" style="color:#1B2A4A;">—</strong></div>
+        <div><span style="color:#888;font-size:0.72rem;">כתובת</span><br><strong id="ev-address" style="color:#1B2A4A;">—</strong></div>
+        <div><span style="color:#888;font-size:0.72rem;">אורחים</span><br><strong id="ev-guests" style="color:#C9A84C;">—</strong></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.75rem;font-weight:700;color:#1B2A4A;margin-bottom:6px;">מנות שנשלחות לאמלפי:</div>
+      <div id="ev-dishes" style="background:#F0FFF4;border:1px solid #C6F6D5;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#2E6B4F;line-height:1.8;"></div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:0.75rem;font-weight:700;color:#1B2A4A;margin-bottom:6px;">הערה לאמלפי (אופציונלי)</div>
+      <textarea id="ev-note" placeholder="בקשות מיוחדות, אלרגיות, הערות לצוות..." style="width:100%;height:64px;font-family:'Heebo',sans-serif;font-size:0.85rem;padding:9px 12px;border:1.5px solid #E0D5C0;border-radius:8px;resize:none;outline:none;background:#FDF8F0;"></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeEventModal()" style="padding:9px 18px;border-radius:8px;border:1.5px solid #E0D5C0;background:white;font-family:'Heebo',sans-serif;font-size:0.85rem;cursor:pointer;">ביטול</button>
+      <button onclick="sendToAmalfi()" style="padding:9px 20px;border-radius:8px;border:none;background:#7c3aed;color:white;font-family:'Heebo',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;">📤 שלח לאמלפי</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const SUPABASE_URL = 'https://arqxoyxobjudccskfwyt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Amalfi / Pizza Zmani legacy project
+const AMALFI_URL = 'https://qgmyaxxzebwcatetbngs.supabase.co';
+const AMALFI_KEY = 'sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq';
+const sbA = supabase.createClient(AMALFI_URL, AMALFI_KEY);
 
 let allDishes = [], allCats = [], selectedDishes = new Set(), activeCats = new Set();
 let includeVat = true, hidePrices = false;
@@ -826,6 +863,85 @@ function getDemoMenu(){return[
   {id:26,name:'טירמיסו',name_it:'Tiramisù',description:'קינוח איטלקי קלאסי',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
   {id:27,name:'מלבי',name_it:'Malabi',description:'קינוח מזרחי עדין',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true}
 ];}
+
+// ══ AMALFI EVENT MODAL ══
+function openEventModal() {
+  const name    = document.getElementById('cl-name').value.trim();
+  const dateVal = document.getElementById('cl-date').value;
+  const address = document.getElementById('cl-address').value;
+  const g       = getGuests();
+  const billed  = g.adults + g.kids;
+  const total   = g.adults + g.kids + g.babies;
+
+  if (!name) { showToast('נא להזין שם לקוח קודם', 'error'); return; }
+
+  document.getElementById('ev-name').textContent    = name;
+  document.getElementById('ev-address').textContent = address || '—';
+  document.getElementById('ev-guests').textContent  = total + ' אנשים (' + billed + ' מחויבים)';
+
+  if (dateVal) {
+    const d = new Date(dateVal + 'T12:00:00');
+    document.getElementById('ev-date').textContent = d.toLocaleDateString('he-IL', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  } else {
+    document.getElementById('ev-date').textContent = '—';
+  }
+
+  // show selected dishes
+  const sel = allDishes.filter(d => selectedDishes.has(d.id));
+  document.getElementById('ev-dishes').innerHTML = sel.length
+    ? sel.map(d => '✓ ' + d.name).join('<br>')
+    : '<span style="color:#888;">לא נבחרו מנות</span>';
+
+  document.getElementById('ev-note').value = document.getElementById('cl-notes').value || '';
+  document.getElementById('eventModal').style.display = 'flex';
+}
+
+function closeEventModal() {
+  document.getElementById('eventModal').style.display = 'none';
+}
+
+async function sendToAmalfi() {
+  const name    = document.getElementById('cl-name').value.trim();
+  const dateVal = document.getElementById('cl-date').value;
+  const g       = getGuests();
+  const billed  = g.adults + g.kids;
+  const total   = g.adults + g.kids + g.babies;
+  const sel     = allDishes.filter(d => selectedDishes.has(d.id));
+  const note    = document.getElementById('ev-note').value.trim();
+
+  if (!sel.length) { showToast('נא לבחור מנות קודם', 'error'); return; }
+
+  // Match dish names to Amalfi dish IDs
+  const { data: amalfiDishes, error: aErr } = await sbA.from('dishes').select('id, name');
+  if (aErr) { showToast('שגיאה בטעינת מנות אמלפי', 'error'); return; }
+
+  const dishIds = sel
+    .map(d => {
+      const match = amalfiDishes.find(a =>
+        a.name.trim() === d.name.trim() ||
+        a.name.includes(d.name) ||
+        d.name.includes(a.name)
+      );
+      return match ? String(match.id) : null;
+    })
+    .filter(Boolean);
+
+  const payload = {
+    name:    name + (dateVal ? ' — ' + new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL') : ''),
+    people:  total,
+    dishIds: dishIds,
+    notes:   note || null,
+    date:    dateVal || null,
+    source:  'quote-builder',
+    created_at: new Date().toISOString(),
+  };
+
+  const { error } = await sbA.from('orders').insert(payload);
+  if (error) { showToast('שגיאה בשליחה לאמלפי: ' + error.message, 'error'); return; }
+
+  showToast('האירוע נשלח לאמלפי ✓', 'success');
+  closeEventModal();
+}
 
 init();
 </script>
