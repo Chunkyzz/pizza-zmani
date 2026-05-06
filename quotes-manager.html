@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizza Zmani – ניהול הצעות מחיר v1.0.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --navy:#1B2A4A;--navy2:#243660;--gold:#C9A84C;--gold2:#E8C56A;
+  --green:#2E6B4F;--cream:#FDF8F0;--cream2:#FAF3E4;--white:#fff;
+  --border:#E0D5C0;--text:#1a1a1a;--muted:#888;
+  --shadow:0 4px 24px rgba(27,42,74,0.10);--danger:#C0392B;
+  --purple:#7c3aed;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,0.2);}
+.brand{font-family:'Frank Ruhl Libre',serif;font-size:1.2rem;color:var(--gold);}
+.version{font-size:0.6rem;color:rgba(255,255,255,0.25);}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;font-family:'Heebo',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.18s;}
+.btn-gold{background:var(--gold);color:var(--navy);}
+.btn-gold:hover{background:var(--gold2);}
+.btn-navy{background:var(--navy);color:white;}
+.btn-navy:hover{background:var(--navy2);}
+.btn-green{background:var(--green);color:white;}
+.btn-green:hover{filter:brightness(1.1);}
+.btn-purple{background:var(--purple);color:white;}
+.btn-purple:hover{filter:brightness(1.1);}
+.btn-ghost{background:none;border:1.5px solid var(--border);color:var(--text);}
+.btn-ghost:hover{border-color:var(--navy);}
+.btn-danger{background:var(--danger);color:white;}
+.btn-sm{padding:5px 11px;font-size:0.78rem;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:28px 20px;}
+
+/* TABS */
+.tabs{display:flex;gap:0;background:var(--navy2);border-radius:10px;overflow:hidden;margin-bottom:24px;width:fit-content;}
+.tab{padding:10px 24px;border:none;background:none;color:rgba(255,255,255,0.55);font-family:'Heebo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.18s;}
+.tab.active{background:var(--gold);color:var(--navy);}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.toolbar-left{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.search-input{font-family:'Heebo',sans-serif;font-size:0.88rem;padding:9px 14px;border:1.5px solid var(--border);border-radius:8px;background:white;outline:none;width:220px;}
+.search-input:focus{border-color:var(--gold);}
+.selected-count{font-size:0.82rem;color:var(--muted);}
+.selected-count strong{color:var(--navy);}
+
+/* QUOTE CARDS */
+.quotes-list{display:flex;flex-direction:column;gap:10px;}
+.quote-card{background:white;border-radius:12px;border:1.5px solid var(--border);padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);transition:all 0.15s;}
+.quote-card:hover{border-color:var(--gold);box-shadow:0 4px 20px rgba(201,168,76,0.12);}
+.quote-card.selected{border-color:var(--purple);background:#FAFAFF;}
+.quote-card.past{opacity:0.65;background:#F8F8F8;}
+.quote-checkbox{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);background:white;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;transition:all 0.15s;}
+.quote-card.selected .quote-checkbox{background:var(--purple);border-color:var(--purple);color:white;}
+.quote-info{flex:1;min-width:0;}
+.quote-name{font-weight:700;font-size:0.95rem;color:var(--navy);}
+.quote-meta{display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;}
+.quote-meta span{font-size:0.78rem;color:var(--muted);}
+.quote-meta strong{color:var(--text);}
+.quote-dishes{font-size:0.74rem;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px;}
+.quote-status{flex-shrink:0;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;}
+.badge-draft{background:#F0F0F0;color:#666;}
+.badge-approved{background:#E8F5E9;color:#2E7D32;}
+.badge-pending{background:#FFF3E0;color:#E65100;}
+.badge-past{background:#FFEBEE;color:#B71C1C;}
+.quote-actions{display:flex;gap:6px;flex-shrink:0;}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-icon{font-size:3rem;margin-bottom:12px;}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:white;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.2);width:min(540px,95vw);max-height:90vh;overflow-y:auto;padding:28px;animation:slideUp 0.2s ease;}
+@keyframes slideUp{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-title{font-family:'Frank Ruhl Libre',serif;font-size:1.3rem;color:var(--navy);margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--gold);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.fg label{font-size:0.75rem;font-weight:700;color:var(--navy);}
+.fg input,.fg select,.fg textarea{font-family:'Heebo',sans-serif;font-size:0.88rem;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--cream);outline:none;transition:border 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--gold);background:white;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* AMALFI MODAL */
+.amalfi-event-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);margin-bottom:6px;cursor:pointer;transition:all 0.15s;}
+.amalfi-event-row:hover{border-color:var(--purple);}
+.amalfi-event-row.selected{border-color:var(--purple);background:#FAFAFF;}
+.amalfi-check{width:18px;height:18px;border-radius:4px;border:2px solid var(--border);background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.7rem;transition:all 0.15s;}
+.amalfi-event-row.selected .amalfi-check{background:var(--purple);border-color:var(--purple);color:white;}
+.amalfi-event-info{flex:1;}
+.amalfi-event-name{font-weight:700;font-size:0.88rem;color:var(--navy);}
+.amalfi-event-sub{font-size:0.74rem;color:var(--muted);}
+.amalfi-summary{background:var(--cream2);border-radius:8px;padding:10px 14px;font-size:0.8rem;color:var(--muted);margin-top:12px;line-height:1.7;}
+.amalfi-summary strong{color:var(--navy);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:white;padding:10px 22px;border-radius:30px;font-size:0.85rem;z-index:999;transition:transform 0.3s;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);}
+.toast.error{background:var(--danger);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">🍕 Pizza Zmani — ניהול הצעות מחיר</div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
+    <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
+  </div>
+  <div class="version">v1.0.0</div>
+</div>
+
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('active',this)">📅 אירועים פעילים</button>
+    <button class="tab" onclick="switchTab('history',this)">📁 היסטוריה</button>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input type="text" class="search-input" placeholder="🔍 חיפוש לקוח..." oninput="filterQuotes()" id="searchInput">
+      <span class="selected-count" id="selectedCount" style="display:none">
+        <strong id="selectedNum">0</strong> נבחרו
+      </span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-purple btn-sm" onclick="openAmalfiModal()" id="amalfiBtn" disabled>🥦 שלח לאמלפי</button>
+      <button class="btn btn-ghost btn-sm" onclick="selectAll()">בחר הכל</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearSelection()">נקה בחירה</button>
+    </div>
+  </div>
+
+  <!-- QUOTES LIST -->
+  <div class="quotes-list" id="quotesList">
+    <div class="empty"><div class="empty-icon">⏳</div><div>טוען הצעות...</div></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ═══ EDIT MODAL ═══ -->
+<div class="modal-bg" id="editModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">✏️ עריכת הצעה</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-row">
+      <div class="fg"><label>שם לקוח</label><input type="text" id="edit-name"></div>
+      <div class="fg"><label>טלפון</label><input type="text" id="edit-phone"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>תאריך אירוע</label><input type="date" id="edit-date"></div>
+      <div class="fg"><label>שעת הגשה</label><input type="time" id="edit-time"></div>
+    </div>
+    <div class="fg"><label>כתובת</label><input type="text" id="edit-address"></div>
+    <div class="fg"><label>סוג אירוע</label>
+      <select id="edit-type">
+        <option>יום הולדת</option><option>חתונה</option><option>בר/בת מצווה</option>
+        <option>אירוע חברה</option><option>ברית/שמחת בת</option><option>אירוע פרטי</option><option>אחר</option>
+      </select>
+    </div>
+    <div class="fg"><label>סטטוס</label>
+      <select id="edit-status">
+        <option value="draft">טיוטה</option>
+        <option value="pending">ממתין לאישור</option>
+        <option value="approved">מאושר</option>
+        <option value="cancelled">מבוטל</option>
+        <option value="postponed">נדחה</option>
+      </select>
+    </div>
+    <div class="fg"><label>הערות</label><textarea id="edit-notes" style="height:72px;resize:none;"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeEditModal()">ביטול</button>
+      <button class="btn btn-gold" onclick="saveEdit()">💾 שמור שינויים</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AMALFI MODAL ═══ -->
+<div class="modal-bg" id="amalfiModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">🥦 שליחה לאמלפי</div>
+
+    <div style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;">
+      בחרת <strong id="amalfi-count" style="color:var(--navy);">0</strong> אירועים לשליחה.
+      הם יישלחו לאמלפי כהזמנות נפרדות ויאוחדו לרשימת קניות משותפת.
+    </div>
+
+    <div id="amalfi-events-list" style="margin-bottom:14px;"></div>
+
+    <div class="amalfi-summary" id="amalfi-summary"></div>
+
+    <div class="fg" style="margin-top:14px;">
+      <label>שם קבוצה (לאיחוד באמלפי)</label>
+      <input type="text" id="amalfi-group" placeholder='למשל: "סופ&quot;ש 6.6" או "שבוע ראשון יוני"'>
+    </div>
+
+    <div class="fg">
+      <label>הערה כללית לאמלפי (אופציונלי)</label>
+      <textarea id="amalfi-note" style="height:60px;resize:none;" placeholder="הערות לצוות..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAmalfiModal()">ביטול</button>
+      <button class="btn btn-purple" onclick="sendToAmalfi()">📤 שלח לאמלפי</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://arqxoyxobjudccskfwyt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const AMALFI_URL = 'https://qgmyaxxzebwcatetbngs.supabase.co';
+const AMALFI_KEY = 'sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq';
+const sbA = supabase.createClient(AMALFI_URL, AMALFI_KEY);
+
+let allQuotes = [];
+let selectedIds = new Set();
+let currentTab = 'active';
+
+// ══ INIT ══
+async function init() {
+  await loadQuotes();
+}
+
+async function loadQuotes() {
+  const { data, error } = await sb.from('qz_quotes').select('*').order('event_date', { ascending: true });
+  if (error) { showToast('שגיאה בטעינה: ' + error.message, 'error'); return; }
+  allQuotes = data || [];
+  renderQuotes();
+}
+
+// ══ TABS ══
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  clearSelection();
+  renderQuotes();
+}
+
+// ══ RENDER ══
+function renderQuotes() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const search = document.getElementById('searchInput').value.toLowerCase();
+
+  let quotes = allQuotes.filter(q => {
+    const isPast = q.event_date && new Date(q.event_date) < today;
+    if (currentTab === 'active' && isPast) return false;
+    if (currentTab === 'history' && !isPast) return false;
+    if (search && !(q.client_name||'').toLowerCase().includes(search) &&
+        !(q.event_type||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  const list = document.getElementById('quotesList');
+  if (!quotes.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">' +
+      (currentTab==='active'?'📅':'📁') + '</div><div>' +
+      (currentTab==='active'?'אין אירועים פעילים':'אין היסטוריה') + '</div></div>';
+    return;
+  }
+
+  list.innerHTML = quotes.map(q => {
+    const sel = selectedIds.has(q.id);
+    const isPast = q.event_date && new Date(q.event_date) < today;
+    const dateStr = q.event_date
+      ? new Date(q.event_date+'T12:00:00').toLocaleDateString('he-IL',{weekday:'short',day:'numeric',month:'long',year:'numeric'})
+      : '—';
+    const billed = (q.guests_adults||0) + (q.guests_kids||0);
+    const total  = billed + (q.guests_babies||0);
+    const dishes = Array.isArray(q.selected_dishes) ? q.selected_dishes.length : 0;
+
+    const statusMap = {draft:'טיוטה',pending:'ממתין',approved:'מאושר',cancelled:'מבוטל',postponed:'נדחה'};
+    const badgeMap  = {draft:'badge-draft',pending:'badge-pending',approved:'badge-approved',cancelled:'badge-past',postponed:'badge-past'};
+    const status = q.status || 'draft';
+
+    return `<div class="quote-card${sel?' selected':''}${isPast?' past':''}" onclick="toggleSelect(${q.id}, event)">
+      <div class="quote-checkbox">${sel?'✓':''}</div>
+      <div class="quote-info">
+        <div class="quote-name">${q.client_name||'—'}</div>
+        <div class="quote-meta">
+          <span>📅 <strong>${dateStr}</strong></span>
+          ${q.event_time?`<span>🕐 <strong>${q.event_time.slice(0,5)}</strong></span>`:''}
+          <span>👥 <strong>${total} אנשים</strong>${q.guests_kids>0?' (כולל '+q.guests_kids+' ילדים)':''}</span>
+          ${q.event_type?`<span>🎉 <strong>${q.event_type}</strong></span>`:''}
+          ${q.total_with_vat?`<span>💰 <strong>₪${q.total_with_vat.toLocaleString()}</strong></span>`:''}
+        </div>
+        ${q.event_address?`<div class="quote-dishes">📍 ${q.event_address}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <span class="badge ${badgeMap[status]||'badge-draft'}">${statusMap[status]||status}</span>
+        <div class="quote-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" onclick="openEdit(${q.id})">✏️</button>
+          <button class="btn btn-navy btn-sm" onclick="openBuilder(${q.id})">📄</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterQuotes() { renderQuotes(); }
+
+// ══ SELECTION ══
+function toggleSelect(id, event) {
+  if (event.target.tagName === 'BUTTON') return;
+  selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  updateSelectionUI();
+  renderQuotes();
+}
+
+function selectAll() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  allQuotes.filter(q => {
+    const isPast = q.event_date && new Date(q.event_date) < today;
+    return currentTab==='active' ? !isPast : isPast;
+  }).forEach(q => selectedIds.add(q.id));
+  updateSelectionUI(); renderQuotes();
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  updateSelectionUI(); renderQuotes();
+}
+
+function updateSelectionUI() {
+  const count = selectedIds.size;
+  const countEl = document.getElementById('selectedCount');
+  const amalfiBtn = document.getElementById('amalfiBtn');
+  countEl.style.display = count > 0 ? '' : 'none';
+  document.getElementById('selectedNum').textContent = count;
+  amalfiBtn.disabled = count === 0;
+}
+
+// ══ EDIT MODAL ══
+function openEdit(id) {
+  const q = allQuotes.find(x => x.id === id);
+  if (!q) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = q.client_name || '';
+  document.getElementById('edit-phone').value = q.client_phone || '';
+  document.getElementById('edit-date').value = q.event_date || '';
+  document.getElementById('edit-time').value = q.event_time || '';
+  document.getElementById('edit-address').value = q.event_address || '';
+  document.getElementById('edit-type').value = q.event_type || 'אחר';
+  document.getElementById('edit-status').value = q.status || 'draft';
+  document.getElementById('edit-notes').value = q.notes || '';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+
+async function saveEdit() {
+  const id = document.getElementById('edit-id').value;
+  const payload = {
+    client_name:   document.getElementById('edit-name').value.trim(),
+    client_phone:  document.getElementById('edit-phone').value.trim(),
+    event_date:    document.getElementById('edit-date').value || null,
+    event_time:    document.getElementById('edit-time').value || null,
+    event_address: document.getElementById('edit-address').value.trim(),
+    event_type:    document.getElementById('edit-type').value,
+    status:        document.getElementById('edit-status').value,
+    notes:         document.getElementById('edit-notes').value.trim(),
+  };
+  const { error } = await sb.from('qz_quotes').update(payload).eq('id', id);
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  showToast('הצעה עודכנה ✓', 'success');
+  closeEditModal();
+  await loadQuotes();
+}
+
+function openBuilder(id) {
+  window.location.href = 'quote-builder.html';
+}
+
+// ══ AMALFI MODAL ══
+function openAmalfiModal() {
+  if (selectedIds.size === 0) return;
+  const selected = allQuotes.filter(q => selectedIds.has(q.id));
+  document.getElementById('amalfi-count').textContent = selected.length;
+
+  // build events list
+  document.getElementById('amalfi-events-list').innerHTML = selected.map(q => {
+    const dateStr = q.event_date
+      ? new Date(q.event_date+'T12:00:00').toLocaleDateString('he-IL',{day:'numeric',month:'long'})
+      : '—';
+    const total = (q.guests_adults||0)+(q.guests_kids||0)+(q.guests_babies||0);
+    return `<div class="amalfi-event-row selected">
+      <div class="amalfi-check">✓</div>
+      <div class="amalfi-event-info">
+        <div class="amalfi-event-name">${q.client_name||'—'}</div>
+        <div class="amalfi-event-sub">${dateStr} • ${total} אנשים${q.event_type?' • '+q.event_type:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // summary
+  const totalGuests = selected.reduce((s,q)=>(q.guests_adults||0)+(q.guests_kids||0)+(q.guests_babies||0)+s, 0);
+  const allDishSets = selected.map(q => Array.isArray(q.selected_dishes) ? q.selected_dishes : []);
+  document.getElementById('amalfi-summary').innerHTML =
+    `<strong>סה"כ אורחים מכל האירועים:</strong> ${totalGuests} אנשים<br>` +
+    `<strong>אירועים:</strong> ${selected.map(q=>q.client_name).join(' • ')}`;
+
+  // auto group name by date range
+  const dates = selected.map(q=>q.event_date).filter(Boolean).sort();
+  if (dates.length) {
+    const first = new Date(dates[0]+'T12:00:00').toLocaleDateString('he-IL',{day:'numeric',month:'long'});
+    const last  = dates.length>1 ? new Date(dates[dates.length-1]+'T12:00:00').toLocaleDateString('he-IL',{day:'numeric',month:'long'}) : null;
+    document.getElementById('amalfi-group').value = last ? `${first}–${last}` : first;
+  }
+
+  document.getElementById('amalfiModal').classList.add('open');
+}
+function closeAmalfiModal() { document.getElementById('amalfiModal').classList.remove('open'); }
+
+async function sendToAmalfi() {
+  const selected = allQuotes.filter(q => selectedIds.has(q.id));
+  const group    = document.getElementById('amalfi-group').value.trim();
+  const note     = document.getElementById('amalfi-note').value.trim();
+
+  if (!selected.length) return;
+
+  // load amalfi dishes for name matching
+  const { data: amalfiDishes } = await sbA.from('dishes').select('id, name');
+
+  let successCount = 0;
+  for (const q of selected) {
+    const total  = (q.guests_adults||0)+(q.guests_kids||0)+(q.guests_babies||0);
+    const dishIds = [];
+
+    if (Array.isArray(q.selected_dishes)) {
+      // selected_dishes are qz_dishes IDs — need to load their names first
+      const { data: qzDishes } = await sb.from('qz_dishes').select('id,name').in('id', q.selected_dishes);
+      if (qzDishes && amalfiDishes) {
+        qzDishes.forEach(qd => {
+          const match = amalfiDishes.find(a =>
+            a.name.trim()===qd.name.trim()||a.name.includes(qd.name)||qd.name.includes(a.name)
+          );
+          if (match) dishIds.push(String(match.id));
+        });
+      }
+    }
+
+    const payload = {
+      client_name: q.client_name,
+      guests:      total,
+      items:       dishIds,
+      event_date:  q.event_date || null,
+      event_time:  q.event_time || null,
+      event_type:  q.event_type || null,
+      address:     q.event_address || null,
+      notes:       [group?'קבוצה: '+group:'', note, q.notes].filter(Boolean).join(' | ') || null,
+      status:      'pending',
+      created_at:  new Date().toISOString(),
+    };
+
+    const { error } = await sbA.from('orders').insert(payload);
+    if (!error) successCount++;
+  }
+
+  if (successCount === selected.length) {
+    showToast(successCount + ' אירועים נשלחו לאמלפי ✓', 'success');
+  } else {
+    showToast(successCount + '/' + selected.length + ' נשלחו (חלק נכשלו)', 'error');
+  }
+
+  closeAmalfiModal();
+  clearSelection();
+}
+
+// ══ TOAST ══
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+init();
+</script>
+</body>
+</html>
