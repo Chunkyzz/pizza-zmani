@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.1.1</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.2.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -228,7 +228,7 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.1.1</div>
+  <div class="version">v2.2.0</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -819,23 +819,262 @@ async function sendApproval(){
 // PDF
 function generatePDF(){
   updatePreview();
-  if(currentMode==='build') setMode('preview');
-  const clientName=document.getElementById('cl-name').value||'לקוח';
-  const customName=document.getElementById('cl-filename').value.trim();
-  const dateVal=document.getElementById('cl-date').value;
-  const dateStr=dateVal?new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').replace(/\//g,'-'):new Date().toLocaleDateString('he-IL').replace(/\//g,'-');
-  const filename=customName?(customName.endsWith('.pdf')?customName:customName+'.pdf'):'Pizza_Zmani_'+clientName+'_'+dateStr+'.pdf';
-  showToast('מייצר PDF...','');
+  const g = getGuests();
+  const billed = g.adults + g.kids;
+  const sel = allDishes.filter(d=>selectedDishes.has(d.id));
+
+  // Build clean RTL HTML for print
+  const catOrder = allCats.map(c=>c.name);
+  const catIt = {}; allCats.forEach(c=>{catIt[c.name]=c.name_it||'';});
+  const bycat = {};
+  sel.forEach(d=>{if(!bycat[d.category])bycat[d.category]=[];bycat[d.category].push(d);});
+
+  let baseTotal=0, addonTotal=0;
+
+  // Category price labels
+  function getCatPrice(cat, dishes){
+    if(hidePrices) return '';
+    if(cat==='פיצות') return '&#x2022; &#8362;100/&#1488;&#1491;&#1501; &#1489;&#1505;&#1497;&#1505;';
+    if(cat==='סלטים'){
+      const sc = dishes.length;
+      if(sc<=4) return '&#x2022; &#8362;20/&#1488;&#1491;&#1501; (&#1506;&#1491; 4 &#1505;&#1500;&#1496;&#1497;&#1501;)';
+      return '&#x2022; &#8362;20/&#1488;&#1491;&#1501; + &#8362;'+(sc-4)*5+'/&#1488;&#1491;&#1501;';
+    }
+    const addonD = dishes.find(d=>d.addon_per_person>0);
+    if(addonD) return '&#x2022; +&#8362;'+addonD.addon_per_person+'/&#1488;&#1491;&#1501;';
+    return '';
+  }
+
+  let dishesHTML = '';
+  catOrder.forEach(cat=>{
+    if(!bycat[cat]||!bycat[cat].length) return;
+    const dishes = bycat[cat];
+    const catPrice = getCatPrice(cat, dishes);
+    const itName = catIt[cat]||'';
+
+    dishesHTML += `<div class="cat-block">
+      <div class="cat-title">
+        <span class="cat-he">${cat}</span>
+        <span class="cat-right">${itName}${catPrice?' &nbsp;'+catPrice:''}</span>
+      </div>
+      <div class="dishes-grid">`;
+
+    dishes.forEach(d=>{
+      const base = d.base_price||0;
+      const addon = (d.addon_per_person||0)*billed;
+      baseTotal += base; addonTotal += addon;
+      const allergy = d.allergens&&d.allergens.length ? '<div class="allergy">&#9888; '+d.allergens.join(', ')+'</div>' : '';
+      dishesHTML += `<div class="dish-item">
+        <div class="dish-name">${d.name}</div>
+        <div class="dish-it">${d.name_it||''}</div>
+        <div class="dish-desc">${d.description||''}</div>
+        ${allergy}
+      </div>`;
+    });
+
+    dishesHTML += '</div></div>';
+  });
+
+  // Totals calc
+  const hasPizzas = sel.some(d=>d.category==='פיצות');
+  if(hasPizzas) baseTotal += 100*billed;
+  const saladCount = sel.filter(d=>d.category==='סלטים').length;
+  if(saladCount>0){ addonTotal += 20*billed; if(saladCount>4) addonTotal += (saladCount-4)*5*billed; }
+
+  const sub0 = baseTotal+addonTotal;
+  const kDisc = billed>0?(g.kids/billed)*sub0*0.15:0;
+  const sub = sub0-kDisc;
+  const vat = includeVat?sub*0.18:0;
+  const grand = sub+vat;
+  const dep = grand*0.10;
+  const perPerson = billed>0?Math.round(grand/billed):0;
+
+  // Client info
+  const name    = document.getElementById('cl-name').value||'—';
+  const phone   = document.getElementById('cl-phone').value||'—';
+  const dateVal = document.getElementById('cl-date').value;
+  const timeVal = document.getElementById('cl-time').value;
+  const address = document.getElementById('cl-address').value||'—';
+  const evtype  = getEventType()||'—';
+  const notes   = document.getElementById('cl-notes').value;
+  const qNum    = document.getElementById('quoteNum').textContent;
+  const qDate   = document.getElementById('quoteDate').textContent;
+
+  let dateStr2 = '—';
+  if(dateVal){
+    const d=new Date(dateVal+'T12:00:00');
+    dateStr2=d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  }
+
+  const totalsHTML = hidePrices ? '' : `
+    <div class="totals-block">
+      <div class="total-row"><span>&#1505;&#1492;"&#1499; &#1500;&#1508;&#1504;&#1497; &#1502;&#1506;"&#1502;</span><span>&#8362;${Math.round(sub).toLocaleString()}</span></div>
+      <div class="total-row"><span>&#1502;&#1506;"&#1502; (18%)</span><span>${includeVat?'&#8362;'+Math.round(vat).toLocaleString():'—'}</span></div>
+      <div class="total-row grand"><span>&#x1F4B0; &#1505;&#1492;"&#1499; &#1500;&#1514;&#1513;&#1500;&#1493;&#1501;</span><span>&#8362;${Math.round(grand).toLocaleString()}</span></div>
+      ${perPerson>0?'<div class="per-person">&#1506;&#1500;&#1493;&#1514; &#1502;&#1502;&#1493;&#1510;&#1506;&#1514; &#1500;&#1488;&#1491;&#1501;: &#8362;'+perPerson.toLocaleString()+'</div>':''}
+    </div>
+    <div class="deposit-block">
+      <span>&#1502;&#1511;&#1491;&#1502;&#1492; &#1500;&#1505;&#1490;&#1497;&#1512;&#1514; &#1514;&#1488;&#1512;&#1497;&#1498; (10%)</span>
+      <strong>&#8362;${Math.round(dep).toLocaleString()}</strong>
+    </div>`;
+
+  const notesHTML = notes ? `<div class="notes-block"><strong>&#1492;&#1506;&#1512;&#1493;&#1514;:</strong> ${notes}</div>` : '';
+
+  const customName = document.getElementById('cl-filename').value.trim();
+  const fileDateStr = dateVal?new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').replace(/\//g,'-'):new Date().toLocaleDateString('he-IL').replace(/\//g,'-');
+  const filename = customName||(name+'_'+fileDateStr);
+
+  const html = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>${filename}</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;direction:rtl;background:white;color:#1a1a1a;font-size:13px;}
+.page{width:210mm;min-height:297mm;padding:12mm 14mm;page-break-after:always;}
+.page:last-child{page-break-after:auto;}
+
+/* HEADER */
+.header{background:#1B2A4A;padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;border-radius:8px;margin-bottom:12px;}
+.logo{font-family:'Frank Ruhl Libre',serif;font-size:22px;color:#C9A84C;}
+.logo-sub{font-size:10px;color:rgba(255,255,255,0.45);margin-top:3px;}
+.quote-num{text-align:left;}
+.quote-num .lbl{font-size:9px;color:rgba(255,255,255,0.35);}
+.quote-num .num{font-family:'Frank Ruhl Libre',serif;font-size:18px;color:white;}
+.quote-num .dt{font-size:9px;color:rgba(255,255,255,0.35);margin-top:2px;}
+
+/* CLIENT GRID */
+.client-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 16px;margin-top:10px;}
+.ci .lbl{font-size:9px;color:rgba(255,255,255,0.38);}
+.ci .val{font-size:11px;font-weight:600;color:white;}
+
+/* GUESTS BAR */
+.guests-bar{background:#243660;padding:7px 18px;display:flex;gap:18px;align-items:center;border-radius:0 0 6px 6px;margin-bottom:14px;margin-top:-4px;}
+.gb .lbl{font-size:9px;color:rgba(255,255,255,0.4);}
+.gb .val{font-size:11px;font-weight:600;color:white;}
+.gb .val.gold{color:#C9A84C;}
+.gb-sep{color:rgba(255,255,255,0.2);}
+
+/* NOTES */
+.notes-block{background:#FFF8F0;border-right:3px solid #C9A84C;padding:7px 10px;border-radius:4px;font-size:11px;color:#1B2A4A;margin-bottom:10px;}
+
+/* CATEGORIES */
+.cat-block{margin-bottom:12px;}
+.cat-title{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid #C9A84C;padding-bottom:3px;margin-bottom:6px;}
+.cat-he{font-family:'Frank Ruhl Libre',serif;font-size:14px;font-weight:700;color:#1B2A4A;}
+.cat-right{font-size:10px;color:#888;font-style:italic;}
+.dishes-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 16px;}
+.dish-item{padding:4px 0;border-bottom:0.5px solid #F0EDE5;}
+.dish-name{font-size:12px;font-weight:700;color:#1B2A4A;}
+.dish-it{font-size:10px;color:#999;font-style:italic;}
+.dish-desc{font-size:10px;color:#666;margin-top:1px;}
+.allergy{font-size:9px;color:#C0392B;margin-top:1px;}
+
+/* TOTALS */
+.totals-block{background:#F8F5EE;border-radius:7px;padding:10px 14px;margin-top:14px;}
+.total-row{display:flex;justify-content:space-between;font-size:12px;color:#666;padding:3px 0;}
+.total-row.grand{font-size:15px;font-weight:700;color:#C9A84C;border-top:1px solid #ddd;padding-top:7px;margin-top:4px;}
+.per-person{font-size:10px;color:#888;text-align:left;margin-top:3px;}
+.deposit-block{border:1.5px dashed #C9A84C;border-radius:6px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+.deposit-block span{font-size:11px;color:#888;}
+.deposit-block strong{font-size:14px;color:#1B2A4A;}
+
+/* FOOTER */
+.page-footer{text-align:center;font-size:10px;color:#aaa;margin-top:14px;padding-top:10px;border-top:0.5px solid #eee;}
+
+/* PAGE 2 - DISCLAIMER */
+.disc-header{background:#1B2A4A;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;border-radius:8px;margin-bottom:14px;}
+.disc-header h2{font-family:'Frank Ruhl Libre',serif;font-size:15px;color:#C9A84C;margin:0;}
+.disc-header span{font-size:10px;color:rgba(255,255,255,0.35);}
+.disc-body{font-size:11.5px;color:#444;line-height:1.8;}
+.disc-body h4{font-size:12px;font-weight:700;color:#1B2A4A;margin-top:12px;margin-bottom:4px;}
+.disc-body h4:first-child{margin-top:0;}
+
+@media print{
+  body{margin:0;}
+  .page{width:100%;padding:10mm 12mm;}
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 -->
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="logo">&#x1F355; Pizza Zmani</div>
+      <div class="logo-sub">&#1488;&#1493;&#1499;&#1500; &#1488;&#1497;&#1496;&#1500;&#1511;&#1497; &#1513;&#1502;&#1495; &#x2022; &#1508;&#1497;&#1510;&#1492; &#x2022; &#1488;&#1497;&#1512;&#1493;&#1506;&#1497;&#1501; &#x2022; &#1505;&#1512;&#1491;&#1504;&#1488;&#1493;&#1514;</div>
+      <div class="client-grid">
+        <div class="ci"><div class="lbl">&#1500;&#1511;&#1493;&#1495;</div><div class="val">${name}</div></div>
+        <div class="ci"><div class="lbl">&#1514;&#1488;&#1512;&#1497;&#1498;</div><div class="val">${dateStr2}</div></div>
+        <div class="ci"><div class="lbl">&#1513;&#1506;&#1514; &#1492;&#1490;&#1513;&#1492;</div><div class="val">${timeVal?timeVal.slice(0,5):'—'}</div></div>
+        <div class="ci"><div class="lbl">&#1499;&#1514;&#1493;&#1489;&#1514;</div><div class="val">${address}</div></div>
+        <div class="ci"><div class="lbl">&#1505;&#1493;&#1490; &#1488;&#1497;&#1512;&#1493;&#1506;</div><div class="val">${evtype}</div></div>
+        <div class="ci"><div class="lbl">&#1496;&#1500;&#1508;&#1493;&#1503;</div><div class="val">${phone}</div></div>
+      </div>
+    </div>
+    <div class="quote-num">
+      <div class="lbl">&#1492;&#1510;&#1506;&#1492; &#1502;&#1505;&#x2019;</div>
+      <div class="num">${qNum}</div>
+      <div class="dt">${qDate}</div>
+    </div>
+  </div>
+
+  <div class="guests-bar">
+    <div class="gb"><div class="lbl">&#1488;&#1493;&#1512;&#1495;&#1497;&#1501;</div><div class="val gold">${g.adults+g.kids+g.babies}</div></div>
+    <span class="gb-sep">|</span>
+    <div class="gb"><div class="lbl">&#1502;&#1489;&#1493;&#1490;&#1512;&#1497;&#1501;</div><div class="val">${g.adults}</div></div>
+    <div class="gb"><div class="lbl">&#1497;&#1500;&#1491;&#1497;&#1501; (&#x2212;15%)</div><div class="val">${g.kids}</div></div>
+    <div class="gb"><div class="lbl">&#1508;&#1506;&#1493;&#1496;&#1493;&#1514; (&#1495;&#1497;&#1504;&#1501;)</div><div class="val">${g.babies}</div></div>
+  </div>
+
+  ${notesHTML}
+  ${dishesHTML}
+  ${totalsHTML}
+  <div class="page-footer">Pizza Zmani &#x2022; 054-203-1181 &#x2022; &#1488;&#1493;&#1499;&#1500; &#1488;&#1497;&#1496;&#1500;&#1511;&#1497; &#1513;&#1502;&#1495;</div>
+</div>
+
+<!-- PAGE 2 - DISCLAIMER -->
+<div class="page">
+  <div class="disc-header">
+    <h2>&#x1F4CB; &#1514;&#1504;&#1488;&#1497;&#1501; &#1493;&#1502;&#1491;&#1497;&#1504;&#1497;&#1493;&#1514;</h2>
+    <span>${qNum}</span>
+  </div>
+  <div class="disc-body">
+    <h4>&#1499;&#1500;&#1500;&#1497;</h4>
+    <p>&#1492;&#1492;&#1510;&#1506;&#1492; &#1514;&#1511;&#1508;&#1492; &#1500;&#1488;&#1495;&#1512; &#1488;&#1497;&#1513;&#1493;&#1512;&#1492; &#1489;&#1499;&#1514;&#1489; &#1493;&#1514;&#1513;&#1500;&#1493;&#1501; &#1502;&#1511;&#1491;&#1502;&#1492; &#1513;&#1500; 10%. &#1492;&#1492;&#1510;&#1506;&#1492; &#1506;&#1500;&#1493;&#1500;&#1492; &#1500;&#1492;&#1513;&#1514;&#1504;&#1493;&#1514; &#1500;&#1488;&#1495;&#1512; &#1513;&#1497;&#1495;&#1514; &#1493;&#1497;&#1491;&#1488;&#1493;/&#1508;&#1490;&#1497;&#1513;&#1492; &#1489;&#1502;&#1511;&#1493;&#1501; &#1492;&#1488;&#1497;&#1512;&#1493;&#1506;. &#1492;&#1502;&#1495;&#1497;&#1512;&#1497;&#1501; &#1500;&#1508;&#1504;&#1497; &#1502;&#1506;"&#1502; (18%). &#1513;&#1497;&#1504;&#1493;&#1497; &#1489;&#1499;&#1502;&#1493;&#1514; &#1492;&#1488;&#1493;&#1512;&#1495;&#1497;&#1501; &#x2013; &#1500;&#1488; &#1497;&#1493;&#1514;&#1512; &#1502;&#x2010;10%.</p>
+
+    <h4>&#1489;&#1497;&#1496;&#1493;&#1500;&#1497;&#1501;</h4>
+    <p>&#1513;&#1497;&#1504;&#1493;&#1497;&#1497;&#1501; &#x2013; &#1506;&#1491; 72 &#1513;&#1506;&#1493;&#1514; &#1500;&#1508;&#1504;&#1497; &#1492;&#1488;&#1497;&#1512;&#1493;&#1506;. &#1489;&#1497;&#1496;&#1493;&#1500; &#1506;&#1491; 72 &#1513;&#1506;&#1493;&#1514; &#1500;&#1508;&#1504;&#1497;: 10% &#1502;&#1492;&#1505;&#1499;&#1493;&#1501;. &#1489;&#1497;&#1496;&#1493;&#1500; &#1489;&#1497;&#1503; 72&#x2013;24 &#1513;&#1506;&#1493;&#1514; &#1500;&#1508;&#1504;&#1497;: 30%. &#1489;&#1497;&#1496;&#1493;&#1500; &#1508;&#1495;&#1493;&#1514; &#1502;&#x2010;24 &#1513;&#1506;&#1493;&#1514;: 100%. &#1489;&#1497;&#1496;&#1493;&#1500; &#1502;&#1499;&#1500; &#1505;&#1497;&#1489;&#1492; (&#1502;&#1490;&#1497;&#1508;&#1492;, &#1499;&#1495; &#1506;&#1500;&#1497;&#1493;&#1503;, &#1502;&#1500;&#1495;&#1502;&#1492;) &#x2013; &#1500;&#1502;&#1506;&#1496; &#1492;&#1504;&#1495;&#1497;&#1493;&#1514; &#1508;&#1497;&#1511;&#1493;&#1491; &#1492;&#1506;&#1493;&#1512;&#1507;.</p>
+
+    <h4>&#9888; &#1488;&#1500;&#1512;&#1490;&#1497;&#1493;&#1514;</h4>
+    <p>&#1488;&#1497;&#1503; &#1489;&#1497;&#1499;&#1493;&#1500;&#1514;&#1497;&#1504;&#1493; &#1500;&#1492;&#1514;&#1495;&#1497;&#1497;&#1489; &#1506;&#1500; &#1488;&#1500;&#1512;&#1490;&#1503; &#1502;&#1499;&#1500; &#1505;&#1493;&#1490; (&#1488;&#1490;&#1493;&#1494;&#1497;&#1501;, &#1495;&#1500;&#1489;, &#1490;&#1500;&#1493;&#1496;&#1503;, &#1513;&#1493;&#1502;&#1513;&#1493;&#1501; &#1493;&#1499;&#1500; &#1488;&#1500;&#1512;&#1490;&#1503; &#1488;&#1495;&#1512;). &#1504;&#1488; &#1500;&#1506;&#1491;&#1499;&#1503; &#1506;&#1500; &#1512;&#1490;&#1497;&#1513;&#1493;&#1497;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1501; &#1499;&#1499;&#1500; &#1492;&#1488;&#1508;&#1513;&#1512;.</p>
+
+    <h4>&#1510;&#1497;&#1493;&#1491; &#1493;&#1492;&#1490;&#1513;&#1492;</h4>
+    <p>&#1504;&#1490;&#1497;&#1506; &#1506;&#1501; &#1499;&#1500; &#1492;&#1510;&#1497;&#1493;&#1491; &#1492;&#1491;&#1512;&#1493;&#1513; &#x2013; &#1499;&#1500;&#1497; &#1492;&#1490;&#1513;&#1492;, &#1506;&#1497;&#1510;&#1493;&#1489;, &#1488;&#1504;&#1513;&#1497; &#1510;&#1493;&#1493;&#1514;. &#1499;&#1500;&#1497; &#1488;&#1493;&#1499;&#1500; &#1499;&#1500;&#1493;&#1500;&#1497;&#1501;: &#1510;&#1500;&#1495;&#1493;&#1514;, &#1505;&#1499;&#1493;"&#1501;, &#1502;&#1508;&#1497;&#1493;&#1514;. &#1492;&#1490;&#1513;&#1492;: &#1513;&#1506;&#1492; &#1493;&#1495;&#1510;&#1497; &#1489;&#1493;&#1508;&#1492; &#1502;&#1500;&#1488; + &#1495;&#1510;&#1497; &#1513;&#1506;&#1492; &#1511;&#1497;&#1504;&#1493;&#1495;&#1497;&#1501;.</p>
+
+    <h4>&#1500;&#1493;&#1490;&#1497;&#1505;&#1496;&#1497;&#1511;&#1492;</h4>
+    <p>&#1492;&#1493;&#1489;&#1500;&#1492; &#1499;&#1500;&#1493;&#1500;&#1492; &#1489;&#1497;&#1503; &#1490;&#1491;&#1512;&#1492;&#x2013;&#1504;&#1514;&#1504;&#1497;&#1492;&#x2013;&#1502;&#1493;&#1491;&#1497;&#1506;&#1497;&#1503;. &#1506;&#1500; &#1492;&#1502;&#1494;&#1502;&#1497;&#1503;: &#1513;&#1496;&#1495; &#1492;&#1511;&#1502;&#1492;, &#1510;&#1500; &#1502;&#1500;&#1488;, &#1499;&#1497;&#1493;&#1512;, &#1495;&#1513;&#1502;&#1500;, 2 &#1495;&#1504;&#1497;&#1493;&#1514;, &#1488;&#1494;&#1493;&#1512; &#1508;&#1512;&#1497;&#1511;&#1492;.</p>
+
+    <h4>&#1514;&#1513;&#1500;&#1493;&#1501;</h4>
+    <p>&#1502;&#1511;&#1491;&#1502;&#1492; 10% &#1489;&#1502;&#1506;&#1502;&#1491; &#1505;&#1490;&#1497;&#1512;&#1514; &#1492;&#1506;&#1505;&#1511;&#1492;. &#1497;&#1514;&#1512;&#1492; &#x2013; &#1489;&#1497;&#1493;&#1501; &#1492;&#1488;&#1497;&#1512;&#1493;&#1506;. &#1495;&#1513;&#1489;&#1493;&#1504;&#1497;&#1514; &#1502;&#1505; &#1514;&#1497;&#1513;&#1500;&#1495; &#1512;&#1511; &#1500;&#1488;&#1495;&#1512; &#1514;&#1513;&#1500;&#1493;&#1501;.</p>
+  </div>
+  <div class="page-footer" style="margin-top:20px;">Pizza Zmani &#x2022; 054-203-1181 &#x2022; &#1488;&#1493;&#1499;&#1500; &#1488;&#1497;&#1496;&#1500;&#1511;&#1497; &#1513;&#1502;&#1495;</div>
+</div>
+
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
   setTimeout(()=>{
-    html2pdf().set({
-      margin:[8,6,8,6],filename,
-      image:{type:'jpeg',quality:0.97},
-      html2canvas:{scale:2,useCORS:true,letterRendering:true,scrollY:0},
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-      pagebreak:{mode:['avoid-all','css','legacy']}
-    }).from(document.getElementById('pdfContent')).save()
-    .then(()=>showToast('PDF הורד ✓','success'));
-  },300);
+    win.print();
+    showToast('הצעה נפתחה להדפסה/שמירה ✓','success');
+  }, 1200);
 }
 
 // RESET
