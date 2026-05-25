@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.0.1</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.1.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -128,6 +128,93 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .unav-link .icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0;}
 .unav-sep{height:1px;background:rgba(255,255,255,0.1);margin:8px 0;}
 .unav-label{font-size:0.68rem;color:rgba(255,255,255,0.3);padding:4px 12px 2px;text-transform:uppercase;letter-spacing:0.8px;}
+
+  --warn:#b45309;--warn-bg:#FEF3C7;--purple2:#6d28d9;
+
+/* SCREENS */
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* SUMMARY STRIP */
+.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.sum-box{background:white;border-radius:10px;border:1px solid var(--border);padding:14px 16px;box-shadow:var(--shadow);border-right:4px solid var(--gold);}
+.sum-box.green{border-right-color:var(--green);}
+.sum-box.warn{border-right-color:var(--warn);}
+.sum-box.purple{border-right-color:var(--purple);}
+.sum-val{font-family:"Frank Ruhl Libre",serif;font-size:1.8rem;color:var(--navy);font-weight:900;}
+.sum-lbl{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+
+/* INGR TABLE */
+.ingr-table-wrap{background:white;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+thead{background:var(--navy);}
+thead th{color:var(--gold);font-weight:600;font-size:0.78rem;padding:11px 14px;text-align:right;letter-spacing:0.3px;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f0ede5;transition:background 0.12s;}
+tbody tr:last-child{border:none;}
+tbody tr:hover{background:#FFFDF5;}
+tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
+.td-name{font-weight:600;color:var(--navy);}
+.td-unit{color:var(--muted);font-size:0.78rem;}
+.cat-row-hdr td{background:var(--cream2);font-size:0.72rem;font-weight:700;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;padding:6px 14px;}
+.qty-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:0.8rem;font-weight:600;}
+.qty-ok{background:#E8F5E9;color:#2E7D32;}
+.qty-input{width:82px;padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.86rem;text-align:center;font-family:inherit;background:white;outline:none;transition:border 0.2s;}
+.qty-input:focus{border-color:var(--gold);}
+.qty-input.needs-round{border-color:var(--warn);background:var(--warn-bg);}
+
+/* EVENT PILLS */
+.event-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.event-pill{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:white;font-size:0.82rem;display:flex;align-items:center;gap:6px;}
+.event-pill.active{background:var(--navy);color:white;border-color:var(--navy);}
+.pill-guests{font-size:0.7rem;opacity:0.7;}
+
+/* TASKS TIMELINE */
+.timeline{padding-right:24px;position:relative;}
+.timeline::before{content:"";position:absolute;right:9px;top:4px;bottom:4px;width:2px;background:var(--border);}
+.tl-group{margin-bottom:24px;}
+.tl-time-label{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.tl-dot{width:18px;height:18px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-left:-8px;position:relative;right:-34px;border:2px solid var(--cream);box-shadow:0 0 0 2px var(--gold);}
+.tl-label-text{font-family:"Frank Ruhl Libre",serif;font-size:0.95rem;color:var(--navy);font-weight:700;}
+.tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:9px;}
+.task-card{background:white;border-radius:10px;border:1.5px solid var(--border);padding:13px 14px;display:flex;align-items:flex-start;gap:11px;box-shadow:0 2px 8px rgba(27,42,74,0.06);transition:all 0.18s;}
+.task-card:hover{box-shadow:var(--shadow);}
+.task-card.done{opacity:0.45;background:var(--cream);}
+.task-card.done .task-name{text-decoration:line-through;}
+.task-chk{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:1px;transition:all 0.15s;}
+.task-chk.on{background:var(--green);border-color:var(--green);color:white;}
+.task-body{flex:1;}
+.task-name{font-size:0.86rem;font-weight:600;color:var(--navy);margin-bottom:3px;}
+.task-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.task-tag{font-size:0.68rem;padding:2px 7px;border-radius:4px;font-weight:600;}
+.tag-dish{background:var(--cream2);color:var(--navy);border:1px solid var(--border);}
+.tag-high{background:#FFEBEE;color:#C62828;}
+.tag-med{background:#FFF8E1;color:#E65100;}
+.tag-low{background:#E8F5E9;color:#2E7D32;}
+
+/* SUPPLIER */
+.wa-box{background:var(--cream2);border:1px solid var(--border);border-radius:10px;padding:16px;font-size:0.84rem;line-height:2.1;color:var(--navy);white-space:pre-wrap;max-height:400px;overflow-y:auto;font-family:"Heebo",sans-serif;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.info-card{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);}
+.info-card-head{background:var(--navy);padding:11px 16px;}
+.info-card-head h3{font-family:"Frank Ruhl Libre",serif;font-size:0.9rem;color:var(--gold);margin:0;}
+.info-card-body{padding:16px;}
+
+/* FRACTION MODAL */
+.frac-item{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;border:1.5px solid var(--warn);background:var(--warn-bg);margin-bottom:8px;}
+.frac-name{font-weight:600;color:var(--navy);font-size:0.88rem;}
+.frac-raw{font-size:0.78rem;color:var(--warn);margin-top:2px;}
+.frac-btn{padding:5px 10px;border-radius:6px;border:none;cursor:pointer;font-size:0.78rem;font-family:inherit;transition:all 0.15s;}
+.frac-up{background:var(--green);color:white;}
+.frac-down{background:var(--navy);color:white;}
+.frac-manual{width:65px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);font-size:0.84rem;text-align:center;font-family:inherit;}
+
+/* SEC HEADER */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.sec-title{font-family:"Frank Ruhl Libre",serif;font-size:1.3rem;color:var(--navy);}
+.btn-green{background:var(--green);color:white;}
+.btn-green:hover{filter:brightness(1.1);}
+
+@media(max-width:700px){.summary-strip{grid-template-columns:1fr 1fr;}.two-col{grid-template-columns:1fr;}.tasks-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -138,16 +225,21 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.0.1</div>
+  <div class="version">v1.1.0</div>
 </div>
 
 <div class="main">
 
   <!-- TABS -->
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('active',this)">📅 אירועים פעילים</button>
-    <button class="tab" onclick="switchTab('history',this)">📁 היסטוריה</button>
+    <button class="tab active" id="tab-quotes" onclick="switchMainTab('quotes',this)">📅 הצעות מחיר</button>
+    <button class="tab" id="tab-ingr" onclick="switchMainTab('ingr',this)">🥦 חומרי גלם</button>
+    <button class="tab" id="tab-tasks" onclick="switchMainTab('tasks',this)">📋 משימות הכנה</button>
+    <button class="tab" id="tab-supplier" onclick="switchMainTab('supplier',this)">🛒 הזמנת ספק</button>
   </div>
+
+  <!-- SCREEN WRAPPER -->
+  <div id="screen-quotes" class="screen active">
 
   <!-- TOOLBAR -->
   <div class="toolbar">
@@ -158,15 +250,118 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
       </span>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-purple btn-sm" onclick="openAmalfiModal()" id="amalfiBtn" disabled>🥦 שלח לאמלפי</button>
+      <button class="btn btn-green btn-sm" onclick="openIngrFromSelected()" id="ingrBtn" disabled>🥦 חומרי גלם</button>
+      <button class="btn btn-purple btn-sm" onclick="openAmalfiModal()" id="amalfiBtn" disabled>📤 שלח לאמלפי</button>
       <button class="btn btn-ghost btn-sm" onclick="selectAll()">בחר הכל</button>
       <button class="btn btn-ghost btn-sm" onclick="clearSelection()">נקה בחירה</button>
     </div>
   </div>
 
+  <!-- SUB TABS -->
+  <div style="display:flex;gap:0;background:var(--cream2);border-radius:8px;overflow:hidden;width:fit-content;margin-bottom:16px;border:1px solid var(--border);">
+    <button class="tab active" id="subtab-active" style="border-radius:0;font-size:0.82rem;padding:8px 18px;" onclick="switchSubTab('active',this)">📅 פעילים</button>
+    <button class="tab" id="subtab-history" style="border-radius:0;font-size:0.82rem;padding:8px 18px;" onclick="switchSubTab('history',this)">📁 היסטוריה</button>
+  </div>
+
   <!-- QUOTES LIST -->
   <div class="quotes-list" id="quotesList">
     <div class="empty"><div class="empty-icon">⏳</div><div>טוען הצעות...</div></div>
+  </div>
+
+
+  </div><!-- /screen-quotes -->
+
+  <!-- ════ INGREDIENTS SCREEN ════ -->
+  <div id="screen-ingr" class="screen">
+    <div class="sec-header">
+      <div class="sec-title">🥦 חומרי גלם לאירוע</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" id="frac-btn" onclick="openFracModal()" style="display:none;">⚠️ עגל שברים (<span id="frac-count">0</span>)</button>
+        <button class="btn btn-navy btn-sm" onclick="calcIngredients()">🔄 חשב מחדש</button>
+        <button class="btn btn-gold btn-sm" onclick="switchMainTab('supplier',document.getElementById('tab-supplier'))">🛒 הזמנת ספק</button>
+      </div>
+    </div>
+    <div class="event-pills" id="event-pills">
+      <span style="color:var(--muted);font-size:0.85rem;">סמן הצעות מחיר בלשונית הצעות מחיר ולחץ "🥦 חומרי גלם"</span>
+    </div>
+    <div id="ingr-summary" style="display:none;">
+      <div class="summary-strip">
+        <div class="sum-box"><div class="sum-val" id="s-guests">0</div><div class="sum-lbl">סועדים מחויבים</div></div>
+        <div class="sum-box green"><div class="sum-val" id="s-dishes">0</div><div class="sum-lbl">מנות בתפריט</div></div>
+        <div class="sum-box warn"><div class="sum-val" id="s-fracs">0</div><div class="sum-lbl">שברים לעיגול</div></div>
+        <div class="sum-box purple"><div class="sum-val" id="s-items">0</div><div class="sum-lbl">פריטי קנייה</div></div>
+      </div>
+      <div class="ingr-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>חומר גלם</th><th>יחידה</th><th>כמות מחושבת</th>
+              <th>כמות סופית</th><th>מנה</th><th>הערה</th>
+            </tr>
+          </thead>
+          <tbody id="ingr-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="ingr-empty" style="text-align:center;padding:60px 20px;color:var(--muted);">
+      <div style="font-size:2.5rem;margin-bottom:10px;">🥦</div>
+      <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;color:var(--navy);margin-bottom:6px;">לא נבחרו אירועים</div>
+      <div style="font-size:0.85rem;">סמן הצעות מחיר ולחץ "🥦 חומרי גלם" בסרגל הכלים</div>
+    </div>
+  </div>
+
+  <!-- ════ TASKS SCREEN ════ -->
+  <div id="screen-tasks" class="screen">
+    <div class="sec-header">
+      <div class="sec-title">📋 משימות הכנה</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="resetTaskDone()">אפס סימונים</button>
+        <button class="btn btn-navy btn-sm" onclick="openAddTaskModal()">+ הוסף משימה</button>
+      </div>
+    </div>
+    <div id="tasks-event-label" style="margin-bottom:16px;font-size:0.85rem;color:var(--muted);"></div>
+    <div class="timeline" id="tasks-timeline"></div>
+    <div id="tasks-empty" style="text-align:center;padding:60px 20px;color:var(--muted);">
+      <div style="font-size:2.5rem;margin-bottom:10px;">📋</div>
+      <div>סמן אירועים בלשונית הצעות מחיר כדי לראות משימות</div>
+    </div>
+  </div>
+
+  <!-- ════ SUPPLIER SCREEN ════ -->
+  <div id="screen-supplier" class="screen">
+    <div class="sec-header">
+      <div class="sec-title">🛒 הזמנת ספק</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-gold" onclick="copyWaText()">📋 העתק</button>
+        <button class="btn btn-ghost btn-sm" onclick="openWaEditModal()">✏️ ערוך</button>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="info-card">
+        <div class="info-card-head"><h3>📤 טקסט לספק</h3></div>
+        <div class="info-card-body">
+          <div class="wa-box" id="wa-text">סמן אירועים ולחץ "🥦 חומרי גלם" כדי לייצר רשימת קניות</div>
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn btn-gold btn-sm" onclick="copyWaText()">📋 העתק</button>
+            <button class="btn btn-ghost btn-sm" onclick="openWaEditModal()">✏️ ערוך</button>
+          </div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-head"><h3>💡 טיפים</h3></div>
+        <div class="info-card-body" style="font-size:0.84rem;line-height:1.9;color:var(--navy);">
+          <p>• <strong>ירקות טריים</strong> — הזמן יום לפני לכל היותר</p>
+          <p>• <strong>דגים</strong> — הזמן 2 ימים לפני, תאם שעת הגעה</p>
+          <p>• <strong>שברים</strong> — תמיד עגל מעלה</p>
+          <p>• <strong>שמן + תבלינים</strong> — בדוק מלאי לפני ההזמנה</p>
+          <p>• <strong>בצק</strong> — מכינים עצמנו</p>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:0.76rem;color:var(--muted);">
+            <div>📞 ספק ירקות: ...</div>
+            <div>📞 ספק דגים: ...</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div><!-- /main -->
@@ -239,6 +434,64 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   </div>
 </div>
 
+
+<!-- ═══ FRACTION MODAL ═══ -->
+<div class="modal-bg" id="fracModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">⚠️ עיגול שברים</div>
+    <p style="font-size:0.83rem;color:var(--muted);margin-bottom:14px;">הכמויות הבאות אינן שלמות — עגל ידנית:</p>
+    <div id="frac-list"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('fracModal')">סגור</button>
+      <button class="btn btn-gold" onclick="confirmAllFracs()">✓ עגל הכל מעלה</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD TASK MODAL ═══ -->
+<div class="modal-bg" id="addTaskModal">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px;">
+    <div class="modal-title">+ משימה חופשית</div>
+    <div class="fg"><label>שם משימה</label><input type="text" id="at-name" placeholder="בדיקת ציוד..."></div>
+    <div class="form-row">
+      <div class="fg"><label>תזמון</label>
+        <select id="at-time">
+          <option value="-72">72 שעות לפני</option>
+          <option value="-48">48 שעות לפני</option>
+          <option value="-24">24 שעות לפני</option>
+          <option value="-12">12 שעות לפני</option>
+          <option value="-3">3 שעות לפני</option>
+          <option value="-1">שעה לפני</option>
+          <option value="0">יום האירוע</option>
+        </select>
+      </div>
+      <div class="fg"><label>עדיפות</label>
+        <select id="at-priority">
+          <option value="high">גבוהה 🔴</option>
+          <option value="med">בינונית 🟡</option>
+          <option value="low">נמוכה 🟢</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addTaskModal')">ביטול</button>
+      <button class="btn btn-gold" onclick="saveExtraTask()">✅ הוסף</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WA EDIT MODAL ═══ -->
+<div class="modal-bg" id="waEditModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">✏️ עריכת טקסט לספק</div>
+    <textarea id="wa-edit-area" style="width:100%;min-height:300px;font-size:0.88rem;line-height:2;font-family:'Heebo',sans-serif;padding:12px;border:1.5px solid var(--border);border-radius:8px;outline:none;"></textarea>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('waEditModal')">ביטול</button>
+      <button class="btn btn-gold" onclick="saveWaEdit()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -246,17 +499,299 @@ const SUPABASE_URL = 'https://arqxoyxobjudccskfwyt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+
+// ─── DISH META (ingredients + tasks per dish) ───
+const DISH_META = {
+  'קיסר':{base:30,min:0,ingredients:[{n:'לבבות חסה',q:3,u:"יח'"},{n:'קרוטונים',q:0.3,u:'ק"ג'},{n:'פרמזן',q:0.2,u:'ק"ג'},{n:'רוטב קיסר',q:0.4,u:'ליטר'}],tasks:[{name:'הכנת רוטב קיסר',h:-24,p:'med'},{name:'קיצוץ חסה',h:-3,p:'high'}]},
+  'קפרזה':{base:30,min:0,ingredients:[{n:'עגבניות שרי',q:1.5,u:'ק"ג'},{n:'מוצרלה טריה',q:1.2,u:'ק"ג'},{n:'בזיליקום',q:1,u:"צרור"}],tasks:[{name:'פריסת קפרזה',h:-3,p:'low'}]},
+  'חציל':{base:30,min:0,ingredients:[{n:'חצילים',q:3,u:'ק"ג'},{n:'שמנת חמוצה',q:0.5,u:'ליטר'}],tasks:[{name:'צלייה חצילים',h:-12,p:'high'},{name:'הכנת ממרח חציל',h:-3,p:'med'}]},
+  'יווני':{base:30,min:0,ingredients:[{n:'מלפפונים',q:1.5,u:'ק"ג'},{n:'עגבניות',q:1.5,u:'ק"ג'},{n:'זיתי קלמטה',q:0.4,u:'ק"ג'},{n:'גבינה בולגרית',q:0.6,u:'ק"ג'}],tasks:[{name:'קיצוץ יוונית',h:-3,p:'low'}]},
+  'בורגול סלקים':{base:30,min:0,ingredients:[{n:'בורגול גס',q:0.8,u:'ק"ג'},{n:'סלק',q:1.5,u:'ק"ג'},{n:'שקדים',q:0.2,u:'ק"ג'}],tasks:[{name:'בישול בורגול + סלק',h:-12,p:'med'}]},
+  'קינואה':{base:30,min:0,ingredients:[{n:'קינואה',q:0.6,u:'ק"ג'},{n:'פלפלים',q:1,u:'ק"ג'},{n:'קישוא',q:0.8,u:'ק"ג'}],tasks:[{name:'בישול קינואה',h:-12,p:'low'}]},
+  'שורשים':{base:30,min:0,ingredients:[{n:'ירקות שורשים מעורבים',q:2,u:'ק"ג'}],tasks:[{name:'חיתוך ירקות שורשים',h:-3,p:'low'}]},
+  "ארנצ'יני":{base:30,min:0,ingredients:[{n:'אורז עגול',q:0.8,u:'ק"ג'},{n:'גבינה צהובה',q:0.3,u:'ק"ג'},{n:'פירורי לחם',q:0.4,u:'ק"ג'},{n:'שמן טיגון',q:2,u:'ליטר'}],tasks:[{name:"בישול אורז לארנצ'יני",h:-24,p:'high'},{name:"גלגול ארנצ'יני",h:-6,p:'high'},{name:"טיגון ארנצ'יני",h:-1,p:'high'}]},
+  'אנטיפסטי':{base:30,min:0,ingredients:[{n:'קישואים',q:1.5,u:'ק"ג'},{n:'פלפלים',q:1,u:'ק"ג'},{n:'בצל',q:0.5,u:'ק"ג'},{n:'בטטה',q:1,u:'ק"ג'},{n:'תפוחי אדמה',q:1,u:'ק"ג'}],tasks:[{name:'חיתוך ירקות אנטיפסטי',h:-3,p:'med'},{name:'צלייה בתנור',h:-2,p:'high'}]},
+  'פיצה אדומה':{base:30,min:0,ingredients:[{n:'רוטב עגבניות',q:0.3,u:'ליטר'},{n:'מוצרלה',q:0.5,u:'ק"ג'}],tasks:[]},
+  'פיצה ירוקה':{base:30,min:0,ingredients:[{n:'פסטו בזיליקום',q:0.2,u:'ק"ג'},{n:'מוצרלה',q:0.5,u:'ק"ג'}],tasks:[]},
+  'פיצה צהובה':{base:30,min:0,ingredients:[{n:'קרם פולנטה',q:0.3,u:'ק"ג'},{n:'פטריות',q:0.4,u:'ק"ג'},{n:'מוצרלה',q:0.4,u:'ק"ג'}],tasks:[]},
+  'פיצה סגולה':{base:30,min:0,ingredients:[{n:'קרם סלק',q:0.3,u:'ק"ג'},{n:'מוצרלה',q:0.4,u:'ק"ג'}],tasks:[]},
+  'פיצה לבנה':{base:30,min:0,ingredients:[{n:'מוצרלה',q:0.5,u:'ק"ג'},{n:'פטריות',q:0.3,u:'ק"ג'}],tasks:[]},
+  'פיצות מהתנור':{base:30,min:0,ingredients:[{n:'קמח פיצה',q:3,u:'ק"ג'},{n:'שמרים',q:0.05,u:'ק"ג'},{n:'מוצרלה',q:2.5,u:'ק"ג'},{n:'רוטב עגבניות',q:1.5,u:'ליטר'},{n:'פסטו בזיליקום',q:0.5,u:'ק"ג'}],tasks:[{name:'הכנת בצק פיצה',h:-24,p:'high'},{name:'מנוחת בצק במקרר',h:-12,p:'high'},{name:'פריסת כדורי בצק',h:-3,p:'high'},{name:'הכנת כל הרטבים',h:-6,p:'high'},{name:'חימום תנור 350°+',h:-1,p:'high'}]},
+  'קלצונה מתוק':{base:30,min:0,ingredients:[{n:'נוטלה/שוקולד',q:0.8,u:'ק"ג'},{n:'אגוזי לוז',q:0.3,u:'ק"ג'}],tasks:[{name:'מילוי + עיצוב קלצונות',h:-2,p:'med'}]},
+  'מאפייה מהטאבון':{base:30,min:0,ingredients:[{n:"בצק פוקאצ'ה",q:0.8,u:'ק"ג'},{n:'שמן זית',q:0.1,u:'ליטר'}],tasks:[{name:'אפיית מאפים',h:-1,p:'med'}]},
+  'פסטה קצרה':{base:30,min:0,ingredients:[{n:'פסטה קצרה יבשה',q:1.2,u:'ק"ג'},{n:'שמנת לבישול',q:0.4,u:'ליטר'},{n:'פרמזן',q:0.2,u:'ק"ג'}],tasks:[{name:'הכנת רוטב פסטה',h:-2,p:'med'},{name:'בישול פסטה',h:-1,p:'high'}]},
+  'ניוקי צבעוני':{base:30,min:0,ingredients:[{n:'ניוקי',q:1.5,u:'ק"ג'},{n:'חמאה',q:0.2,u:'ק"ג'}],tasks:[{name:'הכנת ניוקי',h:-1,p:'high'}]},
+  'סלמון':{base:30,min:0,ingredients:[{n:'פילה סלמון',q:2.2,u:'ק"ג'},{n:'לימון',q:3,u:"יח'"},{n:'עשבי תיבול',q:1,u:"צרור"}],tasks:[{name:'הזמנת סלמון מספק',h:-48,p:'high'},{name:'תיבול סלמון',h:-3,p:'high'},{name:'צלייה סלמון',h:-1,p:'high'}]},
+  'דג לבן':{base:30,min:0,ingredients:[{n:'פילה דג לבן',q:1.8,u:'ק"ג'},{n:'לימון',q:3,u:"יח'"}],tasks:[{name:'הזמנת דג לבן מספק',h:-48,p:'high'},{name:'צלייה דג לבן',h:-1,p:'high'}]},
+  'דג כבוש':{base:30,min:0,ingredients:[{n:'סלמון לכבישה',q:1.5,u:'ק"ג'},{n:'סלק',q:0.5,u:'ק"ג'}],tasks:[{name:'כבישת דג (48ש לפני!)',h:-48,p:'high'}]},
+  "סביצ'ה דג ים":{base:30,min:0,ingredients:[{n:'דג ים טרי',q:1.5,u:'ק"ג'},{n:'לימון',q:5,u:"יח'"}],tasks:[{name:"הכנת סביצ'ה",h:-3,p:'high'}]},
+  'טירמיסו':{base:50,min:1,ingredients:[{n:'טירמיסו (מגש)',q:1,u:'מגש'}],tasks:[{name:'הכנת טירמיסו',h:-24,p:'high'},{name:'קירור טירמיסו',h:-12,p:'med'}]},
+  'מלבי':{base:50,min:1,ingredients:[{n:'מלבי (מגש)',q:1,u:'מגש'}],tasks:[{name:'הכנת מלבי',h:-12,p:'med'}]},
+  'פירות העונה':{base:30,min:0,ingredients:[{n:'פירות עונתיים',q:2,u:'ק"ג'}],tasks:[{name:'קנייה + חיתוך פירות',h:-3,p:'low'}]},
+  'שתייה קלה':{base:30,min:0,ingredients:[{n:'מים מינרלים 0.5L',q:4,u:"בקב'"},{n:'לימונדה',q:3,u:'ליטר'},{n:'מיץ תפוזים',q:2,u:'ליטר'}],tasks:[{name:'קניית שתייה קלה',h:-48,p:'low'}]},
+  'שתייה חמה':{base:30,min:0,ingredients:[{n:'קפסולות נספרסו',q:30,u:"יח'"},{n:'חלב',q:1,u:'ליטר'}],tasks:[{name:'הכנת עמדת קפה',h:-1,p:'low'}]},
+};
+const TASK_TIME_LABELS={'-72':'72 שעות לפני','-48':'48 שעות לפני','-24':'24 שעות לפני','-12':'12 שעות לפני','-6':'6 שעות לפני','-3':'3 שעות לפני','-2':'שעתיים לפני','-1':'שעה לפני','0':'יום האירוע'};
+
+// ─── INGR STATE ───
+let activeIngrQuotes = [];
+let manualQty = {};
+let customWaText = '';
+let taskDone = {};
+let extraTasks = [];
+
+function loadLocalState() {
+  try { manualQty = JSON.parse(localStorage.getItem('pz_manualQty')||'{}'); } catch(e){}
+  try { taskDone  = JSON.parse(localStorage.getItem('pz_taskDone')||'{}'); } catch(e){}
+  try { extraTasks= JSON.parse(localStorage.getItem('pz_extraTasks')||'[]'); } catch(e){}
+}
+
+// ─── MAIN TAB SWITCH ───
+function switchMainTab(name, btn) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tabs .tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+// ─── INGR from selected quotes ───
+function openIngrFromSelected() {
+  if (!selectedIds.size) return;
+  activeIngrQuotes = allQuotes.filter(q => selectedIds.has(q.id));
+  switchMainTab('ingr', document.getElementById('tab-ingr'));
+  calcIngredients();
+  renderTasks();
+}
+
+function getDishMeta(name) {
+  if (DISH_META[name]) return DISH_META[name];
+  const k = Object.keys(DISH_META).find(k => name.includes(k) || k.includes(name.split(' ')[0]));
+  return k ? DISH_META[k] : null;
+}
+
+function needsRounding(r) {
+  return !['ק"ג','ליטר'].includes(r.unit) && r.raw%1!==0 && manualQty[r.mk]===undefined;
+}
+function getFinalQty(r) {
+  if (manualQty[r.mk]!==undefined) return manualQty[r.mk];
+  if (['ק"ג','ליטר'].includes(r.unit)) return parseFloat(r.raw.toFixed(2));
+  return Math.ceil(r.raw);
+}
+
+function calcIngredients() {
+  if (!activeIngrQuotes.length) {
+    document.getElementById('ingr-empty').style.display='';
+    document.getElementById('ingr-summary').style.display='none';
+    document.getElementById('event-pills').innerHTML='<span style="color:var(--muted);font-size:0.85rem;">סמן הצעות מחיר ולחץ "🥦 חומרי גלם"</span>';
+    return;
+  }
+  document.getElementById('event-pills').innerHTML=activeIngrQuotes.map(q=>`<div class="event-pill active">${q.client_name}<span class="pill-guests">${(q.guests_adults||0)+(q.guests_kids||0)} איש</span></div>`).join('');
+  document.getElementById('ingr-empty').style.display='none';
+  document.getElementById('ingr-summary').style.display='block';
+
+  const rows=[];
+  let totalGuests=0;
+  const dishNamesSet=new Set();
+
+  activeIngrQuotes.forEach(q=>{
+    const guests=(q.guests_adults||0)+(q.guests_kids||0);
+    totalGuests+=guests;
+    const dishIds=Array.isArray(q.selected_dishes)?q.selected_dishes:[];
+    allDishes.filter(d=>dishIds.includes(d.id)).forEach(dish=>{
+      const meta=getDishMeta(dish.name);
+      if(!meta||!meta.ingredients.length) return;
+      dishNamesSet.add(dish.name);
+      const ratio=meta.min>0?Math.max(meta.min,Math.ceil(guests/meta.base)):guests/meta.base;
+      meta.ingredients.forEach(ing=>{
+        rows.push({dishName:dish.name,ingrName:ing.n,unit:ing.u,raw:ing.q*ratio,mk:`${q.id}_${dish.id}_${ing.n}`});
+      });
+    });
+  });
+
+  const fracs=rows.filter(r=>needsRounding(r));
+  document.getElementById('s-guests').textContent=totalGuests;
+  document.getElementById('s-dishes').textContent=dishNamesSet.size;
+  document.getElementById('s-fracs').textContent=fracs.length;
+  document.getElementById('s-items').textContent=rows.length;
+  document.getElementById('frac-btn').style.display=fracs.length?'':'none';
+  if(fracs.length) document.getElementById('frac-count').textContent=fracs.length;
+
+  renderIngrTable(rows);
+  buildWaText(rows, totalGuests);
+}
+
+function renderIngrTable(rows) {
+  const byDish={};
+  rows.forEach(r=>{if(!byDish[r.dishName])byDish[r.dishName]=[];byDish[r.dishName].push(r);});
+  let html='';
+  Object.entries(byDish).forEach(([dish,items])=>{
+    html+=`<tr class="cat-row-hdr"><td colspan="6">🍽️ ${dish}</td></tr>`;
+    items.forEach(r=>{
+      const isWarn=needsRounding(r);
+      const fq=getFinalQty(r);
+      const rawDisp=r.raw%1===0?r.raw:r.raw.toFixed(2);
+      html+=`<tr>
+        <td class="td-name">${r.ingrName}</td>
+        <td class="td-unit">${r.unit}</td>
+        <td><span class="qty-badge qty-ok">${rawDisp} ${r.unit}</span></td>
+        <td><input type="number" class="qty-input ${isWarn?'needs-round':''}" value="${isWarn?'':fq}" placeholder="${isWarn?'⚠ עגל':''}" step="0.1" min="0" onchange="setManualQty('${r.mk}',this.value,this)"></td>
+        <td style="font-size:0.77rem;color:var(--muted)">${dish}</td>
+        <td><input type="text" placeholder="הערה..." style="border:none;background:transparent;width:100%;font-size:0.78rem;color:var(--muted);outline:none;font-family:inherit;"></td>
+      </tr>`;
+    });
+  });
+  document.getElementById('ingr-tbody').innerHTML=html;
+}
+
+function setManualQty(key, val, el) {
+  const n=parseFloat(val);
+  if(!isNaN(n)&&n>=0){manualQty[key]=n;localStorage.setItem('pz_manualQty',JSON.stringify(manualQty));el.classList.remove('needs-round');calcIngredients();}
+}
+
+function openFracModal() {
+  const rows=[];
+  activeIngrQuotes.forEach(q=>{
+    const guests=(q.guests_adults||0)+(q.guests_kids||0);
+    const dishIds=Array.isArray(q.selected_dishes)?q.selected_dishes:[];
+    allDishes.filter(d=>dishIds.includes(d.id)).forEach(dish=>{
+      const meta=getDishMeta(dish.name);if(!meta)return;
+      const ratio=meta.min>0?Math.max(meta.min,Math.ceil(guests/meta.base)):guests/meta.base;
+      meta.ingredients.forEach(ing=>{
+        const raw=ing.q*ratio;const mk=`${q.id}_${dish.id}_${ing.n}`;
+        if(needsRounding({unit:ing.u,raw,mk})) rows.push({dishName:dish.name,ingrName:ing.n,unit:ing.u,raw,mk});
+      });
+    });
+  });
+  document.getElementById('frac-list').innerHTML=rows.length
+    ?rows.map(r=>`<div class="frac-item" id="fi_${r.mk.replace(/[^a-z0-9]/gi,'_')}">
+      <div><div class="frac-name">${r.ingrName} <span style="font-size:0.74rem;font-weight:400;color:var(--muted)">(${r.dishName})</span></div>
+      <div class="frac-raw">${r.raw.toFixed(2)} ${r.unit}</div></div>
+      <button class="frac-btn frac-down" onclick="fracSet('${r.mk}',${Math.floor(r.raw)})">↓ ${Math.floor(r.raw)}</button>
+      <button class="frac-btn frac-up" onclick="fracSet('${r.mk}',${Math.ceil(r.raw)})">↑ ${Math.ceil(r.raw)}</button>
+      <input class="frac-manual" type="number" value="${Math.ceil(r.raw)}" onchange="fracSet('${r.mk}',this.value)">
+    </div>`).join('')
+    :'<div style="text-align:center;padding:20px;color:var(--green);">✓ אין שברים</div>';
+  document.getElementById('fracModal').classList.add('open');
+}
+function fracSet(key,val){
+  manualQty[key]=parseFloat(val);localStorage.setItem('pz_manualQty',JSON.stringify(manualQty));
+  const el=document.getElementById('fi_'+key.replace(/[^a-z0-9]/gi,'_'));if(el)el.style.opacity='0.4';calcIngredients();
+}
+function confirmAllFracs(){
+  activeIngrQuotes.forEach(q=>{
+    const guests=(q.guests_adults||0)+(q.guests_kids||0);
+    const dishIds=Array.isArray(q.selected_dishes)?q.selected_dishes:[];
+    allDishes.filter(d=>dishIds.includes(d.id)).forEach(dish=>{
+      const meta=getDishMeta(dish.name);if(!meta)return;
+      const ratio=meta.min>0?Math.max(meta.min,Math.ceil(guests/meta.base)):guests/meta.base;
+      meta.ingredients.forEach(ing=>{const raw=ing.q*ratio;const mk=`${q.id}_${dish.id}_${ing.n}`;
+        if(needsRounding({unit:ing.u,raw,mk}))manualQty[mk]=Math.ceil(raw);
+      });
+    });
+  });
+  localStorage.setItem('pz_manualQty',JSON.stringify(manualQty));
+  calcIngredients();closeModal('fracModal');showToast('כל השברים עוגלו מעלה ✓','success');
+}
+
+// ─── TASKS ───
+function renderTasks() {
+  const container=document.getElementById('tasks-timeline');
+  const emptyEl=document.getElementById('tasks-empty');
+  const labelEl=document.getElementById('tasks-event-label');
+  if(!activeIngrQuotes.length){container.innerHTML='';emptyEl.style.display='';labelEl.textContent='';return;}
+  emptyEl.style.display='none';
+  labelEl.textContent='אירועים: '+activeIngrQuotes.map(q=>q.client_name).join(' • ');
+  const allTasks=[];
+  activeIngrQuotes.forEach(q=>{
+    const dishIds=Array.isArray(q.selected_dishes)?q.selected_dishes:[];
+    allDishes.filter(d=>dishIds.includes(d.id)).forEach(dish=>{
+      const meta=getDishMeta(dish.name);if(!meta)return;
+      (meta.tasks||[]).forEach(t=>allTasks.push({...t,dish:dish.name,id:`${dish.name}_${t.name}`}));
+    });
+  });
+  extraTasks.forEach(t=>allTasks.push(t));
+  const seen=new Set();
+  const uTasks=allTasks.filter(t=>{const k=`${t.dish}_${t.name}_${t.h}`;if(seen.has(k))return false;seen.add(k);return true;});
+  if(!uTasks.length){container.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);">אין משימות מוגדרות למנות אלו</div>';return;}
+  const groups={};
+  uTasks.forEach(t=>{const k=String(t.h);if(!groups[k])groups[k]=[];groups[k].push(t);});
+  let html='<div class="timeline">';
+  ['-72','-48','-24','-12','-6','-3','-2','-1','0'].forEach(k=>{
+    if(!groups[k])return;
+    html+=`<div class="tl-group"><div class="tl-time-label"><div class="tl-dot"></div><div class="tl-label-text">${TASK_TIME_LABELS[k]||k}</div></div><div class="tasks-grid">`;
+    groups[k].forEach(t=>{
+      const done=taskDone[t.id]||false;
+      const pClass={high:'tag-high',med:'tag-med',low:'tag-low'}[t.p]||'tag-low';
+      const pLabel={high:'חשוב',med:'בינוני',low:'נמוך'}[t.p]||'';
+      const sid='tc_'+t.id.replace(/[^a-z0-9]/gi,'_');
+      html+=`<div class="task-card ${done?'done':''}" id="${sid}">
+        <div class="task-chk ${done?'on':''}" onclick="toggleTask('${t.id}','${sid}')">${done?'✓':''}</div>
+        <div class="task-body">
+          <div class="task-name">${t.name}</div>
+          <div class="task-tags">${t.dish?`<span class="task-tag tag-dish">${t.dish}</span>`:'<span class="task-tag tag-dish">כללי</span>'}<span class="task-tag ${pClass}">${pLabel}</span></div>
+        </div></div>`;
+    });
+    html+='</div></div>';
+  });
+  html+='</div>';
+  container.innerHTML=html;
+}
+function toggleTask(id,cardId){
+  taskDone[id]=!taskDone[id];localStorage.setItem('pz_taskDone',JSON.stringify(taskDone));
+  const card=document.getElementById(cardId);if(!card)return;
+  card.classList.toggle('done',taskDone[id]);
+  const chk=card.querySelector('.task-chk');chk.classList.toggle('on',taskDone[id]);chk.textContent=taskDone[id]?'✓':'';
+}
+function resetTaskDone(){if(!confirm('לאפס?'))return;taskDone={};localStorage.removeItem('pz_taskDone');renderTasks();}
+function openAddTaskModal(){document.getElementById('addTaskModal').classList.add('open');}
+function saveExtraTask(){
+  const name=document.getElementById('at-name').value.trim();if(!name){showToast('נדרש שם','warn');return;}
+  extraTasks.push({name,h:parseInt(document.getElementById('at-time').value),p:document.getElementById('at-priority').value,dish:'',id:'extra_'+Date.now()});
+  localStorage.setItem('pz_extraTasks',JSON.stringify(extraTasks));
+  closeModal('addTaskModal');document.getElementById('at-name').value='';renderTasks();showToast('משימה נוספה ✓','success');
+}
+
+// ─── SUPPLIER TEXT ───
+function buildWaText(rows, totalGuests) {
+  const totals={};
+  rows.forEach(r=>{
+    const qty=getFinalQty(r);const key=`${r.ingrName}||${r.unit}`;
+    if(!totals[key])totals[key]={name:r.ingrName,unit:r.unit,qty:0};
+    totals[key].qty+=qty;
+  });
+  const evNames=activeIngrQuotes.map(q=>q.client_name).join(' + ');
+  const lines=Object.values(totals).sort((a,b)=>a.name.localeCompare(b.name,'he')).map(t=>`\u2022 ${t.name} \u2014 ${parseFloat(t.qty.toFixed(2))} ${t.unit}`);
+  customWaText=`שלום! 🍕\nהזמנה לאירועים: ${evNames}\nסה"כ ${totalGuests} סועדים\n\n${lines.join('\n')}\n\nתודה רבה, גל\n📞 054-203-1181`;
+  document.getElementById('wa-text').textContent=customWaText;
+}
+function copyWaText(){
+  const txt=customWaText||document.getElementById('wa-text').textContent;
+  if(!txt||txt.includes('סמן אירועים')){showToast('אין טקסט','warn');return;}
+  navigator.clipboard.writeText(txt).then(()=>showToast('הועתק! ✓','success')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('הועתק! ✓','success');});
+}
+function openWaEditModal(){document.getElementById('wa-edit-area').value=customWaText||document.getElementById('wa-text').textContent;document.getElementById('waEditModal').classList.add('open');}
+function saveWaEdit(){customWaText=document.getElementById('wa-edit-area').value;document.getElementById('wa-text').textContent=customWaText;closeModal('waEditModal');showToast('נשמר ✓','success');}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
 const AMALFI_URL = 'https://qgmyaxxzebwcatetbngs.supabase.co';
 const AMALFI_KEY = 'sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq';
 const sbA = supabase.createClient(AMALFI_URL, AMALFI_KEY);
 
 let allQuotes = [];
 let selectedIds = new Set();
-let currentTab = 'active';
+let currentSubTab = 'active'; let currentTab = 'active';
 
 // ══ INIT ══
 async function init() {
+  loadLocalState();
+  await loadDishes();
   await loadQuotes();
+}
+
+async function loadDishes() {
+  const { data } = await sb.from('qz_dishes').select('id,name,category').order('category');
+  if (data) allDishes = data;
 }
 
 async function loadQuotes() {
@@ -267,8 +802,8 @@ async function loadQuotes() {
 }
 
 // ══ TABS ══
-function switchTab(tab, btn) {
-  currentTab = tab;
+function switchSubTab(tab, btn) {
+  currentSubTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   clearSelection();
@@ -282,8 +817,8 @@ function renderQuotes() {
 
   let quotes = allQuotes.filter(q => {
     const isPast = q.event_date && new Date(q.event_date) < today;
-    if (currentTab === 'active' && isPast) return false;
-    if (currentTab === 'history' && !isPast) return false;
+    if (currentSubTab === 'active' && isPast) return false;
+    if (currentSubTab === 'history' && !isPast) return false;
     if (search && !(q.client_name||'').toLowerCase().includes(search) &&
         !(q.event_type||'').toLowerCase().includes(search)) return false;
     return true;
@@ -366,6 +901,7 @@ function updateSelectionUI() {
   countEl.style.display = count > 0 ? '' : 'none';
   document.getElementById('selectedNum').textContent = count;
   amalfiBtn.disabled = count === 0;
+  document.getElementById('ingrBtn').disabled = count === 0;
 }
 
 // ══ EDIT MODAL ══
