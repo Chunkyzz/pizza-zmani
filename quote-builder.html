@@ -147,14 +147,14 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 .pdf-cat-title{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid #C9A84C;padding-bottom:3px;margin-bottom:7px;margin-top:12px;}
 .pdf-cat-title:first-child{margin-top:0;}
 .pdf-cat-he{font-size:0.95rem;font-weight:700;color:#1B2A4A;font-family:'Frank Ruhl Libre',serif;}
-.pdf-cat-it{font-size:0.72rem;color:#888;font-style:italic;}
+.pdf-cat-it{font-size:0.72rem;color:#888;font-style:italic;text-align:left;}
 
 /* PDF DISH ROWS */
 .pdf-dishes-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;margin-bottom:4px;}
 .pdf-dish-row{padding:4px 0;border-bottom:0.5px solid #F0EDE5;}
 .pdf-dish-row:last-child{border:none;}
-.pdf-dish-name{font-size:0.82rem;font-weight:600;color:#1B2A4A;}
-.pdf-dish-it{font-size:0.65rem;color:#999;font-style:italic;margin-right:3px;}
+.pdf-dish-name{font-size:0.82rem;font-weight:600;color:#1B2A4A;display:inline;}
+.pdf-dish-it{font-size:0.65rem;color:#999;font-style:italic;display:inline;margin-right:4px;padding-right:4px;}
 .pdf-dish-desc{font-size:0.68rem;color:#666;margin-top:1px;}
 .pdf-dish-allergy{font-size:0.62rem;color:#B71C1C;margin-top:1px;}
 
@@ -165,16 +165,18 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 
 /* PDF TOTALS */
 .pdf-totals{background:#F8F5EE;border-radius:8px;padding:12px 16px;margin-top:12px;}
-.pdf-total-row{display:flex;justify-content:space-between;font-size:0.82rem;color:#666;padding:3px 0;}
+.pdf-total-row{display:flex;justify-content:space-between;font-size:0.82rem;color:#666;padding:4px 0;width:100%;}
+.pdf-total-row>span:first-child{flex:1;text-align:right;}
+.pdf-total-row>span:last-child{min-width:90px;text-align:left;font-weight:600;color:#333;}
 .pdf-total-row.divider{border-top:0.5px solid #DDD;padding-top:8px;margin-top:4px;}
 .pdf-total-row.grand{font-size:1rem;font-weight:700;color:#C9A84C;padding-top:6px;}
 .pdf-per-person{font-size:0.72rem;color:#888;text-align:left;margin-top:2px;}
 .pdf-deposit{border:1.5px dashed #C9A84C;border-radius:7px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
-.pdf-deposit span{font-size:0.78rem;color:#888;}
+.pdf-deposit>span{font-size:0.78rem;color:#888;flex:1;}
 .pdf-deposit strong{font-size:0.95rem;color:#1B2A4A;}
 
 /* PDF FOOTER */
-.pdf-footer{text-align:center;font-size:0.65rem;color:#aaa;margin-top:12px;padding-top:10px;border-top:0.5px solid #EEE;}
+.pdf-footer{text-align:center;font-size:0.65rem;color:#aaa;margin-top:12px;padding-top:10px;border-top:0.5px solid #EEE;unicode-bidi:plaintext;direction:ltr;}
 
 /* PDF PAGE 2 — DISCLAIMER */
 .pdf-page-2{page-break-before:always;}.pdf-disclaimer-header{background:#1B2A4A;padding:11px 20px;display:flex;justify-content:space-between;align-items:center;}
@@ -695,7 +697,7 @@ function updatePreview() {
         html+='<div class="pdf-dish-single">' +
           '<div>' +
             '<span class="pdf-dish-name">'+d.name+'</span>' +
-            (d.name_it?'<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
+            (d.name_it?' &nbsp;<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
             (d.description?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
             (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
           '</div>' +
@@ -710,7 +712,7 @@ function updatePreview() {
         baseTotal+=base; addonTotal+=addon;
         html+='<div class="pdf-dish-row">' +
           '<span class="pdf-dish-name">'+d.name+'</span>' +
-          (d.name_it?'<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
+          (d.name_it?' &nbsp;<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
           (d.description?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
           (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
           '</div>';
@@ -826,8 +828,8 @@ function generatePDF(){
   const customName = document.getElementById('cl-filename').value.trim();
   const dateVal    = document.getElementById('cl-date').value;
   const dateStr    = dateVal
-    ? new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').split('/').join('-')
-    : new Date().toLocaleDateString('he-IL').split('/').join('-');
+    ? new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').replace(/\/g,'-')
+    : new Date().toLocaleDateString('he-IL').replace(/\/g,'-');
   const filename = customName
     ? (customName.endsWith('.pdf') ? customName : customName+'.pdf')
     : 'Pizza_Zmani_'+clientName+'_'+dateStr+'.pdf';
