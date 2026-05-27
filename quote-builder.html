@@ -848,7 +848,7 @@ function generatePDF(){
   const total  = billed + g.babies;
 
   // ── price ──
-  const includeVat = document.getElementById('toggle-vat').classList.contains('on');
+  // includeVat and hidePrices are global vars set by toggleOpt
   let baseTotal=0, addonTotal=0;
   const sel = allDishes.filter(d=>selectedDishes.has(d.id));
   sel.forEach(d=>{
@@ -870,7 +870,7 @@ function generatePDF(){
   const dep   = grand*0.10;
   const perP  = billed>0 ? Math.round(grand/billed) : 0;
 
-  const hidePrices = document.getElementById('toggle-prices') && document.getElementById('toggle-prices').classList.contains('on');
+  // hidePrices is global
 
   // ── build menu HTML ──
   const catOrder = allCats.map(c=>c.name);
