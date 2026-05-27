@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.3.1</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.3.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -147,14 +147,14 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 .pdf-cat-title{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid #C9A84C;padding-bottom:3px;margin-bottom:7px;margin-top:12px;}
 .pdf-cat-title:first-child{margin-top:0;}
 .pdf-cat-he{font-size:0.95rem;font-weight:700;color:#1B2A4A;font-family:'Frank Ruhl Libre',serif;}
-.pdf-cat-it{font-size:0.72rem;color:#888;font-style:italic;text-align:left;}
+.pdf-cat-it{font-size:0.72rem;color:#888;font-style:italic;}
 
 /* PDF DISH ROWS */
 .pdf-dishes-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;margin-bottom:4px;}
 .pdf-dish-row{padding:4px 0;border-bottom:0.5px solid #F0EDE5;}
 .pdf-dish-row:last-child{border:none;}
-.pdf-dish-name{font-size:0.82rem;font-weight:600;color:#1B2A4A;display:inline;}
-.pdf-dish-it{font-size:0.65rem;color:#999;font-style:italic;display:inline;margin-right:4px;padding-right:4px;}
+.pdf-dish-name{font-size:0.82rem;font-weight:600;color:#1B2A4A;}
+.pdf-dish-it{font-size:0.65rem;color:#999;font-style:italic;margin-right:3px;}
 .pdf-dish-desc{font-size:0.68rem;color:#666;margin-top:1px;}
 .pdf-dish-allergy{font-size:0.62rem;color:#B71C1C;margin-top:1px;}
 
@@ -165,18 +165,16 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 
 /* PDF TOTALS */
 .pdf-totals{background:#F8F5EE;border-radius:8px;padding:12px 16px;margin-top:12px;}
-.pdf-total-row{display:flex;justify-content:space-between;font-size:0.82rem;color:#666;padding:4px 0;width:100%;}
-.pdf-total-row>span:first-child{flex:1;text-align:right;}
-.pdf-total-row>span:last-child{min-width:90px;text-align:left;font-weight:600;color:#333;}
+.pdf-total-row{display:flex;justify-content:space-between;font-size:0.82rem;color:#666;padding:3px 0;}
 .pdf-total-row.divider{border-top:0.5px solid #DDD;padding-top:8px;margin-top:4px;}
 .pdf-total-row.grand{font-size:1rem;font-weight:700;color:#C9A84C;padding-top:6px;}
 .pdf-per-person{font-size:0.72rem;color:#888;text-align:left;margin-top:2px;}
 .pdf-deposit{border:1.5px dashed #C9A84C;border-radius:7px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
-.pdf-deposit>span{font-size:0.78rem;color:#888;flex:1;}
+.pdf-deposit span{font-size:0.78rem;color:#888;}
 .pdf-deposit strong{font-size:0.95rem;color:#1B2A4A;}
 
 /* PDF FOOTER */
-.pdf-footer{text-align:center;font-size:0.65rem;color:#aaa;margin-top:12px;padding-top:10px;border-top:0.5px solid #EEE;unicode-bidi:plaintext;direction:ltr;}
+.pdf-footer{text-align:center;font-size:0.65rem;color:#aaa;margin-top:12px;padding-top:10px;border-top:0.5px solid #EEE;}
 
 /* PDF PAGE 2 — DISCLAIMER */
 .pdf-page-2{page-break-before:always;}.pdf-disclaimer-header{background:#1B2A4A;padding:11px 20px;display:flex;justify-content:space-between;align-items:center;}
@@ -231,7 +229,7 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.3.1</div>
+  <div class="version">v2.3.2</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -697,7 +695,7 @@ function updatePreview() {
         html+='<div class="pdf-dish-single">' +
           '<div>' +
             '<span class="pdf-dish-name">'+d.name+'</span>' +
-            (d.name_it?' &nbsp;<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
+            (d.name_it?'<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
             (d.description?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
             (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
           '</div>' +
@@ -712,7 +710,7 @@ function updatePreview() {
         baseTotal+=base; addonTotal+=addon;
         html+='<div class="pdf-dish-row">' +
           '<span class="pdf-dish-name">'+d.name+'</span>' +
-          (d.name_it?' &nbsp;<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
+          (d.name_it?'<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
           (d.description?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
           (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
           '</div>';
@@ -822,64 +820,301 @@ async function sendApproval(){
 // PDF
 function generatePDF(){
   updatePreview();
-  if(currentMode==='build') setMode('preview');
 
-  const clientName = document.getElementById('cl-name').value||'לקוח';
-  const customName = document.getElementById('cl-filename').value.trim();
-  const dateVal    = document.getElementById('cl-date').value;
-  const dateStr    = dateVal
-    ? new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').replace(/\/g,'-')
-    : new Date().toLocaleDateString('he-IL').replace(/\/g,'-');
+  // ── collect data directly from DOM/state ──
+  const clientName  = (document.getElementById('cl-name').value||'לקוח').trim();
+  const clientPhone = document.getElementById('cl-phone').value||'';
+  const clientAddr  = document.getElementById('cl-address').value||'';
+  const clientNotes = document.getElementById('cl-notes').value||'';
+  const eventType   = getEventType()||'';
+  const dateVal     = document.getElementById('cl-date').value;
+  const timeVal     = document.getElementById('cl-time').value;
+  const customName  = document.getElementById('cl-filename').value.trim();
+
+  const dateStr = dateVal
+    ? new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
+    : '—';
+  const dateShort = dateVal
+    ? new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').split('/').join('-')
+    : new Date().toLocaleDateString('he-IL').split('/').join('-');
+  const timeStr = timeVal ? timeVal.slice(0,5) : '—';
   const filename = customName
     ? (customName.endsWith('.pdf') ? customName : customName+'.pdf')
-    : 'Pizza_Zmani_'+clientName+'_'+dateStr+'.pdf';
+    : 'Pizza_Zmani_'+clientName+'_'+dateShort+'.pdf';
 
-  showToast('מייצר PDF...','');
+  // ── guests ──
+  const g = getGuests();
+  const billed = g.adults + g.kids;
+  const total  = billed + g.babies;
 
-  setTimeout(()=>{
-    html2pdf().set({
-      margin: [6, 6, 6, 6],
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        scrollY: 0,
-        windowWidth: 794,
-        onclone: (doc) => {
-          doc.documentElement.setAttribute('dir','rtl');
-          doc.documentElement.setAttribute('lang','he');
-          // Fix colors + RTL
-          const style = doc.createElement('style');
-          style.textContent = `
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
-            body { direction: rtl !important; font-family: Arial, sans-serif !important; }
-            [style*="background:#1B2A4A"], [style*="background: #1B2A4A"],
-            .pdf-header, .pdf-guests-bar, .pdf-disclaimer-header, .pdf-quote-card-header {
-              -webkit-print-color-adjust: exact !important;
-            }
-            /* Fix RTL text spacing */
-            span, div, p { letter-spacing: normal !important; word-spacing: normal !important; }
-          `;
-          doc.head.appendChild(style);
-          // Force all inline backgrounds to print
-          doc.querySelectorAll('[style]').forEach(el => {
-            const s = el.getAttribute('style');
-            if(s && (s.includes('background') || s.includes('color'))) {
-              el.style.webkitPrintColorAdjust = 'exact';
-            }
-          });
-        }
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: 'css', before: '.pdf-page-2', avoid: '.pdf-cat-title,.pdf-dish-row,.pdf-totals,.pdf-deposit' }
-    }).from(document.getElementById('pdfContent')).save()
-    .then(()=>{ showToast('PDF הורד ✓','success'); });
-  }, 500);
+  // ── price ──
+  const includeVat = document.getElementById('toggle-vat').classList.contains('on');
+  let baseTotal=0, addonTotal=0;
+  const sel = allDishes.filter(d=>selectedDishes.has(d.id));
+  sel.forEach(d=>{
+    if(d.base_price) baseTotal+=d.base_price;
+    if(d.addon_per_person) addonTotal+=d.addon_per_person*billed;
+  });
+  const hasPizzas = sel.some(d=>d.category==='פיצות');
+  if(hasPizzas) baseTotal+=100*billed;
+  const saladCount = sel.filter(d=>d.category==='סלטים').length;
+  if(saladCount>0){
+    addonTotal += 20*billed;
+    if(saladCount>4) addonTotal += (saladCount-4)*5*billed;
+  }
+  const sub0  = baseTotal+addonTotal;
+  const kDisc = billed>0 ? (g.kids/billed)*sub0*0.15 : 0;
+  const sub   = sub0-kDisc;
+  const vat   = includeVat ? sub*0.18 : 0;
+  const grand = sub+vat;
+  const dep   = grand*0.10;
+  const perP  = billed>0 ? Math.round(grand/billed) : 0;
+
+  const hidePrices = document.getElementById('toggle-prices') && document.getElementById('toggle-prices').classList.contains('on');
+
+  // ── build menu HTML ──
+  const catOrder = allCats.map(c=>c.name);
+  const catIt    = {};  allCats.forEach(c=>{ catIt[c.name]=c.name_it||''; });
+  const bycat    = {};
+  sel.forEach(d=>{ if(!bycat[d.category]) bycat[d.category]=[]; bycat[d.category].push(d); });
+
+  let menuHtml = '';
+  catOrder.forEach(cat=>{
+    if(!bycat[cat]||!bycat[cat].length) return;
+    const dishes = bycat[cat];
+
+    // category price label
+    let priceLabel = '';
+    if(!hidePrices){
+      if(cat==='פיצות') priceLabel='₪100/אדם בסיס';
+      else if(cat==='סלטים'){
+        priceLabel = saladCount<=4 ? '₪20/אדם' : '₪20/אדם + ₪'+(saladCount-4)*5+'/אדם תוספת';
+      } else {
+        const ad = dishes.find(d=>d.addon_per_person>0);
+        if(ad) priceLabel='+₪'+ad.addon_per_person+'/אדם';
+      }
+    }
+
+    menuHtml += `
+      <div class="cat-block">
+        <div class="cat-title">
+          <span class="cat-he">${cat}</span>
+          <span class="cat-right">${catIt[cat]||''}${priceLabel ? ' &nbsp;•&nbsp; <b>'+priceLabel+'</b>' : ''}</span>
+        </div>
+        <div class="dishes-grid">`;
+
+    dishes.forEach(d=>{
+      const allergyStr = (d.allergens&&d.allergens.length) ? d.allergens.join(', ') : '';
+      menuHtml += `
+          <div class="dish-card">
+            <div class="dish-top">
+              <span class="dish-name">${d.name}</span>
+              ${d.name_it ? `<span class="dish-it">(${d.name_it})</span>` : ''}
+            </div>
+            ${d.description ? `<div class="dish-desc">${d.description}</div>` : ''}
+            ${allergyStr ? `<div class="dish-allergy">⚠ ${allergyStr}</div>` : ''}
+          </div>`;
+    });
+
+    menuHtml += `</div></div>`;
+  });
+
+  // ── notes HTML ──
+  const notesHtml = clientNotes ? `
+    <div class="notes-box">
+      <div class="notes-label">הערות מיוחדות</div>
+      <div class="notes-text">${clientNotes}</div>
+    </div>` : '';
+
+  // ── price block HTML ──
+  const priceHtml = hidePrices ? '' : `
+    <div class="price-block">
+      <div class="price-row"><span>סה"כ לפני מע"מ</span><span>₪${Math.round(sub).toLocaleString()}</span></div>
+      ${includeVat ? `<div class="price-row"><span>מע"מ (18%)</span><span>₪${Math.round(vat).toLocaleString()}</span></div>` : ''}
+      <div class="price-row grand"><span>💰 סה"כ לתשלום</span><span>₪${Math.round(grand).toLocaleString()}</span></div>
+      ${perP>0 ? `<div class="price-per">עלות ממוצעת לאדם: ₪${perP.toLocaleString()}</div>` : ''}
+    </div>
+    <div class="deposit-box">
+      <span>מקדמה לסגירת תאריך (10%)</span>
+      <strong>₪${Math.round(dep).toLocaleString()}</strong>
+    </div>`;
+
+  // ── full HTML ──
+  const html = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>${filename}</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;font-size:13px;color:#1a1a1a;}
+
+/* PAGE */
+.page{width:210mm;min-height:auto;margin:0 auto;background:white;}
+@media print{
+  html,body{margin:0;padding:0;}
+  .page{width:100%;page-break-after:always;}
+  .page:last-child{page-break-after:avoid;}
 }
 
+/* HEADER */
+.header{background:#1B2A4A;padding:14px 20px 10px;color:white;}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.logo{font-family:'Frank Ruhl Libre',serif;font-size:22px;color:#C9A84C;line-height:1;}
+.logo-sub{font-size:9px;color:rgba(255,255,255,0.45);margin-top:2px;}
+.quote-ref{text-align:left;}
+.quote-ref .num{font-size:18px;font-weight:700;font-family:'Frank Ruhl Libre',serif;color:white;}
+.quote-ref .dt{font-size:9px;color:rgba(255,255,255,0.35);}
 
+/* CLIENT GRID */
+.client-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 16px;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;}
+.ci label{font-size:9px;color:rgba(255,255,255,0.4);display:block;margin-bottom:2px;}
+.ci span{font-size:12px;font-weight:600;color:white;display:block;}
+.ci span.gold{color:#C9A84C;}
+
+/* GUESTS BAR */
+.guests-bar{background:#243660;padding:7px 20px;display:flex;gap:0;align-items:center;flex-wrap:wrap;}
+.gb{display:flex;align-items:center;gap:5px;padding:0 14px 0 0;margin:0 14px 0 0;border-left:1px solid rgba(255,255,255,0.12);}
+.gb:last-child{border:none;padding:0;margin:0;}
+.gb .lbl{font-size:9px;color:rgba(255,255,255,0.45);}
+.gb .val{font-size:12px;font-weight:600;color:white;}
+.gb .val.gold{color:#C9A84C;}
+
+/* BODY */
+.body{padding:12px 20px 16px;}
+
+/* CATEGORY */
+.cat-block{margin-bottom:10px;}
+.cat-title{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid #C9A84C;padding-bottom:3px;margin-bottom:6px;}
+.cat-he{font-family:'Frank Ruhl Libre',serif;font-size:14px;font-weight:700;color:#1B2A4A;}
+.cat-right{font-size:10px;color:#888;font-style:italic;text-align:left;}
+.cat-right b{color:#2E6B4F;font-style:normal;}
+
+/* DISHES GRID */
+.dishes-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px;}
+.dish-card{padding:4px 0;border-bottom:0.5px solid #F0EDE5;}
+.dish-card:last-child{border:none;}
+.dish-top{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;}
+.dish-name{font-size:12px;font-weight:600;color:#1B2A4A;}
+.dish-it{font-size:10px;color:#aaa;font-style:italic;}
+.dish-desc{font-size:10px;color:#666;margin-top:1px;line-height:1.3;}
+.dish-allergy{font-size:9px;color:#B71C1C;margin-top:1px;}
+
+/* NOTES */
+.notes-box{background:#FFFDF5;border:1px solid #E8D9A0;border-radius:6px;padding:8px 12px;margin:10px 0;}
+.notes-label{font-size:9px;font-weight:600;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.3px;}
+.notes-text{font-size:11px;color:#333;line-height:1.5;}
+
+/* PRICE BLOCK */
+.price-block{background:#F8F5EE;border-radius:7px;padding:10px 14px;margin-top:10px;}
+.price-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#555;padding:3px 0;border-bottom:0.5px solid #E8E2D5;}
+.price-row:last-child{border:none;}
+.price-row span:first-child{font-weight:400;}
+.price-row span:last-child{font-weight:600;color:#333;min-width:80px;text-align:left;}
+.price-row.grand{font-size:14px;font-weight:700;color:#C9A84C;border-top:1.5px solid #DDD;margin-top:4px;padding-top:7px;}
+.price-row.grand span:last-child{color:#C9A84C;}
+.price-per{font-size:10px;color:#888;text-align:left;margin-top:4px;}
+
+/* DEPOSIT */
+.deposit-box{border:1.5px dashed #C9A84C;border-radius:6px;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+.deposit-box span{font-size:11px;color:#888;}
+.deposit-box strong{font-size:13px;font-weight:700;color:#1B2A4A;}
+
+/* FOOTER */
+.footer{text-align:center;font-size:9px;color:#bbb;padding:8px 20px;border-top:0.5px solid #EEE;direction:ltr;}
+
+/* DISCLAIMER PAGE */
+.disc-header{background:#1B2A4A;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;}
+.disc-header h2{font-family:'Frank Ruhl Libre',serif;font-size:14px;color:#C9A84C;margin:0;}
+.disc-header span{font-size:9px;color:rgba(255,255,255,0.3);}
+.disc-body{padding:14px 20px;font-size:11px;color:#444;line-height:1.8;direction:rtl;}
+.disc-body h4{font-size:12px;font-weight:700;color:#1B2A4A;margin:12px 0 3px;}
+.disc-body h4:first-child{margin-top:0;}
+.disc-body p{margin-bottom:5px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ דף 1 ═══ -->
+<div class="page">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="logo">Pizza Zmani 🍕</div>
+        <div class="logo-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
+      </div>
+      <div class="quote-ref">
+        <div class="num">#${document.getElementById('pr-quote-num')?.textContent||''}</div>
+        <div class="dt">${dateShort}</div>
+      </div>
+    </div>
+    <div class="client-grid">
+      <div class="ci"><label>לקוח</label><span class="gold">${clientName}</span></div>
+      <div class="ci"><label>תאריך</label><span>${dateStr}</span></div>
+      <div class="ci"><label>שעת הגשה</label><span>${timeStr}</span></div>
+      <div class="ci"><label>טלפון</label><span>${clientPhone}</span></div>
+      <div class="ci"><label>סוג אירוע</label><span>${eventType}</span></div>
+      <div class="ci"><label>כתובת</label><span>${clientAddr}</span></div>
+    </div>
+  </div>
+
+  <div class="guests-bar">
+    <div class="gb"><span class="lbl">אורחים</span><span class="val gold">${total}</span></div>
+    <div class="gb"><span class="lbl">מבוגרים</span><span class="val">${g.adults}</span></div>
+    <div class="gb"><span class="lbl">ילדים (15%−)</span><span class="val">${g.kids}</span></div>
+    <div class="gb"><span class="lbl">פעוטות (חינם)</span><span class="val">${g.babies}</span></div>
+    <div class="gb"><span class="lbl">מחויבים</span><span class="val">${billed}</span></div>
+  </div>
+
+  <div class="body">
+    ${menuHtml}
+    ${notesHtml}
+    ${priceHtml}
+  </div>
+  <div class="footer">Pizza Zmani &nbsp;•&nbsp; 054-203-1181 &nbsp;•&nbsp; אוכל איטלקי שמח</div>
+</div>
+
+<!-- ═══ דף 2 — תנאים ═══ -->
+<div class="page">
+  <div class="disc-header">
+    <h2>📋 תנאים ומדיניות</h2>
+    <span>${document.getElementById('pr-quote-ref')?.textContent||''}</span>
+  </div>
+  <div class="disc-body">
+    <h4>כללי</h4>
+    <p>ההצעה תקפה לאחר אישורה בכתב ותשלום מקדמה של 10%. ההצעה עלולה להשתנות לאחר שיחת וידאו/פגישה במקום האירוע לאור צרכים תפעוליים, תברואתיים ועיצוביים. המחירים לפני מע"מ (18%). נדרשים דיוקים ושיחה עם הלקוח. שינוי בכמות האורחים – לא יותר מ-10%.</p>
+    <h4>ביטולים</h4>
+    <p>שינויים יתאפשרו עד 72 שעות לפני תחילת האירוע. ביטול עד 72 שעות לפני: 10% מהסכום. ביטול בין 72–24 שעות לפני: 30% מהסכום. ביטול פחות מ-24 שעות לפני: 100% מהסכום. ביטול מכל סיבה (מגיפה, כח עליון, מלחמה) חל על הלקוח — למעט הנחיות פיקוד העורף.</p>
+    <h4>⚠ אלרגיות</h4>
+    <p>אין ביכולתינו להתחייב על אלרגן מכל סוג שהוא (אגוזים, חלב, גלוטן, שומשום וכל אלרגן אחר). נא לעדכן על רגישויות מוקדם ככל האפשר כדי שנוכל להיערך בהתאם.</p>
+    <h4>ציוד והגשה</h4>
+    <p>נגיע לאירוע עם כל הציוד הדרוש — כלי הגשה, לבושה עיצובית ואנשי צוות בהתאם לגודל. האירוע ה מפיות אינו כולל כוסות. שתייה: הגשה שעה וחצי בופה מלא + חצי שעה בופה. קינוחים.</p>
+    <h4>לוגיסטיקה</h4>
+    <p>הובלה כלולה בין גדרה – נתניה – ומודיעין. מודיעין אחרים יתומחרו לפי. מרחק על המזמין לדאוג ל: מקום עם מים זורמים בקרבת, מקום נקודות חשמל, פעילות 2 מקומות חניה ואזור פריקה. וטעינה ב 3 מדרגות – תחושב תוספת.</p>
+    <h4>תשלום</h4>
+    <p>מקדמה של 10% במעמד סגירת הפגישה. העסקה יתרה – ביום. האירוע תשלום כנגד חשבונית. עסקה חשותף פלוס – יש לציין מראש.</p>
+  </div>
+  <div class="footer">Pizza Zmani &nbsp;•&nbsp; 054-203-1181 &nbsp;•&nbsp; אוכל איטלקי שמח</div>
+</div>
+
+<script>
+window.onload = function(){
+  setTimeout(function(){
+    window.focus();
+    window.print();
+  }, 1800);
+};
+<\/script>
+</body>
+</html>`;
+
+  showToast('מייצר PDF...','');
+  const win = window.open('', '_blank', 'width=900,height=750');
+  if(!win){ showToast('חסום popup — אשר בדפדפן','error'); return; }
+  win.document.write(html);
+  win.document.close();
+}
 // RESET
 function resetAll(){
   if(!confirm('לאפס?'))return;
