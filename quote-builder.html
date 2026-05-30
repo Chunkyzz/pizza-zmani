@@ -898,8 +898,11 @@ function generatePDF(){
     menuHtml += `
       <div class="cat-block">
         <div class="cat-title">
-          <span class="cat-he">${cat}</span>
-          <span class="cat-right">${catIt[cat]||''}${priceLabel ? ' &nbsp;•&nbsp; <b>'+priceLabel+'</b>' : ''}</span>
+          <span>
+            <span class="cat-he">${cat}</span>
+            ${catIt[cat] ? `<span class="cat-he-sub">${catIt[cat]}</span>` : ''}
+          </span>
+          ${priceLabel ? `<span class="cat-price">${priceLabel}</span>` : ''}
         </div>
         <div class="dishes-grid">`;
 
@@ -988,8 +991,8 @@ html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;fo
 .cat-block{margin-bottom:10px;}
 .cat-title{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid #C9A84C;padding-bottom:3px;margin-bottom:6px;}
 .cat-he{font-family:'Frank Ruhl Libre',serif;font-size:14px;font-weight:700;color:#1B2A4A;}
-.cat-right{font-size:10px;color:#888;font-style:italic;text-align:left;}
-.cat-right b{color:#2E6B4F;font-style:normal;}
+.cat-he-sub{font-size:10px;color:#aaa;font-style:italic;margin-right:6px;font-weight:400;}
+.cat-price{font-size:10px;color:#2E6B4F;font-weight:600;text-align:left;}
 
 /* DISHES GRID */
 .dishes-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px;}
