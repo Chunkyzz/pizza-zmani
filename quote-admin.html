@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול תפריט v1.0.0</title>
+<title>Pizza Zmani – ניהול תפריט v1.1.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -333,13 +333,14 @@
       <div class="sub">מערכת ניהול תפריט והצעות מחיר</div>
     </div>
   </div>
-  <div class="topbar-version">v1.0.0</div>
+  <div class="topbar-version">v1.1.0</div>
 </div>
 
 <!-- TABS -->
 <div class="tabs">
   <button class="tab-btn active" onclick="showTab('dishes')">🍽️ מנות</button>
   <button class="tab-btn" onclick="showTab('categories')">📂 קטגוריות</button>
+  <button class="tab-btn" onclick="showTab('pricing')">💰 תמחור</button>
   <button class="tab-btn" onclick="showTab('settings')">⚙️ הגדרות</button>
 </div>
 
@@ -401,6 +402,16 @@
         </tbody>
       </table>
     </div>
+  </div>
+
+  <!-- ════ PRICING TAB ════ -->
+  <div class="section" id="tab-pricing">
+    <div class="section-header">
+      <div class="section-title">💰 כללי תמחור</div>
+      <button class="btn btn-primary" onclick="savePricing()">💾 שמור שינויים</button>
+    </div>
+    <div id="pricing-loading" style="text-align:center;padding:40px;color:var(--muted);">⏳ טוען...</div>
+    <div id="pricing-grid" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
   </div>
 
   <!-- ════ SETTINGS TAB ════ -->
@@ -573,6 +584,7 @@ async function init() {
   await loadCategories();
   await loadDishes();
   buildStats();
+  await loadPricing();
 }
 init();
 
@@ -846,6 +858,60 @@ function setToggle(id, val) {
 function isOn(id) { return document.getElementById(id).classList.contains('on'); }
 
 // ── SETTINGS ──
+// ══════════════════════════════════════════════
+//  PRICING
+// ══════════════════════════════════════════════
+let pricingData = {};
+
+async function loadPricing() {
+  const { data, error } = await sb.from('qz_pricing').select('*').order('key');
+  if (error) { console.error('pricing load error:', error); return; }
+  pricingData = {};
+  data.forEach(row => { pricingData[row.key] = row; });
+  renderPricingGrid(data);
+  document.getElementById('pricing-loading').style.display = 'none';
+  document.getElementById('pricing-grid').style.display = 'grid';
+}
+
+function renderPricingGrid(rows) {
+  const grid = document.getElementById('pricing-grid');
+  grid.innerHTML = rows.map(row => `
+    <div class="settings-card" style="margin-bottom:0;">
+      <div style="margin-bottom:10px;">
+        <div style="font-family:'Frank Ruhl Libre',serif;font-size:1rem;color:var(--navy);margin-bottom:3px;">${row.label||row.key}</div>
+        <div style="font-size:0.75rem;color:var(--muted);">${row.description||''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="number" 
+          id="pricing-${row.key}" 
+          value="${row.value}" 
+          step="0.5" min="0"
+          style="font-family:'Heebo',sans-serif;font-size:1.2rem;font-weight:700;padding:10px 14px;border:2px solid var(--border);border-radius:9px;background:var(--cream);outline:none;width:120px;text-align:center;color:var(--navy);"
+          onfocus="this.style.borderColor='var(--gold)'"
+          onblur="this.style.borderColor='var(--border)'"
+        >
+        <span style="font-size:0.85rem;color:var(--muted);">${row.key.includes('discount')||row.key==='vat'||row.key==='deposit' ? '%' : '₪'}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function savePricing() {
+  const updates = Object.keys(pricingData).map(key => {
+    const el = document.getElementById('pricing-' + key);
+    if (!el) return null;
+    return sb.from('qz_pricing')
+      .update({ value: parseFloat(el.value) })
+      .eq('key', key);
+  }).filter(Boolean);
+
+  try {
+    await Promise.all(updates);
+    showToast('תמחור עודכן ✓', 'success');
+  } catch(e) {
+    showToast('שגיאה בשמירה', 'error');
+  }
+}
+
 function saveSettings() {
   const keys = ['base-price','vat','kids-disc','deposit','delivery','hours','allergy','cancel'];
   const vals = {};
