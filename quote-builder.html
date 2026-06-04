@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.3.8</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -229,7 +229,7 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.3.8</div>
+  <div class="version">v2.4.0</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -525,6 +525,80 @@ async function init() {
   document.getElementById('quoteNum').textContent = '#' + String(Date.now()).slice(-4);
   document.getElementById('pr-quote-ref').textContent = 'הצעה ' + document.getElementById('quoteNum').textContent;
   await loadData();
+  // Check if editing existing quote
+  const params = new URLSearchParams(window.location.search);
+  const editId = params.get('id');
+  if (editId) await loadExistingQuote(editId);
+}
+
+async function loadExistingQuote(id) {
+  const { data, error } = await sb.from('qz_quotes').select('*').eq('id', id).single();
+  if (error || !data) { showToast('לא נמצאה הצעה', 'error'); return; }
+
+  // Set currentQuoteId for upsert
+  currentQuoteId = data.id;
+
+  // Fill form fields
+  document.getElementById('cl-name').value    = data.client_name || '';
+  document.getElementById('cl-phone').value   = data.client_phone || '';
+  document.getElementById('cl-address').value = data.event_address || '';
+  document.getElementById('cl-notes').value   = data.notes || '';
+  if (data.event_date) document.getElementById('cl-date').value = data.event_date;
+  if (data.event_time) document.getElementById('cl-time').value = data.event_time.slice(0,5);
+
+  // Event type
+  const typeEl = document.getElementById('cl-type');
+  if (typeEl && data.event_type) {
+    const opt = Array.from(typeEl.options).find(o => o.value === data.event_type);
+    if (opt) typeEl.value = data.event_type;
+    else {
+      typeEl.value = 'אחר';
+      const custom = document.getElementById('cl-type-custom');
+      if (custom) custom.value = data.event_type;
+    }
+  }
+
+  // Guests
+  if (data.guests_adults !== null) setGuestVal('adults', data.guests_adults);
+  if (data.guests_kids   !== null) setGuestVal('kids',   data.guests_kids);
+  if (data.guests_babies !== null) setGuestVal('babies', data.guests_babies);
+
+  // Selected dishes
+  if (Array.isArray(data.selected_dishes)) {
+    selectedDishes.clear();
+    data.selected_dishes.forEach(id => selectedDishes.add(Number(id)));
+    renderDishes();
+  }
+
+  // Manual price
+  if (data.total_before_vat) {
+    document.getElementById('manual-subtotal').value = data.total_before_vat;
+    calcManualPrice();
+  }
+
+  // VAT
+  includeVat = data.include_vat !== false;
+  const vatLabel = document.getElementById('tog-vat');
+  if (vatLabel) vatLabel.classList.toggle('checked', includeVat);
+
+  // Show back button
+  document.getElementById('back-to-manager').style.display = '';
+
+  // Update title
+  document.getElementById('quoteNum').textContent = '#' + String(data.id).slice(-4);
+  document.getElementById('pr-quote-ref').textContent = 'עריכת הצעה';
+
+  showToast('הצעה נטענה לעריכה ✓', 'success');
+  updatePreview();
+}
+
+function setGuestVal(type, val) {
+  // find the guest counter display element
+  const el = document.querySelector('[data-guest="'+type+'"]') ||
+             document.getElementById('guest-'+type);
+  if (el) el.textContent = val;
+  // also try the internal counter
+  if (window.guestCounts) window.guestCounts[type] = val;
 }
 
 async function loadData() {

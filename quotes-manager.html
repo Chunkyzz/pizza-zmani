@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.2.1</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.2.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.2.1</div>
+  <div class="version">v1.2.2</div>
 </div>
 
 <div class="main">
@@ -943,7 +943,7 @@ async function saveEdit() {
 }
 
 function openBuilder(id) {
-  window.location.href = 'quote-builder.html';
+  window.location.href = 'quote-builder.html?id=' + id;
 }
 
 // ══ AMALFI MODAL ══
