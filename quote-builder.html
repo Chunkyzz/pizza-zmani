@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.3.7</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.3.8</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -229,7 +229,7 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.3.7</div>
+  <div class="version">v2.3.8</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -793,34 +793,47 @@ function clearTotals(){
 }
 
 // SAVE
-async function saveQuote(){
+let currentQuoteId = null; // tracks saved quote ID for upsert
+
+async function saveQuote(silent=false){
   const name=document.getElementById('cl-name').value.trim();
-  if(!name){showToast('נא להזין שם לקוח','error');return;}
-  const g=getGuests(),billed=g.adults+g.kids;
-  const sel=allDishes.filter(d=>selectedDishes.has(d.id));
-  let base=0,addon=0;
-  sel.forEach(d=>{base+=d.base_price||0;addon+=(d.addon_per_person||0)*billed;});
-  const sub=(base+addon)-(billed>0?(g.kids/billed)*(base+addon)*0.15:0);
-  const grand=sub+(includeVat?sub*0.18:0);
-  const{error}=await sb.from('qz_quotes').insert({
-    client_name:name,client_phone:document.getElementById('cl-phone').value,
+  if(!name){if(!silent)showToast('נא להזין שם לקוח','error');return null;}
+  const g=getGuests();
+  const sub  = parseFloat(document.getElementById('manual-subtotal').value)||0;
+  const grand= sub+(includeVat?sub*0.18:0);
+  const payload={
+    client_name:name,
+    client_phone:document.getElementById('cl-phone').value,
     event_date:document.getElementById('cl-date').value||null,
     event_time:document.getElementById('cl-time').value||null,
-    event_type:getEventType(),event_address:document.getElementById('cl-address').value,
+    event_type:getEventType(),
+    event_address:document.getElementById('cl-address').value,
     notes:document.getElementById('cl-notes').value,
     guests_adults:g.adults,guests_kids:g.kids,guests_babies:g.babies,
     selected_dishes:[...selectedDishes],
-    total_before_vat:Math.round(sub),total_with_vat:Math.round(grand),
-    include_vat:includeVat,status:'draft',created_at:new Date().toISOString()
-  });
-  if(error){showToast('שגיאה: '+error.message,'error');return;}
-  showToast('הצעה נשמרה ✓','success');
+    total_before_vat:Math.round(sub),
+    total_with_vat:Math.round(grand),
+    include_vat:includeVat,
+    status:'draft'
+  };
+  let error;
+  if(currentQuoteId){
+    ({error}=await sb.from('qz_quotes').update(payload).eq('id',currentQuoteId));
+  } else {
+    const{data,error:err}=await sb.from('qz_quotes').insert(payload).select('id').single();
+    error=err;
+    if(data) currentQuoteId=data.id;
+  }
+  if(error){if(!silent)showToast('שגיאה: '+error.message,'error');return null;}
+  if(!silent)showToast('הצעה נשמרה ✓','success');
+  return currentQuoteId;
 }
 
 // SEND APPROVAL
 async function sendApproval(){
   const name=document.getElementById('cl-name').value.trim();
   if(!name){showToast('נא להזין שם לקוח','error');return;}
+  await saveQuote(true); // שמירה אוטומטית
   const g=getGuests(),billed=g.adults+g.kids;
   const sel=allDishes.filter(d=>selectedDishes.has(d.id));
   let base=0,addon=0;
@@ -853,8 +866,9 @@ async function sendApproval(){
 }
 
 // PDF
-function generatePDF(){
+async function generatePDF(){
   updatePreview();
+  await saveQuote(true); // שמירה אוטומטית
 
   const clientName  = (document.getElementById('cl-name').value||'לקוח').trim();
   const clientPhone = document.getElementById('cl-phone').value||'';
