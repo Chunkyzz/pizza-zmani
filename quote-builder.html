@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.3.6</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.3.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -229,7 +229,7 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.3.6</div>
+  <div class="version">v2.3.7</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -324,14 +324,43 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
   <div class="section-card">
     <div class="section-head"><h3>⚙️ אפשרויות</h3></div>
     <div class="section-body">
-      <div><label class="option-toggle checked" id="tog-vat">
-        <input type="checkbox" checked onchange="toggleOpt(this,'tog-vat','vat')">
-        <span>כולל מע"מ 18%</span>
-      </label></div>
       <div><label class="option-toggle" id="tog-hide">
         <input type="checkbox" onchange="toggleOpt(this,'tog-hide','hide')">
         <span>הסתר מחירי מנות (גרסת לקוח)</span>
       </label></div>
+    </div>
+  </div>
+
+  <!-- תמחור ידני -->
+  <div class="section-card">
+    <div class="section-head"><h3>💰 תמחור</h3></div>
+    <div class="section-body" style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:0.78rem;font-weight:600;color:var(--navy);">סה"כ לפני מע"מ (₪)</label>
+        <input type="number" id="manual-subtotal" placeholder="0" min="0" step="50"
+          style="font-family:inherit;font-size:0.95rem;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--cream);outline:none;width:100%;"
+          oninput="calcManualPrice()">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <label class="option-toggle checked" id="tog-vat">
+          <input type="checkbox" checked onchange="toggleOpt(this,'tog-vat','vat');calcManualPrice()">
+          <span>כולל מע"מ 18%</span>
+        </label>
+      </div>
+      <div style="background:var(--cream2);border-radius:8px;padding:10px 14px;border:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);padding:2px 0;">
+          <span>לפני מע"מ</span><span id="disp-sub" style="font-weight:600;color:var(--navy);">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);padding:2px 0;" id="disp-vat-row">
+          <span>מע"מ (18%)</span><span id="disp-vat" style="font-weight:600;color:var(--navy);">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--gold);padding:6px 0 2px;border-top:1px solid var(--border);margin-top:4px;">
+          <span>סה"כ לתשלום</span><span id="disp-grand">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--muted);padding:2px 0;margin-top:4px;border-top:1px dashed var(--gold);">
+          <span>מקדמה (10%)</span><span id="disp-deposit" style="font-weight:600;color:var(--navy);">—</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -606,6 +635,26 @@ function toggleOpt(cb,id,key) {
   if(key==='hide') hidePrices=cb.checked;
   if(currentMode!=='build') updatePreview();
 }
+
+function calcManualPrice() {
+  const sub = parseFloat(document.getElementById('manual-subtotal').value) || 0;
+  const vat  = includeVat ? sub * 0.18 : 0;
+  const grand = sub + vat;
+  const dep   = grand * 0.10;
+  const fmt = n => n > 0 ? '₪' + Math.round(n).toLocaleString() : '—';
+
+  document.getElementById('disp-sub').textContent     = fmt(sub);
+  document.getElementById('disp-vat').textContent     = fmt(vat);
+  document.getElementById('disp-grand').textContent   = fmt(grand);
+  document.getElementById('disp-deposit').textContent = fmt(dep);
+  document.getElementById('disp-vat-row').style.display = includeVat ? '' : 'none';
+
+  // sync to preview elements
+  document.getElementById('t-subtotal').textContent = fmt(sub);
+  document.getElementById('t-vat').textContent      = includeVat ? fmt(vat) : '—';
+  document.getElementById('t-grand').textContent    = fmt(grand);
+  document.getElementById('t-deposit').textContent  = fmt(dep);
+}
 function syncPreview() { if(currentMode!=='build') updatePreview(); }
 
 // UPDATE PREVIEW
@@ -845,27 +894,14 @@ function generatePDF(){
   const billed = g.adults + g.kids;
   const total  = billed + g.babies;
 
-  // price
-  let baseTotal=0, addonTotal=0;
+  // price — manual input
   const sel = allDishes.filter(d=>selectedDishes.has(d.id));
-  sel.forEach(d=>{
-    if(d.base_price) baseTotal+=d.base_price;
-    if(d.addon_per_person) addonTotal+=d.addon_per_person*billed;
-  });
-  const hasPizzas = sel.some(d=>d.category==='פיצות');
-  if(hasPizzas) baseTotal+=100*billed;
   const saladCount = sel.filter(d=>d.category==='סלטים').length;
-  if(saladCount>0){
-    addonTotal+=20*billed;
-    if(saladCount>4) addonTotal+=(saladCount-4)*5*billed;
-  }
-  const sub0  = baseTotal+addonTotal;
-  const kDisc = billed>0 ? g.kids*(sub0/billed)*0.15 : 0;
-  const sub   = sub0-kDisc;
-  const vat   = includeVat ? sub*0.18 : 0;
-  const grand = sub+vat;
-  const dep   = grand*0.10;
-  const perP  = billed>0 ? Math.round(grand/billed) : 0;
+  const sub   = parseFloat(document.getElementById('manual-subtotal').value) || 0;
+  const vat   = includeVat ? sub * 0.18 : 0;
+  const grand = sub + vat;
+  const dep   = grand * 0.10;
+  const perP  = billed > 0 ? Math.round(grand / billed) : 0;
 
   // menu html
   const catOrder = allCats.map(c=>c.name);
