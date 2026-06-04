@@ -708,22 +708,8 @@ function updatePreview() {
     if(!bycat[cat]||!bycat[cat].length) return;
     const dishes=bycat[cat];
 
-    // price label for category header
-    let catPriceLabel='';
-    if(!hidePrices){
-      if(cat==='פיצות'){
-        catPriceLabel='₪100/אדם בסיס';
-      } else if(cat==='סלטים'){
-        const sc=bycat[cat]?bycat[cat].length:0;
-        if(sc<=4) catPriceLabel='₪20/אדם (עד 4 סלטים)';
-        else catPriceLabel='₪20/אדם + ₪'+(sc-4)*5+'/אדם תוספת ('+sc+' סלטים)';
-      } else {
-        const catAddonVal=dishes.find(d=>d.addon_per_person>0);
-        const catBaseVal=dishes.find(d=>d.base_price>0);
-        if(catAddonVal) catPriceLabel='+₪'+catAddonVal.addon_per_person+'/אדם';
-        else if(catBaseVal) catPriceLabel='₪'+catBaseVal.base_price+' בסיס';
-      }
-    }
+    // price labels removed — manual pricing
+    const catPriceLabel='';
 
     html+='<div class="pdf-cat-title">' +
       '<span class="pdf-cat-he">'+cat+'</span>' +
@@ -740,7 +726,7 @@ function updatePreview() {
         const addon=(d.addon_per_person||0)*billed;
         baseTotal+=base; addonTotal+=addon;
         const total=base+addon;
-        const showPrice=!hidePrices&&total&&dishes.length===1;
+        const showPrice=false; // prices hidden — manual mode
         html+='<div class="pdf-dish-single">' +
           '<div>' +
             '<span class="pdf-dish-name">'+d.name+'</span>' +
