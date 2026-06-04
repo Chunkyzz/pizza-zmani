@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizza Zmani – אמלפי 2000 | חומרי גלם והכנות v1.1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{
+  --navy:#1B2A4A;--navy2:#243660;--navy3:#1a2540;
+  --gold:#C9A84C;--gold2:#E8C56A;--gold-dim:#a08030;
+  --green:#2E6B4F;--green2:#3a8a64;
+  --cream:#FDF8F0;--cream2:#FAF3E4;--cream3:#F5EDD8;
+  --white:#fff;--border:#E0D5C0;--border2:#d4c8ad;
+  --text:#1a1a1a;--muted:#888;--muted2:#aaa;
+  --danger:#C0392B;--warn:#b45309;--warn-bg:#FEF3C7;
+  --shadow:0 4px 24px rgba(27,42,74,0.10);
+  --shadow-lg:0 8px 40px rgba(27,42,74,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;direction:rtl;}
+
+/* ─── TOPBAR ─── */
+.topbar{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);
+  padding:0 28px;height:60px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 20px rgba(0,0,0,0.2);
+}
+.tb-brand{display:flex;align-items:center;gap:14px;}
+.tb-logo{font-family:'Frank Ruhl Libre',serif;font-size:1.3rem;color:var(--gold);}
+.tb-sep{width:1px;height:28px;background:rgba(255,255,255,0.15);}
+.tb-title{font-size:0.85rem;color:rgba(255,255,255,0.7);letter-spacing:0.3px;}
+.tb-right{display:flex;align-items:center;gap:16px;}
+.tb-version{font-size:0.65rem;color:rgba(255,255,255,0.25);letter-spacing:1px;}
+.tb-event{font-size:0.78rem;color:var(--gold);background:rgba(201,168,76,0.15);
+  padding:4px 12px;border-radius:20px;border:1px solid rgba(201,168,76,0.25);}
+
+/* ─── TABS ─── */
+.tabs{background:var(--navy2);border-bottom:2px solid var(--gold);
+  padding:0 28px;display:flex;gap:0;}
+.tab{background:none;border:none;color:rgba(255,255,255,0.5);
+  font-family:'Heebo',sans-serif;font-size:0.88rem;font-weight:500;
+  padding:13px 20px;cursor:pointer;border-bottom:3px solid transparent;
+  transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:7px;}
+.tab:hover{color:var(--gold2);}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(201,168,76,0.07);}
+.tab .badge{background:rgba(201,168,76,0.2);color:var(--gold);
+  font-size:0.68rem;padding:2px 7px;border-radius:10px;font-weight:700;}
+
+/* ─── LAYOUT ─── */
+.main{max-width:1300px;margin:0 auto;padding:28px 24px;}
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* ─── IMPORT BANNER ─── */
+.import-banner{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);
+  border-radius:14px;padding:20px 24px;margin-bottom:24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;
+}
+.ib-info{color:white;}
+.ib-title{font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;color:var(--gold);}
+.ib-sub{font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:3px;}
+.ib-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;
+  border-radius:9px;border:none;font-family:'Heebo',sans-serif;font-size:0.88rem;
+  font-weight:500;cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.btn-gold{background:var(--gold);color:var(--navy);}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-1px);}
+.btn-navy{background:var(--navy);color:white;}
+.btn-navy:hover{background:var(--navy2);}
+.btn-green{background:var(--green);color:white;}
+.btn-green:hover{filter:brightness(1.1);}
+.btn-ghost{background:none;border:1.5px solid var(--border);color:var(--text);}
+.btn-ghost:hover{border-color:var(--navy);}
+.btn-danger{background:var(--danger);color:white;}
+.btn-sm{padding:5px 12px;font-size:0.8rem;}
+.btn-icon{padding:7px 10px;}
+
+/* ─── SECTION HEADER ─── */
+.sec-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.sec-title{font-family:'Frank Ruhl Libre',serif;font-size:1.4rem;color:var(--navy);}
+
+/* ─── GRID LAYOUTS ─── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+/* ─── CARDS ─── */
+.card{background:var(--white);border-radius:14px;box-shadow:var(--shadow);
+  border:1px solid var(--border);overflow:hidden;}
+.card-header{background:var(--navy);padding:12px 18px;display:flex;
+  align-items:center;justify-content:space-between;}
+.card-header h3{font-family:'Frank Ruhl Libre',serif;font-size:0.95rem;
+  color:var(--gold);margin:0;}
+.card-body{padding:18px;}
+
+/* ─── INGREDIENTS SCREEN ─── */
+.event-selector{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.event-chip{padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);
+  background:white;font-size:0.85rem;cursor:pointer;transition:all 0.18s;
+  display:flex;align-items:center;gap:8px;}
+.event-chip:hover{border-color:var(--gold);}
+.event-chip.active{background:var(--navy);color:white;border-color:var(--navy);}
+.event-chip .chip-badge{font-size:0.72rem;opacity:0.7;}
+
+.ingr-table-wrap{background:white;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+thead{background:var(--navy);}
+thead th{color:var(--gold);font-weight:600;font-size:0.78rem;
+  padding:11px 14px;text-align:right;letter-spacing:0.3px;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f0ede5;transition:background 0.15s;}
+tbody tr:last-child{border:none;}
+tbody tr:hover{background:#FFFDF5;}
+tbody td{padding:10px 14px;font-size:0.86rem;vertical-align:middle;}
+.td-name{font-weight:600;color:var(--navy);}
+.td-unit{color:var(--muted);font-size:0.78rem;}
+.frac-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;
+  border-radius:6px;font-size:0.8rem;font-weight:600;}
+.frac-ok{background:#E8F5E9;color:#2E7D32;}
+.frac-warn{background:var(--warn-bg);color:var(--warn);}
+.qty-input{width:80px;padding:5px 8px;border:1.5px solid var(--border);
+  border-radius:7px;font-size:0.88rem;text-align:center;font-family:inherit;
+  background:white;outline:none;transition:border 0.2s;}
+.qty-input:focus{border-color:var(--gold);}
+.qty-input.warn{border-color:var(--warn);background:var(--warn-bg);}
+.ingr-cat{background:var(--cream2);font-size:0.72rem;font-weight:700;
+  color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;
+  padding:7px 14px;border-bottom:1px solid var(--border);}
+.ingr-cat td{padding:6px 14px;}
+
+/* ─── SUMMARY BOXES ─── */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:14px;margin-bottom:24px;}
+.sum-card{background:white;border-radius:12px;border:1px solid var(--border);
+  padding:16px 18px;box-shadow:var(--shadow);border-right:4px solid var(--gold);}
+.sum-val{font-family:'Frank Ruhl Libre',serif;font-size:1.9rem;
+  color:var(--navy);font-weight:900;}
+.sum-label{font-size:0.74rem;color:var(--muted);margin-top:3px;}
+.sum-card.green{border-right-color:var(--green);}
+.sum-card.warn{border-right-color:var(--warn);}
+
+/* ─── WATEXT BOX ─── */
+.wa-box{background:var(--cream2);border:1px solid var(--border);border-radius:10px;
+  padding:16px;font-size:0.84rem;line-height:2.1;color:var(--navy);
+  font-family:'Heebo',sans-serif;white-space:pre-wrap;max-height:340px;overflow-y:auto;}
+.copy-btn{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ─── TASKS SCREEN ─── */
+.task-timeline{position:relative;padding-right:28px;}
+.task-timeline::before{content:'';position:absolute;right:10px;top:0;bottom:0;
+  width:2px;background:var(--border);}
+.task-group{margin-bottom:28px;position:relative;}
+.task-time-label{position:absolute;right:-28px;top:0;width:20px;height:20px;
+  border-radius:50%;background:var(--gold);display:flex;align-items:center;
+  justify-content:center;font-size:0.5rem;color:var(--navy);font-weight:700;z-index:1;}
+.task-time-header{font-family:'Frank Ruhl Libre',serif;font-size:0.95rem;
+  color:var(--navy);margin-bottom:12px;padding-right:12px;
+  display:flex;align-items:center;gap:8px;}
+.task-time-header .dot{width:10px;height:10px;border-radius:50%;
+  background:var(--gold);flex-shrink:0;}
+.task-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;}
+.task-card{background:white;border-radius:10px;border:1px solid var(--border);
+  padding:14px;box-shadow:0 2px 8px rgba(27,42,74,0.06);
+  display:flex;align-items:flex-start;gap:12px;transition:all 0.2s;}
+.task-card:hover{box-shadow:var(--shadow);border-color:var(--border2);}
+.task-card.done{opacity:0.5;background:var(--cream);}
+.task-card.done .task-name{text-decoration:line-through;}
+.task-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
+  flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all 0.18s;margin-top:1px;}
+.task-check.checked{background:var(--green);border-color:var(--green);color:white;font-size:13px;}
+.task-body{flex:1;}
+.task-name{font-size:0.88rem;font-weight:600;color:var(--navy);margin-bottom:3px;}
+.task-meta{font-size:0.76rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;}
+.task-dish{background:var(--cream2);color:var(--navy);padding:2px 8px;
+  border-radius:5px;font-size:0.72rem;border:1px solid var(--border);}
+.task-priority{padding:2px 8px;border-radius:5px;font-size:0.72rem;font-weight:600;}
+.p-high{background:#FFEBEE;color:#C62828;}
+.p-med{background:#FFF8E1;color:#F57F17;}
+.p-low{background:#E8F5E9;color:#2E7D32;}
+
+/* ─── PRINT PREVIEW ─── */
+.print-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+.print-opt{background:white;border-radius:12px;border:1.5px solid var(--border);
+  padding:20px;cursor:pointer;transition:all 0.18s;text-align:center;}
+.print-opt:hover{border-color:var(--gold);}
+.print-opt.sel{border-color:var(--green);background:#F0FFF4;}
+.print-opt-icon{font-size:1.8rem;margin-bottom:8px;}
+.print-opt-title{font-size:0.9rem;font-weight:600;color:var(--navy);margin-bottom:4px;}
+.print-opt-sub{font-size:0.75rem;color:var(--muted);}
+
+/* ─── MODAL ─── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
+  z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal-bg.open{display:flex;}
+.modal{background:white;border-radius:18px;box-shadow:var(--shadow-lg);
+  width:min(600px,95vw);max-height:90vh;overflow-y:auto;padding:28px;
+  animation:modalUp 0.22s ease;}
+@keyframes modalUp{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-title{font-family:'Frank Ruhl Libre',serif;font-size:1.35rem;color:var(--navy);
+  margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid var(--gold);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;
+  margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fgrp{display:flex;flex-direction:column;gap:5px;}
+.fgrp.full{grid-column:1/-1;}
+label{font-size:0.8rem;font-weight:600;color:var(--navy);}
+input,select,textarea{font-family:'Heebo',sans-serif;font-size:0.9rem;
+  padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;
+  background:white;color:var(--text);outline:none;transition:border 0.2s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+textarea{resize:vertical;min-height:70px;}
+
+/* ─── FRACTION MODAL ─── */
+.frac-list{display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;}
+.frac-item{display:grid;grid-template-columns:1fr auto auto auto;
+  gap:12px;align-items:center;padding:12px;border-radius:9px;
+  border:1.5px solid var(--warn);background:var(--warn-bg);}
+.frac-ingr-name{font-weight:600;color:var(--navy);font-size:0.9rem;}
+.frac-raw{font-size:0.82rem;color:var(--warn);}
+.frac-round-btn{padding:5px 10px;border-radius:7px;border:none;
+  cursor:pointer;font-size:0.8rem;font-family:inherit;transition:all 0.15s;}
+.frac-up{background:var(--green);color:white;}
+.frac-down{background:var(--navy);color:white;}
+
+/* ─── ADMIN ─── */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.dish-list{display:flex;flex-direction:column;gap:8px;max-height:500px;overflow-y:auto;}
+.dish-row{background:white;border-radius:10px;border:1px solid var(--border);
+  padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;
+  transition:all 0.15s;}
+.dish-row:hover{border-color:var(--gold);box-shadow:var(--shadow);}
+.dish-row.active{border-color:var(--navy);background:var(--cream);}
+.dish-row-name{font-weight:600;color:var(--navy);font-size:0.9rem;}
+.dish-row-meta{font-size:0.75rem;color:var(--muted);margin-top:2px;}
+.ingr-editor{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin:12px 0;}
+.ingr-edit-row{display:grid;grid-template-columns:1fr 80px 80px auto;gap:8px;align-items:center;}
+.ingr-edit-row input{font-size:0.84rem;padding:6px 10px;}
+.add-ingr-row{display:flex;gap:8px;margin-top:4px;}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(70px);
+  background:var(--navy);color:white;padding:12px 24px;border-radius:30px;
+  font-size:0.85rem;z-index:999;transition:transform 0.3s;
+  box-shadow:0 8px 32px rgba(0,0,0,0.2);white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);}
+.toast.warn{background:var(--warn);}
+.toast.error{background:var(--danger);}
+
+/* ─── UNIVERSAL NAV ─── */
+.unav-btn{position:fixed;bottom:24px;left:24px;width:52px;height:52px;border-radius:50%;
+  background:var(--navy);color:var(--gold);border:none;font-size:1.4rem;cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9000;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;}
+.unav-btn:hover{transform:scale(1.1);background:var(--navy2);}
+.unav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);
+  z-index:8999;backdrop-filter:blur(3px);}
+.unav-overlay.open{display:block;}
+.unav-menu{position:fixed;bottom:88px;left:24px;background:var(--navy);border-radius:16px;
+  padding:16px;z-index:9001;width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.35);
+  animation:unavUp 0.2s ease;display:none;}
+.unav-menu.open{display:block;}
+@keyframes unavUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.unav-title{font-family:'Frank Ruhl Libre',serif;font-size:0.78rem;color:rgba(255,255,255,0.4);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,0.1);}
+.unav-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;
+  text-decoration:none;color:white;font-size:0.85rem;font-weight:500;
+  transition:all 0.15s;margin-bottom:3px;}
+.unav-link:hover{background:rgba(255,255,255,0.1);}
+.unav-link.current{background:rgba(201,168,76,0.15);color:var(--gold);}
+.unav-link .icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0;}
+.unav-sep{height:1px;background:rgba(255,255,255,0.1);margin:8px 0;}
+.unav-label{font-size:0.68rem;color:rgba(255,255,255,0.3);padding:4px 12px 2px;
+  text-transform:uppercase;letter-spacing:0.8px;}
+
+/* ─── PRINT STYLES ─── */
+@media print{
+  .topbar,.tabs,.unav-btn,.unav-menu,.unav-overlay,.no-print{display:none!important;}
+  .card{box-shadow:none;border:1px solid #ccc;}
+}
+@media(max-width:768px){
+  .two-col,.three-col,.form-grid,.admin-grid,.print-opts{grid-template-columns:1fr;}
+  .main{padding:16px 12px;}
+  .topbar{padding:0 16px;}
+  .tabs{padding:0 8px;overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-brand">
+    <div class="tb-logo">🍕 Pizza Zmani</div>
+    <div class="tb-sep"></div>
+    <div class="tb-title">אמלפי 2000 — חומרי גלם והכנות</div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-event" id="tb-event-display">אין אירוע פעיל</div>
+    <div class="tb-version">v1.1.0</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('ingredients',this)">🥦 רשימת חומרי גלם</button>
+  <button class="tab" onclick="showTab('tasks',this)">📋 משימות הכנה</button>
+  <button class="tab" onclick="showTab('supplier',this)">🛒 הזמנת ספק</button>
+  <button class="tab" onclick="showTab('export',this)">📄 ייצוא</button>
+  <button class="tab" onclick="showTab('admin',this)">⚙️ ניהול מנות</button>
+</div>
+
+<div class="main">
+
+<!-- ══════════════ INGREDIENTS TAB ══════════════ -->
+<div class="screen active" id="tab-ingredients">
+
+  <!-- Import banner -->
+  <div class="import-banner" id="import-banner">
+    <div class="ib-info">
+      <div class="ib-title">🍕 נכנסת מ-Pizza Zmani?</div>
+      <div class="ib-sub">טען אירוע ישירות מהצעת מחיר מאושרת — או הזן ידנית</div>
+    </div>
+    <div class="ib-actions">
+      <button class="btn btn-gold" onclick="openImportModal()">📥 טען אירוע מהצעה</button>
+      <button class="btn btn-ghost" style="color:white;border-color:rgba(255,255,255,0.3)" onclick="openNewEventModal()">+ אירוע חדש ידני</button>
+    </div>
+  </div>
+
+  <!-- Event selector -->
+  <div class="sec-header">
+    <div class="sec-title">📦 חומרי גלם לאירוע</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="openFracModal()" id="frac-btn" style="display:none">⚠️ עגל שברים (<span id="frac-count">0</span>)</button>
+      <button class="btn btn-navy btn-sm" onclick="calcAll()">🔄 חשב מחדש</button>
+    </div>
+  </div>
+
+  <div class="event-selector" id="event-selector" style="margin-bottom:20px;"></div>
+
+  <!-- Summary -->
+  <div class="summary-grid" id="ingr-summary" style="display:none">
+    <div class="sum-card"><div class="sum-val" id="s-guests">0</div><div class="sum-label">סועדים מחויבים</div></div>
+    <div class="sum-card green"><div class="sum-val" id="s-dishes">0</div><div class="sum-label">מנות בתפריט</div></div>
+    <div class="sum-card warn"><div class="sum-val" id="s-fracs">0</div><div class="sum-label">שברים לעיגול</div></div>
+    <div class="sum-card"><div class="sum-val" id="s-ingrs">0</div><div class="sum-label">פריטים לקנייה</div></div>
+  </div>
+
+  <div class="ingr-table-wrap" id="ingr-table-wrap" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>חומר גלם</th>
+          <th>יחידה</th>
+          <th>כמות מחושבת</th>
+          <th>כמות לאחר עיגול</th>
+          <th>מנה</th>
+          <th>הערות</th>
+        </tr>
+      </thead>
+      <tbody id="ingr-tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="no-event-msg" style="text-align:center;padding:60px 20px;color:var(--muted);">
+    <div style="font-size:3rem;margin-bottom:12px;">🥦</div>
+    <div style="font-family:'Frank Ruhl Libre',serif;font-size:1.3rem;color:var(--navy);margin-bottom:8px;">טען אירוע כדי להתחיל</div>
+    <div style="font-size:0.88rem;">לחץ על "טען אירוע מהצעה" או צור אירוע ידני</div>
+  </div>
+</div>
+
+<!-- ══════════════ TASKS TAB ══════════════ -->
+<div class="screen" id="tab-tasks">
+  <div class="sec-header">
+    <div class="sec-title">📋 משימות הכנה</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="resetTasks()">אפס סימונים</button>
+      <button class="btn btn-navy btn-sm" onclick="openAddTaskModal()">+ הוסף משימה</button>
+    </div>
+  </div>
+  <div id="tasks-timeline" style="margin-top:8px;"></div>
+  <div id="no-tasks-msg" style="display:none;text-align:center;padding:60px 20px;color:var(--muted);">
+    <div style="font-size:2.5rem;margin-bottom:10px;">📋</div>
+    <div>אין משימות הכנה. הוסף מהניהול.</div>
+  </div>
+</div>
+
+<!-- ══════════════ SUPPLIER TAB ══════════════ -->
+<div class="screen" id="tab-supplier">
+  <div class="sec-header">
+    <div class="sec-title">🛒 הזמנת ספק</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-gold" onclick="copySupplierText()">📋 העתק לוואטסאפ</button>
+      <button class="btn btn-navy btn-sm" onclick="openWaEdit()">✏️ ערוך</button>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><h3>📤 טקסט לספק</h3></div>
+      <div class="card-body">
+        <div class="wa-box" id="wa-text">אין אירוע פעיל — טען אירוע בלשונית חומרי גלם</div>
+        <div class="copy-btn">
+          <button class="btn btn-gold" onclick="copySupplierText()">📋 העתק טקסט</button>
+          <button class="btn btn-ghost btn-sm" onclick="openWaEdit()">✏️ ערוך לפני שליחה</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>💡 טיפים לספק</h3></div>
+      <div class="card-body" style="font-size:0.85rem;line-height:1.8;color:var(--navy);">
+        <p>• <strong>שברים:</strong> תמיד עגל <em>מעלה</em> — עדיף לחמאה מיותרת מאשר לחסר</p>
+        <p>• <strong>ירקות טריים:</strong> הזמן יום לפני האירוע לכל היותר</p>
+        <p>• <strong>דגים:</strong> הזמן 2 ימים לפני ותאם שעת הגעה</p>
+        <p>• <strong>שמן:</strong> תמיד לבדוק מלאי בית — לא לבזבז הזמנה</p>
+        <p style="margin-top:12px;color:var(--muted);font-size:0.78rem;">📞 ספק ירקות: ...</p>
+        <p style="color:var(--muted);font-size:0.78rem;">📞 ספק דגים: ...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ EXPORT TAB ══════════════ -->
+<div class="screen" id="tab-export">
+  <div class="sec-title" style="margin-bottom:20px;">📄 ייצוא מסמכים</div>
+
+  <div class="print-opts" id="print-opts">
+    <div class="print-opt sel" onclick="togglePrintOpt(this,'ingredients')">
+      <div class="print-opt-icon">📦</div>
+      <div class="print-opt-title">רשימת חומרי גלם</div>
+      <div class="print-opt-sub">כל הפריטים עם כמויות</div>
+    </div>
+    <div class="print-opt sel" onclick="togglePrintOpt(this,'tasks')">
+      <div class="print-opt-icon">📋</div>
+      <div class="print-opt-title">משימות הכנה</div>
+      <div class="print-opt-sub">לפי תזמון ומנות</div>
+    </div>
+    <div class="print-opt" onclick="togglePrintOpt(this,'supplier')">
+      <div class="print-opt-icon">🛒</div>
+      <div class="print-opt-title">הזמנת ספק</div>
+      <div class="print-opt-sub">טקסט מוכן לוואטסאפ</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+    <button class="btn btn-gold" onclick="exportPDF()">⬇️ הורד PDF</button>
+    <button class="btn btn-navy" onclick="window.print()">🖨️ הדפס</button>
+    <button class="btn btn-green" onclick="copySupplierText()">📋 העתק הזמנת ספק</button>
+  </div>
+
+  <!-- PDF Preview -->
+  <div id="pdf-preview" class="card">
+    <div class="card-header"><h3>👁️ תצוגה מקדימה</h3></div>
+    <div class="card-body" id="pdf-preview-body" style="font-size:0.85rem;line-height:1.7;color:var(--navy);">
+      בחר את מה שברצונך לייצא ולחץ הורד PDF
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ADMIN TAB ══════════════ -->
+<div class="screen" id="tab-admin">
+  <div class="sec-header">
+    <div class="sec-title">⚙️ ניהול מנות וירקות</div>
+    <button class="btn btn-gold" onclick="openAddDishModal()">+ מנה חדשה</button>
+  </div>
+  <div class="admin-grid">
+    <!-- Dish list -->
+    <div>
+      <div style="font-size:0.8rem;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">רשימת מנות</div>
+      <div class="dish-list" id="dish-list"></div>
+    </div>
+    <!-- Dish editor -->
+    <div>
+      <div style="font-size:0.8rem;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">עריכת מנה</div>
+      <div class="card" id="dish-editor" style="display:none;">
+        <div class="card-header"><h3 id="editor-title">עריכת מנה</h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+            <div class="fgrp"><label>שם מנה</label><input type="text" id="ed-name"></div>
+            <div class="fgrp"><label>קטגוריה</label>
+              <select id="ed-cat">
+                <option>סלטים</option><option>ראשונות</option><option>פיצות</option>
+                <option>פסטה</option><option>דגים</option><option>מתוקים</option><option>שתייה</option>
+              </select>
+            </div>
+            <div class="fgrp"><label>אורחים בסיס לחישוב</label><input type="number" id="ed-base" value="30" min="1"></div>
+            <div class="fgrp"><label>מינימום קבוע (0=ליניארי)</label><input type="number" id="ed-min" value="0" min="0"></div>
+          </div>
+
+          <div style="font-size:0.82rem;font-weight:600;color:var(--navy);margin-bottom:8px;">חומרי גלם</div>
+          <div class="ingr-editor" id="ingr-editor"></div>
+          <div class="add-ingr-row">
+            <input type="text" id="new-ingr-name" placeholder="שם חומר גלם" style="flex:2">
+            <input type="number" id="new-ingr-qty" placeholder="כמות" style="flex:1;max-width:80px" min="0" step="0.1">
+            <input type="text" id="new-ingr-unit" placeholder="יחידה" style="flex:1;max-width:80px">
+            <button class="btn btn-navy btn-sm" onclick="addIngr()">+</button>
+          </div>
+
+          <div style="font-size:0.82rem;font-weight:600;color:var(--navy);margin:14px 0 8px;">משימות הכנה</div>
+          <div id="task-editor" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;"></div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="text" id="new-task-name" placeholder="שם משימה" style="flex:2">
+            <select id="new-task-time" style="flex:1">
+              <option value="-72">72 שעות לפני</option>
+              <option value="-48">48 שעות לפני</option>
+              <option value="-24">24 שעות לפני</option>
+              <option value="-12">12 שעות לפני</option>
+              <option value="-3">3 שעות לפני</option>
+              <option value="-1">שעה לפני</option>
+              <option value="0">יום האירוע</option>
+            </select>
+            <select id="new-task-priority" style="flex:1">
+              <option value="high">גבוהה</option>
+              <option value="med">בינונית</option>
+              <option value="low">נמוכה</option>
+            </select>
+            <button class="btn btn-navy btn-sm" onclick="addTask()">+</button>
+          </div>
+
+          <div class="modal-footer" style="margin-top:16px;">
+            <button class="btn btn-ghost" onclick="closeDishEditor()">סגור</button>
+            <button class="btn btn-gold" onclick="saveDish()">💾 שמור מנה</button>
+          </div>
+        </div>
+      </div>
+      <div id="no-dish-sel" style="padding:40px;text-align:center;color:var(--muted);font-size:0.85rem;">בחר מנה מהרשימה לעריכה</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- Import Modal -->
+<div class="modal-bg" id="import-modal">
+  <div class="modal">
+    <div class="modal-title">📥 טען אירוע מ-Pizza Zmani</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">הזן את ה-ID של הצעת המחיר שנשמרה ב-Supabase</p>
+    <div class="form-grid">
+      <div class="fgrp full"><label>Quote ID (מ-quote_approvals)</label><input type="text" id="import-id" placeholder="הדבק את ה-ID מ-WhatsApp..."></div>
+    </div>
+    <div id="import-preview" style="display:none;margin-top:16px;padding:14px;background:var(--cream2);border-radius:9px;font-size:0.85rem;line-height:1.8;color:var(--navy);border:1px solid var(--border);"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('import-modal')">ביטול</button>
+      <button class="btn btn-navy" onclick="fetchQuote()">🔍 טען פרטים</button>
+      <button class="btn btn-gold" id="import-confirm-btn" style="display:none" onclick="importQuote()">✅ ייבא אירוע</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Event Modal -->
+<div class="modal-bg" id="new-event-modal">
+  <div class="modal">
+    <div class="modal-title">+ אירוע חדש</div>
+    <div class="form-grid">
+      <div class="fgrp full"><label>שם האירוע / לקוח</label><input type="text" id="ne-name" placeholder="כהן — בר מצווה"></div>
+      <div class="fgrp"><label>תאריך</label><input type="date" id="ne-date"></div>
+      <div class="fgrp"><label>מספר מבוגרים</label><input type="number" id="ne-adults" value="80" min="0"></div>
+      <div class="fgrp"><label>ילדים (3–13)</label><input type="number" id="ne-kids" value="0" min="0"></div>
+      <div class="fgrp"><label>פעוטות (0–2, חינם)</label><input type="number" id="ne-babies" value="0" min="0"></div>
+      <div class="fgrp full"><label>מנות (בחר)</label>
+        <div id="ne-dishes" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;max-height:220px;overflow-y:auto;margin-top:4px;padding:8px;background:var(--cream);border-radius:8px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('new-event-modal')">ביטול</button>
+      <button class="btn btn-gold" onclick="createManualEvent()">✅ צור אירוע</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fraction Modal -->
+<div class="modal-bg" id="frac-modal">
+  <div class="modal">
+    <div class="modal-title">⚠️ עיגול שברים</div>
+    <p style="font-size:0.84rem;color:var(--muted);margin-bottom:16px;">הכמויות הבאות אינן שלמות — אנא עגל ידנית:</p>
+    <div class="frac-list" id="frac-list"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('frac-modal')">סגור</button>
+      <button class="btn btn-gold" onclick="confirmAllFracs()">✓ אשר הכל (עגל מעלה)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal-bg" id="add-task-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">+ משימה כללית</div>
+    <div class="form-grid">
+      <div class="fgrp full"><label>שם משימה</label><input type="text" id="at-name" placeholder="בדיקת ציוד..."></div>
+      <div class="fgrp"><label>תזמון</label>
+        <select id="at-time">
+          <option value="-72">72 שעות לפני</option><option value="-48">48 שעות לפני</option>
+          <option value="-24">24 שעות לפני</option><option value="-12">12 שעות לפני</option>
+          <option value="-3">3 שעות לפני</option><option value="-1">שעה לפני</option>
+          <option value="0">יום האירוע</option>
+        </select>
+      </div>
+      <div class="fgrp"><label>עדיפות</label>
+        <select id="at-priority"><option value="high">גבוהה</option><option value="med">בינונית</option><option value="low">נמוכה</option></select>
+      </div>
+      <div class="fgrp full"><label>מנה קשורה (אופציונלי)</label>
+        <select id="at-dish"><option value="">— כללי —</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-task-modal')">ביטול</button>
+      <button class="btn btn-gold" onclick="saveExtraTask()">✅ הוסף</button>
+    </div>
+  </div>
+</div>
+
+<!-- WA Edit Modal -->
+<div class="modal-bg" id="wa-edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ עריכת טקסט לספק</div>
+    <textarea id="wa-edit-area" style="width:100%;min-height:300px;font-size:0.88rem;line-height:2;"></textarea>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('wa-edit-modal')">ביטול</button>
+      <button class="btn btn-gold" onclick="saveWaEdit()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════ UNIVERSAL NAV ══════════════ -->
+<div class="unav-overlay" id="unavOverlay" onclick="closeUnav()"></div>
+<div class="unav-menu" id="unavMenu">
+  <div class="unav-title">🍕 Pizza Zmani — ניווט מהיר</div>
+  <div class="unav-label">הצעות מחיר</div>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quotes-manager.html"><span class="icon">📋</span>ניהול הצעות מחיר</a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-builder.html"><span class="icon">📝</span>בונה הצעה חדשה</a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-admin.html"><span class="icon">🍽️</span>ניהול תפריט מנות</a>
+  <div class="unav-sep"></div>
+  <div class="unav-label">מערכות נוספות</div>
+  <a class="unav-link current" href="#"><span class="icon">🥦</span>אמלפי 2000 — הכנות</a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-order.html/"><span class="icon">🏠</span>דף הבית</a>
+</div>
+<button class="unav-btn" onclick="toggleUnav()" title="ניווט מהיר">🍕</button>
+
+<script>
+// ═══════════════════════════════════════════
+//  SUPABASE
+// ═══════════════════════════════════════════
+const SB_URL = 'https://arqxoyxobjudccskfwyt.supabase.co';
+const SB_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
+
+async function sbFetch(table, params='') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}${params}`, {
+    headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json'}
+  });
+  return r.json();
+}
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let events = [];        // all loaded events
+let activeEventId = null;
+let dishes = [];        // all dishes with ingredients
+let taskDone = {};      // { taskKey: true/false }
+let manualQty = {};     // { "eventId_ingrName": roundedQty }
+let customWaText = '';  // custom supplier text
+let selectedPrintOpts = new Set(['ingredients','tasks']);
+
+// ═══════════════════════════════════════════
+//  DEFAULT DISH DATA (if localStorage is empty)
+// ═══════════════════════════════════════════
+const DEFAULT_DISHES = [
+  {
+    id:'d1', name:'קיסר', cat:'סלטים', base:30, min:0,
+    ingredients:[
+      {name:'לבבות חסה',qty:3,unit:'יח\''},
+      {name:'קרוטונים',qty:0.3,unit:'ק"ג'},
+      {name:'פרמזן',qty:0.2,unit:'ק"ג'},
+      {name:'רוטב קיסר',qty:0.4,unit:'ליטר'},
+    ],
+    tasks:[
+      {name:'הכנת רוטב קיסר',hoursOffset:-24,priority:'med'},
+      {name:'קיצוץ חסה וקרוטונים',hoursOffset:-3,priority:'high'},
+    ]
+  },
+  {
+    id:'d2', name:'קפרזה', cat:'סלטים', base:30, min:0,
+    ingredients:[
+      {name:'עגבניות שרי',qty:1.5,unit:'ק"ג'},
+      {name:'מוצרלה טריה',qty:1.2,unit:'ק"ג'},
+      {name:'בזיליקום',qty:1,unit:'צרור'},
+      {name:'שמן זית',qty:0.15,unit:'ליטר'},
+    ],
+    tasks:[
+      {name:'פריסת עגבניות ומוצרלה',hoursOffset:-3,priority:'med'},
+    ]
+  },
+  {
+    id:'d3', name:'חציל', cat:'סלטים', base:30, min:0,
+    ingredients:[
+      {name:'חצילים',qty:3,unit:'ק"ג'},
+      {name:'שמנת חמוצה',qty:0.5,unit:'ליטר'},
+      {name:'שמן זית',qty:0.1,unit:'ליטר'},
+    ],
+    tasks:[
+      {name:'צלייה+שריפה חצילים',hoursOffset:-12,priority:'high'},
+      {name:'הכנת ממרח חציל',hoursOffset:-6,priority:'med'},
+    ]
+  },
+  {
+    id:'d4', name:'יווני', cat:'סלטים', base:30, min:0,
+    ingredients:[
+      {name:'מלפפונים',qty:1.5,unit:'ק"ג'},
+      {name:'עגבניות',qty:1.5,unit:'ק"ג'},
+      {name:'זיתי קלמטה',qty:0.4,unit:'ק"ג'},
+      {name:'גבינה בולגרית',qty:0.6,unit:'ק"ג'},
+      {name:'שמן זית',qty:0.1,unit:'ליטר'},
+    ],
+    tasks:[
+      {name:'קיצוץ ירקות יוונית',hoursOffset:-3,priority:'low'},
+    ]
+  },
+  {
+    id:'d5', name:'בורגול סלקים', cat:'סלטים', base:30, min:0,
+    ingredients:[
+      {name:'בורגול גס',qty:0.8,unit:'ק"ג'},
+      {name:'סלק',qty:1.5,unit:'ק"ג'},
+      {name:'שקדים',qty:0.2,unit:'ק"ג'},
+      {name:'צימוקים',qty:0.1,unit:'ק"ג'},
+    ],
+    tasks:[
+      {name:'בישול בורגול + צלייה סלק',hoursOffset:-12,priority:'med'},
+    ]
+  },
+  {
+    id:'d6', name:'קינואה', cat:'סלטים', base:30, min:0,
+    ingredients:[
+      {name:'קינואה',qty:0.6,unit:'ק"ג'},
+      {name:'פלפלים',qty:1,unit:'ק"ג'},
+      {name:'קישוא',qty:0.8,unit:'ק"ג'},
+      {name:'חמוציות',qty:0.1,unit:'ק"ג'},
+    ],
+    tasks:[
+      {name:'בישול קינואה + ירקות',hoursOffset:-12,priority:'low'},
+    ]
+  },
+  {
+    id:'d7', name:"ארנצ'יני", cat:'ראשונות', base:30, min:0,
+    ingredients:[
+      {name:'אורז עגול',qty:0.8,unit:'ק"ג'},
+      {name:'גבינה צהובה',qty:0.3,unit:'ק"ג'},
+      {name:'פירורי לחם',qty:0.4,unit:'ק"ג'},
+      {name:'שמן טיגון',qty:2,unit:'ליטר'},
+    ],
+    tasks:[
+      {name:'בישול אורז + קירור',hoursOffset:-24,priority:'high'},
+      {name:'גלגול וציפוי ארנצ\'יני',hoursOffset:-6,priority:'high'},
+      {name:'טיגון ארנצ\'יני',hoursOffset:-1,priority:'high'},
+    ]
+  },
+  {
+    id:'d8', name:'אנטיפסטי', cat:'ראשונות', base:30, min:0,
+    ingredients:[
+      {name:'קישואים',qty:1.5,unit:'ק"ג'},
+      {name:'פלפלים',qty:1,unit:'ק"ג'},
+      {name:'בצל',qty:0.5,unit:'ק"ג'},
+      {name:'בטטה',qty:1,unit:'ק"ג'},
+      {name:'תפוחי אדמה',qty:1,unit:'ק"ג'},
+      {name:'שמן זית',qty:0.2,unit:'ליטר'},
+    ],
+    tasks:[
+      {name:'חיתוך + תיבול ירקות אנטיפסטי',hoursOffset:-3,priority:'med'},
+      {name:'צלייה ירקות בתנור',hoursOffset:-2,priority:'high'},
+    ]
+  },
+  {
+    id:'d9', name:'פיצות מהתנור', cat:'פיצות', base:30, min:0,
+    ingredients:[
+      {name:'קמח פיצה',qty:3,unit:'ק"ג'},
+      {name:'שמרים',qty:0.05,unit:'ק"ג'},
+      {name:'מלח',qty:0.08,unit:'ק"ג'},
+      {name:'שמן זית',qty:0.15,unit:'ליטר'},
+      {name:'מוצרלה',qty:2.5,unit:'ק"ג'},
+      {name:'רוטב עגבניות',qty:1.5,unit:'ליטר'},
+      {name:'פסטו בזיליקום',qty:0.5,unit:'ק"ג'},
+    ],
+    tasks:[
+      {name:'הכנת בצק פיצה',hoursOffset:-24,priority:'high'},
+      {name:'מנוחה + קירור בצק',hoursOffset:-12,priority:'high'},
+      {name:'פריסת כדורי בצק',hoursOffset:-3,priority:'high'},
+      {name:'הכנת רטבים: עגבניות/פסטו/פולנטה/סלק',hoursOffset:-6,priority:'high'},
+      {name:'חימום תנור לוהט (350°+)',hoursOffset:-1,priority:'high'},
+    ]
+  },
+  {
+    id:'d10', name:'קלצונה מתוק', cat:'מתוקים', base:30, min:0,
+    ingredients:[
+      {name:'בצק קלצונה (כולל בסיס)',qty:1,unit:'ק"ג'},
+      {name:'נוטלה/שוקולד',qty:0.8,unit:'ק"ג'},
+      {name:'אגוזי לוז',qty:0.3,unit:'ק"ג'},
+    ],
+    tasks:[
+      {name:'הכנת בצק קלצונה (כחלק מבצק פיצה)',hoursOffset:-24,priority:'med'},
+      {name:'מילוי + עיצוב קלצונות',hoursOffset:-2,priority:'med'},
+    ]
+  },
+  {
+    id:'d11', name:'פסטה קצרה', cat:'פסטה', base:30, min:0,
+    ingredients:[
+      {name:'פסטה קצרה יבשה',qty:1.2,unit:'ק"ג'},
+      {name:'רוטב עגבניות',qty:0.8,unit:'ליטר'},
+      {name:'שמנת לבישול',qty:0.4,unit:'ליטר'},
+      {name:'פרמזן',qty:0.2,unit:'ק"ג'},
+    ],
+    tasks:[
+      {name:'בישול פסטה al dente',hoursOffset:-1,priority:'high'},
+      {name:'הכנת רוטב פסטה',hoursOffset:-2,priority:'med'},
+    ]
+  },
+  {
+    id:'d12', name:'סלמון', cat:'דגים', base:30, min:0,
+    ingredients:[
+      {name:'סלמון טרי (פילה)',qty:2.2,unit:'ק"ג'},
+      {name:'שמן זית',qty:0.1,unit:'ליטר'},
+      {name:'לימון',qty:3,unit:'יח\''},
+      {name:'עשבי תיבול',qty:1,unit:'צרור'},
+    ],
+    tasks:[
+      {name:'הזמנת סלמון טרי מספק',hoursOffset:-48,priority:'high'},
+      {name:'ניקוי + תיבול סלמון',hoursOffset:-3,priority:'high'},
+      {name:'צלייה/אפיית סלמון',hoursOffset:-1,priority:'high'},
+    ]
+  },
+  {
+    id:'d13', name:'דג לבן', cat:'דגים', base:30, min:0,
+    ingredients:[
+      {name:'פילה דג לבן טרי',qty:1.8,unit:'ק"ג'},
+      {name:'שמן זית',qty:0.1,unit:'ליטר'},
+      {name:'לימון',qty:3,unit:'יח\''},
+      {name:'שום',qty:4,unit:'שיני'},
+    ],
+    tasks:[
+      {name:'הזמנת דג לבן טרי',hoursOffset:-48,priority:'high'},
+      {name:'ניקוי + תיבול דג לבן',hoursOffset:-3,priority:'high'},
+      {name:'צלייה דג לבן',hoursOffset:-1,priority:'high'},
+    ]
+  },
+  {
+    id:'d14', name:'טירמיסו', cat:'מתוקים', base:50, min:1,
+    ingredients:[
+      {name:'טירמיסו (מגש)',qty:1,unit:'מגש'},
+    ],
+    tasks:[
+      {name:'הכנת טירמיסו',hoursOffset:-24,priority:'high'},
+      {name:'קירור טירמיסו',hoursOffset:-12,priority:'med'},
+    ]
+  },
+  {
+    id:'d15', name:'מלבי', cat:'מתוקים', base:50, min:1,
+    ingredients:[
+      {name:'מלבי (מגש)',qty:1,unit:'מגש'},
+    ],
+    tasks:[
+      {name:'הכנת מלבי',hoursOffset:-12,priority:'med'},
+    ]
+  },
+  {
+    id:'d16', name:'שתייה קלה', cat:'שתייה', base:30, min:0,
+    ingredients:[
+      {name:'מים מינרלים 0.5L',qty:4,unit:'בקבוקים'},
+      {name:'לימונדה',qty:3,unit:'ליטר'},
+      {name:'מיץ תפוזים',qty:2,unit:'ליטר'},
+    ],
+    tasks:[
+      {name:'קניית שתייה',hoursOffset:-48,priority:'low'},
+    ]
+  },
+  {
+    id:'d17', name:'מאפייה מהטאבון', cat:'פיצות', base:30, min:0,
+    ingredients:[
+      {name:'בצק לפוקאצ\'ה/פלוט',qty:0.8,unit:'ק"ג'},
+      {name:'שמן זית',qty:0.1,unit:'ליטר'},
+      {name:'גרגירי מלח גס',qty:0.05,unit:'ק"ג'},
+      {name:'רוזמרין',qty:1,unit:'ענף'},
+    ],
+    tasks:[
+      {name:'הכנת בצק מאפייה',hoursOffset:-12,priority:'med'},
+      {name:'אפיית מאפים מהטאבון',hoursOffset:-1,priority:'med'},
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+function init() {
+  loadDishes();
+  loadEvents();
+  loadTaskDone();
+  loadManualQty();
+  renderDishList();
+  renderNeDishes();
+  renderAtDishSelect();
+  renderAllTasks();
+}
+
+function loadDishes() {
+  const saved = localStorage.getItem('amalfi2000_dishes');
+  dishes = saved ? JSON.parse(saved) : DEFAULT_DISHES;
+}
+function saveDishesLS() {
+  localStorage.setItem('amalfi2000_dishes', JSON.stringify(dishes));
+}
+
+function loadEvents() {
+  const saved = localStorage.getItem('amalfi2000_events');
+  events = saved ? JSON.parse(saved) : [];
+  if (events.length) {
+    activeEventId = events[events.length - 1].id;
+  }
+  renderEventSelector();
+  calcAll();
+}
+function saveEventsLS() {
+  localStorage.setItem('amalfi2000_events', JSON.stringify(events));
+}
+
+function loadTaskDone() {
+  const s = localStorage.getItem('amalfi2000_tasks');
+  taskDone = s ? JSON.parse(s) : {};
+}
+function saveTaskDone() {
+  localStorage.setItem('amalfi2000_tasks', JSON.stringify(taskDone));
+}
+
+function loadManualQty() {
+  const s = localStorage.getItem('amalfi2000_qty');
+  manualQty = s ? JSON.parse(s) : {};
+}
+function saveManualQty() {
+  localStorage.setItem('amalfi2000_qty', JSON.stringify(manualQty));
+}
+
+// ═══════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════
+function showTab(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+//  EVENT SELECTOR
+// ═══════════════════════════════════════════
+function renderEventSelector() {
+  const el = document.getElementById('event-selector');
+  if (!events.length) {
+    el.innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">אין אירועים — טען מ-Pizza Zmani</span>';
+    document.getElementById('no-event-msg').style.display = '';
+    document.getElementById('ingr-summary').style.display = 'none';
+    document.getElementById('ingr-table-wrap').style.display = 'none';
+    document.getElementById('tb-event-display').textContent = 'אין אירוע פעיל';
+    return;
+  }
+  el.innerHTML = events.map(ev => `
+    <div class="event-chip ${ev.id === activeEventId ? 'active' : ''}" onclick="setActiveEvent('${ev.id}')">
+      ${ev.name}
+      <span class="chip-badge">${ev.guests} איש</span>
+      <span style="font-size:11px;opacity:0.5;cursor:pointer;" onclick="event.stopPropagation();deleteEvent('${ev.id}')">✕</span>
+    </div>`).join('');
+  if (activeEventId) {
+    const ev = events.find(e => e.id === activeEventId);
+    if (ev) document.getElementById('tb-event-display').textContent = ev.name + ' — ' + ev.guests + ' איש';
+  }
+}
+
+function setActiveEvent(id) {
+  activeEventId = id;
+  renderEventSelector();
+  calcAll();
+  renderAllTasks();
+  buildWaText();
+}
+
+function deleteEvent(id) {
+  if (!confirm('למחוק אירוע זה?')) return;
+  events = events.filter(e => e.id !== id);
+  if (activeEventId === id) activeEventId = events.length ? events[events.length-1].id : null;
+  saveEventsLS();
+  renderEventSelector();
+  calcAll();
+}
+
+// ═══════════════════════════════════════════
+//  CALC INGREDIENTS
+// ═══════════════════════════════════════════
+function calcAll() {
+  const ev = events.find(e => e.id === activeEventId);
+  if (!ev) {
+    document.getElementById('no-event-msg').style.display = '';
+    document.getElementById('ingr-summary').style.display = 'none';
+    document.getElementById('ingr-table-wrap').style.display = 'none';
+    document.getElementById('frac-btn').style.display = 'none';
+    return;
+  }
+  document.getElementById('no-event-msg').style.display = 'none';
+  document.getElementById('ingr-summary').style.display = 'grid';
+  document.getElementById('ingr-table-wrap').style.display = 'block';
+
+  const guests = ev.guests; // adults + kids_billed
+  const evDishes = dishes.filter(d => ev.dishIds.includes(d.id));
+
+  // Aggregate ingredients
+  const aggrMap = {}; // key: "ingrName||unit||dishName" → {raw, dish}
+  evDishes.forEach(dish => {
+    const ratio = dish.min > 0
+      ? Math.max(dish.min, Math.ceil(guests / dish.base))
+      : guests / dish.base;
+
+    (dish.ingredients || []).forEach(ing => {
+      const key = `${ing.name}||${ing.unit}||${dish.name}`;
+      if (!aggrMap[key]) aggrMap[key] = { name: ing.name, unit: ing.unit, dish: dish.name, raw: 0 };
+      aggrMap[key].raw += ing.qty * ratio;
+    });
+  });
+
+  const rows = Object.values(aggrMap);
+  const fracs = rows.filter(r => {
+    const manualKey = `${activeEventId}_${r.name}_${r.dish}`;
+    return manualQty[manualKey] === undefined && !Number.isInteger(r.raw) && r.unit !== 'ק"ג' && r.unit !== 'ליטר';
+  });
+
+  // Update summary
+  document.getElementById('s-guests').textContent = guests;
+  document.getElementById('s-dishes').textContent = evDishes.length;
+  document.getElementById('s-fracs').textContent = fracs.length;
+  document.getElementById('s-ingrs').textContent = rows.length;
+
+  if (fracs.length) {
+    document.getElementById('frac-btn').style.display = '';
+    document.getElementById('frac-count').textContent = fracs.length;
+  } else {
+    document.getElementById('frac-btn').style.display = 'none';
+  }
+
+  renderIngrTable(rows, evDishes);
+  buildWaText(rows);
+}
+
+function renderIngrTable(rows, evDishes) {
+  const tbody = document.getElementById('ingr-tbody');
+
+  // Group by dish
+  const byDish = {};
+  rows.forEach(r => {
+    if (!byDish[r.dish]) byDish[r.dish] = [];
+    byDish[r.dish].push(r);
+  });
+
+  let html = '';
+  Object.entries(byDish).forEach(([dish, items]) => {
+    html += `<tr class="ingr-cat"><td colspan="6">🍽️ ${dish}</td></tr>`;
+    items.forEach(r => {
+      const manualKey = `${activeEventId}_${r.name}_${r.dish}`;
+      const isFrac = !Number.isInteger(r.raw) && r.unit !== 'ק"ג' && r.unit !== 'ליטר';
+      const displayRaw = r.raw % 1 === 0 ? r.raw : r.raw.toFixed(2);
+      const roundedVal = manualQty[manualKey] !== undefined ? manualQty[manualKey] : (isFrac ? '' : (r.raw % 1 === 0 ? r.raw : (r.unit === 'ק"ג' || r.unit === 'ליטר' ? parseFloat(r.raw.toFixed(2)) : Math.ceil(r.raw))));
+      const fracClass = isFrac && manualQty[manualKey] === undefined ? 'warn' : 'ok';
+      const fracText = isFrac && manualQty[manualKey] === undefined ? '⚠ שבר' : (roundedVal !== '' ? '✓ ' + roundedVal : '');
+
+      html += `<tr>
+        <td class="td-name">${r.name}</td>
+        <td class="td-unit">${r.unit}</td>
+        <td><span class="frac-badge frac-ok">${displayRaw} ${r.unit}</span></td>
+        <td>
+          <input type="number" class="qty-input ${fracClass}" 
+            value="${roundedVal}"
+            placeholder="${isFrac ? '?' : ''}"
+            step="0.1" min="0"
+            onchange="setManualQty('${activeEventId}','${r.name}','${r.dish}',this.value,this)"
+            data-key="${manualKey}">
+        </td>
+        <td style="font-size:0.78rem;color:var(--muted)">${r.dish}</td>
+        <td><input type="text" placeholder="הערה..." style="border:none;background:transparent;width:100%;font-size:0.8rem;color:var(--muted);outline:none;font-family:inherit;"></td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML = html;
+}
+
+function setManualQty(evId, name, dish, val, inputEl) {
+  const key = `${evId}_${name}_${dish}`;
+  const num = parseFloat(val);
+  if (!isNaN(num) && num >= 0) {
+    manualQty[key] = num;
+    inputEl.classList.remove('warn');
+    inputEl.classList.add('ok');
+    saveManualQty();
+    // Recalc frac count
+    calcAll();
+  }
+}
+
+// ═══════════════════════════════════════════
+//  FRACTION MODAL
+// ═══════════════════════════════════════════
+function openFracModal() {
+  const ev = events.find(e => e.id === activeEventId);
+  if (!ev) return;
+  const guests = ev.guests;
+  const evDishes = dishes.filter(d => ev.dishIds.includes(d.id));
+  const fracs = [];
+  evDishes.forEach(dish => {
+    const ratio = dish.min > 0 ? Math.max(dish.min, Math.ceil(guests/dish.base)) : guests/dish.base;
+    (dish.ingredients||[]).forEach(ing => {
+      const raw = ing.qty * ratio;
+      const key = `${activeEventId}_${ing.name}_${dish.name}`;
+      if (!Number.isInteger(raw) && ing.unit !== 'ק"ג' && ing.unit !== 'ליטר' && manualQty[key] === undefined) {
+        fracs.push({ name: ing.name, dish: dish.name, raw, key, unit: ing.unit });
+      }
+    });
+  });
+
+  const list = document.getElementById('frac-list');
+  list.innerHTML = fracs.map(f => `
+    <div class="frac-item" id="fi-${f.key.replace(/[^a-z0-9]/gi,'_')}">
+      <div>
+        <div class="frac-ingr-name">${f.name} <span style="font-size:0.75rem;color:var(--muted)">(${f.dish})</span></div>
+        <div class="frac-raw">${f.raw.toFixed(2)} ${f.unit}</div>
+      </div>
+      <button class="frac-round-btn frac-down" onclick="fracSet('${f.key}',${Math.floor(f.raw)},this)">↓ ${Math.floor(f.raw)}</button>
+      <button class="frac-round-btn frac-up" onclick="fracSet('${f.key}',${Math.ceil(f.raw)},this)">↑ ${Math.ceil(f.raw)}</button>
+      <input type="number" value="${Math.ceil(f.raw)}" style="width:65px;padding:5px;border-radius:7px;border:1px solid var(--border);text-align:center;font-size:0.85rem;" 
+        onchange="fracSet('${f.key}',this.value,null)">
+    </div>`).join('') || '<div style="text-align:center;padding:20px;color:var(--green);">✓ אין שברים!</div>';
+
+  document.getElementById('frac-modal').classList.add('open');
+}
+
+function fracSet(key, val, btn) {
+  manualQty[key] = parseFloat(val);
+  saveManualQty();
+  const safeKey = key.replace(/[^a-z0-9]/gi,'_');
+  const row = document.getElementById('fi-' + safeKey);
+  if (row) row.style.opacity = '0.4';
+  calcAll();
+}
+
+function confirmAllFracs() {
+  const ev = events.find(e => e.id === activeEventId);
+  if (!ev) return;
+  const guests = ev.guests;
+  const evDishes = dishes.filter(d => ev.dishIds.includes(d.id));
+  evDishes.forEach(dish => {
+    const ratio = dish.min > 0 ? Math.max(dish.min, Math.ceil(guests/dish.base)) : guests/dish.base;
+    (dish.ingredients||[]).forEach(ing => {
+      const raw = ing.qty * ratio;
+      const key = `${activeEventId}_${ing.name}_${dish.name}`;
+      if (!Number.isInteger(raw) && ing.unit !== 'ק"ג' && ing.unit !== 'ליטר' && manualQty[key] === undefined) {
+        manualQty[key] = Math.ceil(raw);
+      }
+    });
+  });
+  saveManualQty();
+  calcAll();
+  closeModal('frac-modal');
+  showToast('כל השברים עוגלו מעלה ✓','success');
+}
+
+// ═══════════════════════════════════════════
+//  TASKS
+// ═══════════════════════════════════════════
+const TIME_LABELS = {
+  '-72': '72 שעות לפני האירוע',
+  '-48': '48 שעות לפני האירוע',
+  '-24': '24 שעות לפני האירוע',
+  '-12': '12 שעות לפני האירוע',
+  '-3':  '3 שעות לפני האירוע',
+  '-1':  'שעה לפני האירוע',
+  '0':   'יום האירוע',
+};
+
+function getAllTasks() {
+  const ev = events.find(e => e.id === activeEventId);
+  const evDishes = ev ? dishes.filter(d => ev.dishIds.includes(d.id)) : [];
+  const extra = JSON.parse(localStorage.getItem('amalfi2000_extratasks') || '[]');
+  const all = [];
+  evDishes.forEach(dish => {
+    (dish.tasks || []).forEach(t => {
+      all.push({ ...t, dish: dish.name, id: `${dish.id}_${t.name}` });
+    });
+  });
+  extra.forEach(t => all.push(t));
+  return all;
+}
+
+function renderAllTasks() {
+  const tasks = getAllTasks();
+  const timeline = document.getElementById('tasks-timeline');
+  const noMsg = document.getElementById('no-tasks-msg');
+
+  if (!tasks.length) {
+    timeline.innerHTML = '';
+    noMsg.style.display = '';
+    return;
+  }
+  noMsg.style.display = 'none';
+
+  // Group by time
+  const groups = {};
+  tasks.forEach(t => {
+    const k = String(t.hoursOffset);
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(t);
+  });
+
+  const order = ['-72','-48','-24','-12','-3','-1','0'];
+  let html = '<div class="task-timeline">';
+  order.forEach(k => {
+    if (!groups[k]) return;
+    html += `<div class="task-group">
+      <div class="task-time-header"><div class="dot"></div>${TIME_LABELS[k] || k}</div>
+      <div class="task-cards-grid">`;
+    groups[k].forEach(t => {
+      const done = taskDone[t.id] || false;
+      const pClass = { high:'p-high', med:'p-med', low:'p-low' }[t.priority] || 'p-low';
+      html += `
+        <div class="task-card ${done ? 'done' : ''}" id="tc-${sanitize(t.id)}">
+          <div class="task-check ${done ? 'checked' : ''}" onclick="toggleTask('${t.id}','tc-${sanitize(t.id)}')">
+            ${done ? '✓' : ''}
+          </div>
+          <div class="task-body">
+            <div class="task-name">${t.name}</div>
+            <div class="task-meta">
+              ${t.dish ? `<span class="task-dish">${t.dish}</span>` : '<span class="task-dish">כללי</span>'}
+              <span class="task-priority ${pClass}">${t.priority === 'high' ? 'חשוב' : t.priority === 'med' ? 'בינוני' : 'נמוך'}</span>
+            </div>
+          </div>
+        </div>`;
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  timeline.innerHTML = html;
+}
+
+function sanitize(s) { return s.replace(/[^a-z0-9]/gi,'_'); }
+
+function toggleTask(id, cardId) {
+  taskDone[id] = !taskDone[id];
+  saveTaskDone();
+  const card = document.getElementById(cardId);
+  const check = card.querySelector('.task-check');
+  card.classList.toggle('done', taskDone[id]);
+  check.classList.toggle('checked', taskDone[id]);
+  check.textContent = taskDone[id] ? '✓' : '';
+}
+
+function resetTasks() {
+  if (!confirm('לאפס את כל הסימונים?')) return;
+  taskDone = {};
+  saveTaskDone();
+  renderAllTasks();
+}
+
+function openAddTaskModal() {
+  document.getElementById('at-name').value = '';
+  document.getElementById('add-task-modal').classList.add('open');
+}
+
+function saveExtraTask() {
+  const name = document.getElementById('at-name').value.trim();
+  if (!name) { showToast('נדרש שם משימה', 'warn'); return; }
+  const extra = JSON.parse(localStorage.getItem('amalfi2000_extratasks') || '[]');
+  const t = {
+    name, hoursOffset: parseInt(document.getElementById('at-time').value),
+    priority: document.getElementById('at-priority').value,
+    dish: document.getElementById('at-dish').value || '',
+    id: 'extra_' + Date.now()
+  };
+  extra.push(t);
+  localStorage.setItem('amalfi2000_extratasks', JSON.stringify(extra));
+  closeModal('add-task-modal');
+  renderAllTasks();
+  showToast('משימה נוספה ✓', 'success');
+}
+
+function renderAtDishSelect() {
+  const sel = document.getElementById('at-dish');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— כללי —</option>' +
+    dishes.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  SUPPLIER TEXT
+// ═══════════════════════════════════════════
+function buildWaText(rows) {
+  if (!rows) {
+    const ev = events.find(e => e.id === activeEventId);
+    if (!ev) { document.getElementById('wa-text').textContent = 'אין אירוע פעיל'; return; }
+    calcAll(); return;
+  }
+  const ev = events.find(e => e.id === activeEventId);
+  const dateStr = ev.date ? new Date(ev.date+'T12:00:00').toLocaleDateString('he-IL') : '';
+
+  // Aggregate across all dishes per ingredient name
+  const totals = {};
+  rows.forEach(r => {
+    const key = `${r.name}||${r.unit}`;
+    if (!totals[key]) totals[key] = { name: r.name, unit: r.unit, qty: 0 };
+    const manualKey = `${activeEventId}_${r.name}_${r.dish}`;
+    const qty = manualQty[manualKey] !== undefined ? manualQty[manualKey] : (r.unit === 'ק"ג' || r.unit === 'ליטר' ? parseFloat(r.raw.toFixed(2)) : Math.ceil(r.raw));
+    totals[key].qty += qty;
+  });
+
+  const lines = Object.values(totals)
+    .sort((a,b) => a.name.localeCompare(b.name, 'he'))
+    .map(t => `• ${t.name} — ${parseFloat(t.qty.toFixed(2))} ${t.unit}`);
+
+  const text = `שלום! 🍕\nהזמנה לאירוע ${ev.name} (${ev.guests} איש) בתאריך ${dateStr}:\n\n${lines.join('\n')}\n\nתודה רבה, גל\n📞 054-203-1181`;
+  customWaText = text;
+  document.getElementById('wa-text').textContent = text;
+}
+
+function copySupplierText() {
+  const txt = customWaText || document.getElementById('wa-text').textContent;
+  if (!txt || txt.includes('אין אירוע')) { showToast('אין טקסט להעתקה', 'warn'); return; }
+  navigator.clipboard.writeText(txt).then(() => showToast('הועתק! ✓', 'success')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('הועתק! ✓', 'success');
+  });
+}
+
+function openWaEdit() {
+  document.getElementById('wa-edit-area').value = customWaText || document.getElementById('wa-text').textContent;
+  document.getElementById('wa-edit-modal').classList.add('open');
+}
+function saveWaEdit() {
+  customWaText = document.getElementById('wa-edit-area').value;
+  document.getElementById('wa-text').textContent = customWaText;
+  closeModal('wa-edit-modal');
+  showToast('נשמר ✓', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  IMPORT FROM SUPABASE
+// ═══════════════════════════════════════════
+let importedData = null;
+
+function openImportModal() { document.getElementById('import-modal').classList.add('open'); }
+
+async function fetchQuote() {
+  const id = document.getElementById('import-id').value.trim();
+  if (!id) { showToast('נדרש ID', 'warn'); return; }
+  showToast('טוען...');
+  try {
+    const data = await sbFetch('quote_approvals', `?quote_id=eq.${id}&select=*`);
+    if (!data || !data.length) { showToast('לא נמצאה הצעה עם ID זה', 'error'); return; }
+    importedData = data[0];
+    const d = importedData;
+    const previewEl = document.getElementById('import-preview');
+    const billed = (d.guests_adults || 0) + (d.guests_kids || 0);
+    previewEl.innerHTML = `
+      <strong>${d.client_name}</strong> — ${d.event_type || ''}<br>
+      📅 ${d.event_date || '—'} ${d.event_time ? '• ' + d.event_time.slice(0,5) : ''}<br>
+      📍 ${d.address || '—'}<br>
+      👥 ${billed} סועדים מחויבים<br>
+      🍽️ ${(d.menu_items || []).join(', ') || '—'}`;
+    previewEl.style.display = '';
+    document.getElementById('import-confirm-btn').style.display = '';
+    showToast('הצעה נמצאה ✓', 'success');
+  } catch(e) {
+    showToast('שגיאה: ' + e.message, 'error');
+  }
+}
+
+function importQuote() {
+  if (!importedData) return;
+  const d = importedData;
+  const billed = (d.guests_adults || 0) + (d.guests_kids || 0);
+
+  // Match menu_items to dish IDs
+  const matchedIds = [];
+  (d.menu_items || []).forEach(itemName => {
+    const found = dishes.find(dish =>
+      dish.name === itemName ||
+      itemName.includes(dish.name) ||
+      dish.name.includes(itemName.split(' ')[0])
+    );
+    if (found && !matchedIds.includes(found.id)) matchedIds.push(found.id);
+  });
+  if (!matchedIds.length) {
+    // Fallback: include standard dishes
+    matchedIds.push(...dishes.filter(d => ['d9','d2','d4'].includes(d.id)).map(d=>d.id));
+  }
+
+  const ev = {
+    id: 'ev_' + d.quote_id,
+    name: d.client_name + ' — ' + (d.event_type || 'אירוע'),
+    date: d.event_date,
+    guests: billed,
+    dishIds: matchedIds,
+    source: 'supabase',
+    quoteId: d.quote_id
+  };
+
+  // Replace if same quote_id
+  events = events.filter(e => e.id !== ev.id);
+  events.push(ev);
+  activeEventId = ev.id;
+  saveEventsLS();
+  closeModal('import-modal');
+  renderEventSelector();
+  calcAll();
+  renderAllTasks();
+  showToast('אירוע יובא בהצלחה ✓', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  MANUAL EVENT
+// ═══════════════════════════════════════════
+function openNewEventModal() {
+  renderNeDishes();
+  document.getElementById('new-event-modal').classList.add('open');
+}
+
+function renderNeDishes() {
+  const el = document.getElementById('ne-dishes');
+  if (!el) return;
+  el.innerHTML = dishes.map(d => `
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:white;font-weight:400;">
+      <input type="checkbox" value="${d.id}" checked style="width:auto;">
+      ${d.name}
+    </label>`).join('');
+}
+
+function createManualEvent() {
+  const name = document.getElementById('ne-name').value.trim();
+  if (!name) { showToast('נדרש שם אירוע', 'warn'); return; }
+  const adults = parseInt(document.getElementById('ne-adults').value) || 0;
+  const kids = parseInt(document.getElementById('ne-kids').value) || 0;
+  const dishIds = Array.from(document.querySelectorAll('#ne-dishes input:checked')).map(i => i.value);
+
+  const ev = {
+    id: 'ev_' + Date.now(),
+    name,
+    date: document.getElementById('ne-date').value,
+    guests: adults + kids,
+    dishIds,
+    source: 'manual'
+  };
+  events.push(ev);
+  activeEventId = ev.id;
+  saveEventsLS();
+  closeModal('new-event-modal');
+  renderEventSelector();
+  calcAll();
+  renderAllTasks();
+  showToast('אירוע נוצר ✓', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — DISH EDITOR
+// ═══════════════════════════════════════════
+let editingDishId = null;
+
+function renderDishList() {
+  const el = document.getElementById('dish-list');
+  el.innerHTML = dishes.map(d => `
+    <div class="dish-row ${d.id === editingDishId ? 'active' : ''}" onclick="selectDishEdit('${d.id}')">
+      <div style="flex:1;">
+        <div class="dish-row-name">${d.name}</div>
+        <div class="dish-row-meta">${d.cat} • ${(d.ingredients||[]).length} ירקות • ${(d.tasks||[]).length} משימות</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteDishAdmin('${d.id}')">✕</button>
+    </div>`).join('');
+}
+
+function selectDishEdit(id) {
+  editingDishId = id;
+  const d = dishes.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('editor-title').textContent = 'עריכת: ' + d.name;
+  document.getElementById('ed-name').value = d.name;
+  document.getElementById('ed-cat').value = d.cat;
+  document.getElementById('ed-base').value = d.base || 30;
+  document.getElementById('ed-min').value = d.min || 0;
+  renderIngrEditor(d.ingredients || []);
+  renderTaskEditor(d.tasks || []);
+  document.getElementById('dish-editor').style.display = '';
+  document.getElementById('no-dish-sel').style.display = 'none';
+  renderDishList();
+}
+
+function renderIngrEditor(ingrs) {
+  const el = document.getElementById('ingr-editor');
+  el.innerHTML = ingrs.map((ing, i) => `
+    <div class="ingr-edit-row">
+      <input type="text" value="${ing.name}" onchange="updateIngr(${i},'name',this.value)">
+      <input type="number" value="${ing.qty}" step="0.1" onchange="updateIngr(${i},'qty',parseFloat(this.value))">
+      <input type="text" value="${ing.unit}" onchange="updateIngr(${i},'unit',this.value)">
+      <button class="btn btn-danger btn-sm" onclick="removeIngr(${i})">✕</button>
+    </div>`).join('');
+}
+
+function renderTaskEditor(tasks) {
+  const el = document.getElementById('task-editor');
+  el.innerHTML = tasks.map((t, i) => `
+    <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;">
+      <input type="text" value="${t.name}" style="font-size:0.82rem;padding:5px 8px;" onchange="updateTaskEdit(${i},'name',this.value)">
+      <select style="font-size:0.78rem;padding:5px;" onchange="updateTaskEdit(${i},'hoursOffset',parseInt(this.value))">
+        ${['-72','-48','-24','-12','-3','-1','0'].map(h => `<option value="${h}" ${t.hoursOffset == h ? 'selected' : ''}>${h === '0' ? 'יום ה-' : h + 'ש'}</option>`).join('')}
+      </select>
+      <select style="font-size:0.78rem;padding:5px;" onchange="updateTaskEdit(${i},'priority',this.value)">
+        <option value="high" ${t.priority==='high'?'selected':''}>גבוהה</option>
+        <option value="med" ${t.priority==='med'?'selected':''}>בינונית</option>
+        <option value="low" ${t.priority==='low'?'selected':''}>נמוכה</option>
+      </select>
+      <button class="btn btn-danger btn-sm" onclick="removeTask(${i})">✕</button>
+    </div>`).join('');
+}
+
+function updateIngr(i, field, val) {
+  const d = dishes.find(x => x.id === editingDishId);
+  if (d && d.ingredients[i]) d.ingredients[i][field] = val;
+}
+function removeIngr(i) {
+  const d = dishes.find(x => x.id === editingDishId);
+  if (d) { d.ingredients.splice(i, 1); renderIngrEditor(d.ingredients); }
+}
+function addIngr() {
+  const name = document.getElementById('new-ingr-name').value.trim();
+  const qty = parseFloat(document.getElementById('new-ingr-qty').value) || 0;
+  const unit = document.getElementById('new-ingr-unit').value.trim() || 'ק"ג';
+  if (!name) { showToast('נדרש שם', 'warn'); return; }
+  const d = dishes.find(x => x.id === editingDishId);
+  if (!d) return;
+  if (!d.ingredients) d.ingredients = [];
+  d.ingredients.push({ name, qty, unit });
+  document.getElementById('new-ingr-name').value = '';
+  document.getElementById('new-ingr-qty').value = '';
+  renderIngrEditor(d.ingredients);
+}
+
+function updateTaskEdit(i, field, val) {
+  const d = dishes.find(x => x.id === editingDishId);
+  if (d && d.tasks[i]) d.tasks[i][field] = val;
+}
+function removeTask(i) {
+  const d = dishes.find(x => x.id === editingDishId);
+  if (d) { d.tasks.splice(i, 1); renderTaskEditor(d.tasks); }
+}
+function addTask() {
+  const name = document.getElementById('new-task-name').value.trim();
+  if (!name) { showToast('נדרש שם', 'warn'); return; }
+  const d = dishes.find(x => x.id === editingDishId);
+  if (!d) return;
+  if (!d.tasks) d.tasks = [];
+  d.tasks.push({
+    name,
+    hoursOffset: parseInt(document.getElementById('new-task-time').value),
+    priority: document.getElementById('new-task-priority').value
+  });
+  document.getElementById('new-task-name').value = '';
+  renderTaskEditor(d.tasks);
+}
+
+function saveDish() {
+  const d = dishes.find(x => x.id === editingDishId);
+  if (!d) return;
+  d.name = document.getElementById('ed-name').value.trim() || d.name;
+  d.cat = document.getElementById('ed-cat').value;
+  d.base = parseInt(document.getElementById('ed-base').value) || 30;
+  d.min = parseInt(document.getElementById('ed-min').value) || 0;
+  saveDishesLS();
+  renderDishList();
+  calcAll();
+  showToast('מנה נשמרה ✓', 'success');
+}
+
+function openAddDishModal() {
+  editingDishId = 'new_' + Date.now();
+  const newDish = { id: editingDishId, name: 'מנה חדשה', cat: 'סלטים', base: 30, min: 0, ingredients: [], tasks: [] };
+  dishes.push(newDish);
+  saveDishesLS();
+  renderDishList();
+  selectDishEdit(editingDishId);
+}
+
+function deleteDishAdmin(id) {
+  if (!confirm('למחוק מנה זו?')) return;
+  dishes = dishes.filter(d => d.id !== id);
+  saveDishesLS();
+  if (editingDishId === id) {
+    editingDishId = null;
+    document.getElementById('dish-editor').style.display = 'none';
+    document.getElementById('no-dish-sel').style.display = '';
+  }
+  renderDishList();
+  showToast('מנה נמחקה', 'success');
+}
+
+function closeDishEditor() {
+  editingDishId = null;
+  document.getElementById('dish-editor').style.display = 'none';
+  document.getElementById('no-dish-sel').style.display = '';
+  renderDishList();
+}
+
+// ═══════════════════════════════════════════
+//  EXPORT / PDF
+// ═══════════════════════════════════════════
+function togglePrintOpt(el, key) {
+  el.classList.toggle('sel');
+  if (selectedPrintOpts.has(key)) selectedPrintOpts.delete(key);
+  else selectedPrintOpts.add(key);
+  buildPdfPreview();
+}
+
+function buildPdfPreview() {
+  const ev = events.find(e => e.id === activeEventId);
+  const body = document.getElementById('pdf-preview-body');
+  if (!ev) { body.innerHTML = 'אין אירוע פעיל'; return; }
+  let html = `<div style="font-family:'Frank Ruhl Libre',serif;font-size:1.2rem;color:var(--navy);margin-bottom:12px;">🍕 Pizza Zmani — ${ev.name} • ${ev.guests} איש</div>`;
+  if (selectedPrintOpts.has('ingredients')) {
+    html += '<div style="font-weight:600;color:var(--navy);margin:10px 0 6px;">📦 חומרי גלם</div>';
+    const evDishes = dishes.filter(d => ev.dishIds.includes(d.id));
+    evDishes.forEach(dish => {
+      const ratio = dish.min > 0 ? Math.max(dish.min, Math.ceil(ev.guests/dish.base)) : ev.guests/dish.base;
+      (dish.ingredients||[]).forEach(ing => {
+        const raw = ing.qty * ratio;
+        const key = `${activeEventId}_${ing.name}_${dish.name}`;
+        const qty = manualQty[key] !== undefined ? manualQty[key] : (ing.unit==='ק"ג'||ing.unit==='ליטר' ? parseFloat(raw.toFixed(2)) : Math.ceil(raw));
+        html += `<div style="font-size:0.82rem;padding:2px 0;">• ${ing.name}: ${qty} ${ing.unit} <span style="color:var(--muted)">(${dish.name})</span></div>`;
+      });
+    });
+  }
+  if (selectedPrintOpts.has('tasks')) {
+    html += '<div style="font-weight:600;color:var(--navy);margin:10px 0 6px;">📋 משימות הכנה</div>';
+    const tasks = getAllTasks();
+    ['-72','-48','-24','-12','-3','-1','0'].forEach(k => {
+      const group = tasks.filter(t => String(t.hoursOffset) === k);
+      if (!group.length) return;
+      html += `<div style="font-size:0.8rem;font-weight:600;color:var(--muted);margin-top:6px;">${TIME_LABELS[k]}</div>`;
+      group.forEach(t => { html += `<div style="font-size:0.82rem;padding:1px 0;">☐ ${t.name} ${t.dish ? '(' + t.dish + ')' : ''}</div>`; });
+    });
+  }
+  if (selectedPrintOpts.has('supplier')) {
+    html += '<div style="font-weight:600;color:var(--navy);margin:10px 0 6px;">🛒 הזמנת ספק</div>';
+    html += `<div style="font-size:0.82rem;white-space:pre-wrap;">${customWaText || document.getElementById('wa-text').textContent}</div>`;
+  }
+  body.innerHTML = html;
+}
+
+function exportPDF() {
+  buildPdfPreview();
+  const ev = events.find(e => e.id === activeEventId);
+  const name = ev ? ev.name.replace(/[^א-תa-z0-9]/gi, '_') : 'amalfi';
+  const element = document.getElementById('pdf-preview-body');
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `amalfi_${name}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  showToast('יוצר PDF...', 'warn');
+  html2pdf().set(opt).from(element).save().then(() => showToast('PDF נוצר ✓', 'success'));
+}
+
+// ═══════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════
+function toggleUnav() {
+  document.getElementById('unavMenu').classList.toggle('open');
+  document.getElementById('unavOverlay').classList.toggle('open');
+}
+function closeUnav() {
+  document.getElementById('unavMenu').classList.remove('open');
+  document.getElementById('unavOverlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+//  URL PARAMS — auto import from Pizza Zmani
+// ═══════════════════════════════════════════
+async function checkUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const qid = params.get('quote_id');
+  if (qid) {
+    document.getElementById('import-id').value = qid;
+    await fetchQuote();
+    if (importedData) { importQuote(); }
+  }
+}
+
+// ═══════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════
+init();
+checkUrlParams();
+buildPdfPreview();
+</script>
+</body>
+</html>

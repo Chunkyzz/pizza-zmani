@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.2.0</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.2.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.2.0</div>
+  <div class="version">v1.2.1</div>
 </div>
 
 <div class="main">
@@ -864,6 +864,7 @@ function renderQuotes() {
         <div class="quote-actions" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-sm" onclick="openEdit(${q.id})">✏️</button>
           <button class="btn btn-navy btn-sm" onclick="openBuilder(${q.id})">📄</button>
+          <button class="btn btn-green btn-sm" onclick="openAmalfi(${q.id})" title="הפקת אירוע — אמלפי">🥦</button>
           <button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id},'${(q.client_name||'').replace(/'/g,'')}')" title="מחק">🗑️</button>
         </div>
       </div>
