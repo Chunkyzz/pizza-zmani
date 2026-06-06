@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -18,6 +18,11 @@
 body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
 
 /* TOPBAR */
+.topbar.edit-mode{background:#7c3aed!important;}
+.edit-only{display:none!important;}
+.topbar.edit-mode .edit-only{display:flex!important;}
+.topbar.edit-mode .normal-only{display:none!important;}
+body.edit-mode-active{padding-bottom:64px;}
 .topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,0.2);gap:8px;}
 .brand{font-family:'Frank Ruhl Libre',serif;font-size:1rem;color:var(--gold);white-space:nowrap;flex-shrink:0;}
 .topbar-center{display:flex;gap:4px;align-items:center;}
@@ -210,26 +215,100 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 .unav-link .icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0;}
 .unav-sep{height:1px;background:rgba(255,255,255,0.1);margin:8px 0;}
 .unav-label{font-size:0.68rem;color:rgba(255,255,255,0.3);padding:4px 12px 2px;text-transform:uppercase;letter-spacing:0.8px;}
+
+/* ══ EDIT MODE ══ */
+.topbar.edit-mode{background:#5b21b6!important;}
+.edit-only{display:none!important;}
+.topbar.edit-mode .edit-only{display:flex!important;align-items:center;gap:8px;}
+.topbar.edit-mode .normal-only{display:none!important;}
+body.edit-mode-active{padding-bottom:64px;}
+
+/* dish card state colors in edit mode */
+.edit-mode-active .dish-card.newly-added{
+  border-color:#16a34a!important;background:#F0FFF4!important;
+}
+.edit-mode-active .dish-card.newly-added::after{
+  content:'חדש';font-size:0.6rem;background:#16a34a;color:white;
+  padding:1px 5px;border-radius:4px;margin-right:4px;
+}
+.edit-mode-active .dish-card.newly-removed{
+  border-color:#dc2626!important;background:#FFF5F5!important;opacity:0.6;
+}
+.edit-mode-active input:not([type=checkbox]):focus,
+.edit-mode-active select:focus,
+.edit-mode-active textarea:focus{
+  border-color:#C9A84C!important;box-shadow:0 0 0 2px rgba(201,168,76,0.2)!important;
+}
+.edit-mode-active input.field-changed,
+.edit-mode-active select.field-changed,
+.edit-mode-active textarea.field-changed{
+  border-color:#C9A84C!important;background:#FFFDF5!important;
+}
+
+/* save bar */
+#edit-save-bar{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:#5b21b6;padding:12px 24px;z-index:8000;
+  align-items:center;justify-content:space-between;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.25);
+}
+#edit-save-bar .bar-label{color:rgba(255,255,255,0.6);font-size:0.82rem;}
+#edit-save-bar .bar-btns{display:flex;gap:10px;align-items:center;}
+.btn-save-changes{
+  background:white;color:#5b21b6;border:none;
+  padding:10px 24px;border-radius:9px;
+  font-family:'Heebo',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;
+  transition:all 0.15s;
+}
+.btn-save-changes:hover{background:#f5f3ff;}
+.btn-cancel-changes{
+  background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.3);
+  padding:10px 18px;border-radius:9px;
+  font-family:'Heebo',sans-serif;font-size:0.88rem;cursor:pointer;
+  transition:all 0.15s;
+}
+.btn-cancel-changes:hover{background:rgba(255,255,255,0.25);}
+.btn-back-no-save{
+  background:none;color:rgba(255,255,255,0.5);border:none;
+  padding:10px 14px;font-family:'Heebo',sans-serif;font-size:0.82rem;cursor:pointer;
+  text-decoration:underline;
+}
+.btn-back-no-save:hover{color:white;}
+
+/* SUB-OPTIONS & NOTES */
+.dish-subopts{margin-top:6px;padding:7px 9px;background:rgba(27,42,74,0.04);border-radius:7px;border:1px solid rgba(201,168,76,0.25);display:none;}
+.dish-card.selected .dish-subopts{display:block;}
+.subopt-title{font-size:0.68rem;color:var(--muted);font-weight:600;margin-bottom:5px;}
+.subopt-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.subopt-chip{padding:4px 9px;border-radius:6px;border:1.5px solid var(--border);background:white;cursor:pointer;font-size:0.78rem;color:var(--navy);transition:all 0.15s;font-family:inherit;}
+.subopt-chip:hover{border-color:var(--gold);}
+.subopt-chip.sel{border-color:var(--green);background:#F0FFF4;color:var(--green);font-weight:600;}
+.subopt-extra{font-size:0.65rem;color:var(--muted);margin-top:4px;}
+.note-toggle{font-size:0.72rem;color:var(--muted);cursor:pointer;text-decoration:underline;display:block;margin-top:5px;}
+.dish-note-area{width:100%;margin-top:4px;font-family:inherit;font-size:0.8rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--cream);outline:none;resize:none;height:46px;display:none;}
+.dish-note-area.open{display:block;}
+.dish-note-area:focus{border-color:var(--gold);}
 </style>
 </head>
 <body class="view-build">
 
 <!-- TOPBAR -->
-<div class="topbar">
+<div class="topbar" id="mainTopbar">
   <div class="brand">🍕 Pizza Zmani</div>
-  <div class="topbar-center">
+  <span class="edit-only" style="color:rgba(255,255,255,0.5);font-size:0.82rem;font-style:italic;">✏️ מצב עריכה</span>
+  <div class="topbar-center normal-only">
     <button class="btn btn-mode active" id="btnBuild" onclick="setMode('build')">✏️ בנייה</button>
     <button class="btn btn-mode" id="btnSplit" onclick="setMode('split')">⚡ משולב</button>
     <button class="btn btn-mode" id="btnPreview" onclick="setMode('preview')">👁️ תצוגה</button>
   </div>
-  <div class="topbar-right">
+  <div class="topbar-right normal-only">
     <button class="btn btn-ghost" onclick="resetAll()" title="איפוס">🔄</button>
     <button class="btn btn-ghost" onclick="saveQuote()">💾</button>
     <button class="btn btn-gold" onclick="generatePDF()">📄 PDF</button>
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.0</div>
+  <div class="version">v2.4.3</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -531,6 +610,87 @@ async function init() {
   if (editId) await loadExistingQuote(editId);
 }
 
+// ── EDIT MODE STATE ──
+let editOriginalDishes = null;  // snapshot of dishes when loaded
+let editOriginalFields = {};    // snapshot of field values when loaded
+
+async function saveAndReturn() {
+  const btn = document.querySelector('.btn-save-changes');
+  if(btn){ btn.textContent = '⏳ שומר...'; btn.disabled = true; }
+  const saved = await saveQuote(false);
+  if(saved || currentQuoteId){
+    showToast('נשמר ✓ חוזר לניהול...', 'success');
+    setTimeout(() => { window.location.href = 'quotes-manager.html'; }, 1200);
+  } else {
+    if(btn){ btn.textContent = '💾 שמור שינויים'; btn.disabled = false; }
+  }
+}
+
+function exitWithoutSaving() {
+  const hasChanges = detectChanges();
+  if(hasChanges){
+    if(!confirm('יש שינויים שלא נשמרו. לצאת בלי לשמור?')) return;
+  }
+  window.location.href = 'quotes-manager.html';
+}
+
+async function reloadQuote() {
+  if(!currentQuoteId) return;
+  if(!confirm('לבטל את כל השינויים ולחזור לגרסה השמורה?')) return;
+  showToast('טוען גרסה שמורה...', '');
+  await loadExistingQuote(currentQuoteId);
+  showToast('גרסה שמורה נטענה ✓', 'success');
+}
+
+function detectChanges() {
+  if(!editOriginalDishes) return false;
+  // Check dishes
+  const currentDishes = JSON.stringify([...selectedDishes].sort());
+  const originalDishes = JSON.stringify([...editOriginalDishes].sort());
+  if(currentDishes !== originalDishes) return true;
+  // Check fields
+  const fields = ['cl-name','cl-phone','cl-date','cl-time','cl-address','cl-notes','manual-subtotal'];
+  for(const f of fields){
+    const el = document.getElementById(f);
+    if(el && el.value !== (editOriginalFields[f]||'')) return true;
+  }
+  return false;
+}
+
+function snapshotOriginal() {
+  editOriginalDishes = new Set(selectedDishes);
+  const fields = ['cl-name','cl-phone','cl-date','cl-time','cl-address','cl-notes','manual-subtotal'];
+  fields.forEach(f => {
+    const el = document.getElementById(f);
+    if(el) editOriginalFields[f] = el.value;
+  });
+}
+
+function markChangedFields() {
+  const fields = ['cl-name','cl-phone','cl-date','cl-time','cl-address','cl-notes','manual-subtotal'];
+  fields.forEach(f => {
+    const el = document.getElementById(f);
+    if(!el) return;
+    el.addEventListener('input', () => {
+      const orig = editOriginalFields[f] || '';
+      el.classList.toggle('field-changed', el.value !== orig);
+    });
+  });
+}
+
+function markChangedDishes() {
+  if(!editOriginalDishes) return;
+  document.querySelectorAll('.dish-card').forEach(card => {
+    const id = parseInt(card.dataset.id);
+    if(!id) return;
+    const wasOriginal = editOriginalDishes.has(id);
+    const isNow = selectedDishes.has(id);
+    card.classList.remove('newly-added','newly-removed');
+    if(!wasOriginal && isNow) card.classList.add('newly-added');
+    if(wasOriginal && !isNow) card.classList.add('newly-removed');
+  });
+}
+
 async function loadExistingQuote(id) {
   const { data, error } = await sb.from('qz_quotes').select('*').eq('id', id).single();
   if (error || !data) { showToast('לא נמצאה הצעה', 'error'); return; }
@@ -581,8 +741,14 @@ async function loadExistingQuote(id) {
   const vatLabel = document.getElementById('tog-vat');
   if (vatLabel) vatLabel.classList.toggle('checked', includeVat);
 
-  // Show back button
-  document.getElementById('back-to-manager').style.display = '';
+  document.getElementById('mainTopbar').classList.add('edit-mode');
+  document.body.classList.add('edit-mode-active');
+  document.getElementById('edit-save-bar').style.display = 'flex';
+  // Snapshot original state for change detection
+  setTimeout(() => {
+    snapshotOriginal();
+    markChangedFields();
+  }, 300);
 
   // Update title
   document.getElementById('quoteNum').textContent = '#' + String(data.id).slice(-4);
@@ -663,14 +829,31 @@ function renderDishes() {
       '<div class="dish-price">' +
         (d.base_price?'<div class="dish-price-base">₪'+d.base_price+'</div>':'') +
         (d.addon_per_person?'<div class="dish-price-addon">+₪'+d.addon_per_person+'/אדם</div>':'') +
-      '</div></div>';
+      '</div>' +
+      (DISH_SUBOPTIONS[d.name]?'<div class="dish-subopts" id="so-'+d.id+'" onclick="event.stopPropagation()"></div>':'') +
+      '<div style="padding:0 8px 6px;" onclick="event.stopPropagation()">' +
+        '<span class="note-toggle" onclick="toggleNote('+d.id+',event)">+ הערה למנה</span>' +
+        '<textarea class="dish-note-area" id="dn-'+d.id+'" placeholder="הערה ספציפית ללקוח..." oninput="saveNote('+d.id+',this.value,event)"></textarea>' +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
 function toggleDish(id) {
   selectedDishes.has(id) ? selectedDishes.delete(id) : selectedDishes.add(id);
   renderDishes();
-  if (currentMode!=='build') updatePreview();
+  // Initialize sub-options for newly selected dishes
+  if(selectedDishes.has(id)){
+    const dish=allDishes.find(d=>d.id===id);
+    if(dish&&DISH_SUBOPTIONS[dish.name]){
+      const el=document.getElementById('so-'+id);
+      if(el)buildSubOptsHTML(el,id);
+    }
+    // Restore note if exists
+    const noteEl=document.getElementById('dn-'+id);
+    if(noteEl&&dishNotes[id]){noteEl.value=dishNotes[id];noteEl.classList.add('open');}
+  }
+  if(currentMode!=='build')updatePreview();
 }
 
 // GUESTS
@@ -732,6 +915,13 @@ function calcManualPrice() {
 function syncPreview() { if(currentMode!=='build') updatePreview(); }
 
 // UPDATE PREVIEW
+// mark dish changes in edit mode
+function checkDishChanges() {
+  if(document.body.classList.contains('edit-mode-active')) {
+    markChangedDishes();
+  }
+}
+
 function updatePreview() {
   const g = getGuests();
   const billed = g.adults+g.kids;
@@ -867,7 +1057,49 @@ function clearTotals(){
 }
 
 // SAVE
-let currentQuoteId = null; // tracks saved quote ID for upsert
+let currentQuoteId = null;
+
+// ── SUB-OPTIONS ──
+const DISH_SUBOPTIONS = {
+  'פסטה קצרה':{title:'בחירת רוטב (ראשון כלול, כל נוסף +₪5/אדם)',opts:[{id:'rosa',l:'רוזה'},{id:'tomato',l:'עגבניות'},{id:'cream',l:'שמנת'},{id:'pesto',l:'פסטו'}],multi:true,base:1,extra:5},
+  'ניוקי צבעוני':{title:'בחירת רוטב',opts:[{id:'butter',l:'חמאת מרווה'},{id:'cream2',l:'שמנת עשבי תיבול'}],multi:false,base:1,extra:0},
+};
+let dishSubOpts={};
+let dishNotes={};
+
+function toggleSubOpt(dishId,optId,multi,event){
+  event&&event.stopPropagation();
+  if(!dishSubOpts[dishId])dishSubOpts[dishId]={};
+  if(!multi){dishSubOpts[dishId]={};}
+  dishSubOpts[dishId][optId]=!dishSubOpts[dishId][optId];
+  const el=document.getElementById('so-'+dishId);
+  if(el)buildSubOptsHTML(el,dishId);
+  if(currentMode!=='build')updatePreview();
+}
+
+function buildSubOptsHTML(container,dishId){
+  const dish=allDishes.find(d=>d.id===dishId);
+  if(!dish)return;
+  const def=DISH_SUBOPTIONS[dish.name];
+  if(!def)return;
+  const sel=dishSubOpts[dishId]||{};
+  const selCount=Object.values(sel).filter(Boolean).length;
+  const extra=Math.max(0,selCount-def.base);
+  container.innerHTML='<div class="subopt-title">'+def.title+'</div>'+
+    '<div class="subopt-grid">'+def.opts.map(o=>'<div class="subopt-chip'+(sel[o.id]?' sel':'')+'" onclick="toggleSubOpt('+dishId+',\''+o.id+'\','+def.multi+',event)">'+o.l+'</div>').join('')+'</div>'+
+    (extra>0&&def.extra>0?'<div class="subopt-extra">+₪'+(extra*def.extra)+'/אדם תוספת רטבים נוספים</div>':'');
+}
+
+function toggleNote(dishId,event){
+  event&&event.stopPropagation();
+  const el=document.getElementById('dn-'+dishId);
+  if(el)el.classList.toggle('open');
+}
+function saveNote(dishId,val,event){
+  event&&event.stopPropagation();
+  dishNotes[dishId]=val;
+}
+ // tracks saved quote ID for upsert
 
 async function saveQuote(silent=false){
   const name=document.getElementById('cl-name').value.trim();
@@ -1306,6 +1538,14 @@ init();
   <a class="unav-link" href="https://chunkyzz.github.io/pizza-order.html/" id="nav-home">
     <span class="icon">🏠</span>דף הבית — כל המערכות
   </a>
+</div>
+<div id="edit-save-bar">
+  <span class="bar-label">✏️ מצב עריכה — שינויים לא נשמרים אוטומטית</span>
+  <div class="bar-btns">
+    <button class="btn-back-no-save" onclick="exitWithoutSaving()">← צא בלי לשמור</button>
+    <button class="btn-cancel-changes" onclick="reloadQuote()">↩️ בטל שינויים</button>
+    <button class="btn-save-changes" onclick="saveAndReturn()">💾 שמור שינויים</button>
+  </div>
 </div>
 <button class="unav-btn" onclick="toggleUnav()" title="ניווט מהיר">🍕</button>
 
