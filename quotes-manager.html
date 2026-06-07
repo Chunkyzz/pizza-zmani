@@ -909,12 +909,9 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
   }, { onConflict: 'quote_id' });
   const approvalUrl = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + quoteId;
   const msg = encodeURIComponent(
-    'שלום ' + qData.client_name + '! 🍕
-' +
-    'הצעת המחיר שלך מ-Pizza Zmani מוכנה לאישור.
-' +
-    'לחץ/י לצפייה ואישור:
-' + approvalUrl
+    'שלום ' + qData.client_name + '! 🍕' + '\n' +
+    'הצעת המחיר שלך מ-Pizza Zmani מוכנה לאישור.' + '\n' +
+    'לחץ/י לצפייה ואישור:' + '\n' + approvalUrl
   );
   const phone = (qData.client_phone||clientPhone).replace(/\D/g,'').replace(/^0/,'972');
   window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
