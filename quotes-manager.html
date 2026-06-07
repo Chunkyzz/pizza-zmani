@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.2.2</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.2.2</div>
+  <div class="version">v1.3.0</div>
 </div>
 
 <div class="main">
@@ -862,14 +862,67 @@ function renderQuotes() {
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <span class="badge ${badgeMap[status]||'badge-draft'}">${statusMap[status]||status}</span>
         <div class="quote-actions" onclick="event.stopPropagation()">
-          <button class="btn btn-ghost btn-sm" onclick="openEdit(${q.id})">✏️</button>
-          <button class="btn btn-navy btn-sm" onclick="openBuilder(${q.id})">📄</button>
-          <button class="btn btn-green btn-sm" onclick="openAmalfi(${q.id})" title="הפקת אירוע — אמלפי">🥦</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEdit(${q.id})" title="עריכה">✏️</button>
+          <button class="btn btn-navy btn-sm" onclick="openBuilder(${q.id})" title="עריכה מלאה">📝</button>
+          <button class="btn btn-gold btn-sm" onclick="openPDFFromManager(${q.id})" title="PDF">📄</button>
+          <button class="btn btn-green btn-sm" onclick="sendFromManager(${q.id},'${q.client_name||''}','${q.client_phone||''}')" title="שלח לאישור">📨</button>
+          <button class="btn btn-green btn-sm" onclick="openAmalfi(${q.id})" title="אמלפי" style="background:#0891b2;">🥦</button>
           <button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id},'${(q.client_name||'').replace(/'/g,'')}')" title="מחק">🗑️</button>
         </div>
       </div>
     </div>`;
   }).join('');
+}
+
+async function deleteQuote(id, name) {
+  if(!confirm('למחוק את הצעת המחיר של ' + name + '?')) return;
+  const { error } = await sb.from('qz_quotes').delete().eq('id', id);
+  if(error){ showToast('שגיאה: '+error.message,'error'); return; }
+  showToast('הצעה נמחקה ✓','success');
+  await loadQuotes();
+}
+
+async function sendFromManager(quoteId, clientName, clientPhone) {
+  if(!clientPhone){ showToast('אין מספר טלפון ללקוח','error'); return; }
+  // Create/update approval record
+  const { data: qData } = await sb.from('qz_quotes').select('*').eq('id', quoteId).single();
+  if(!qData){ showToast('לא נמצאה הצעה','error'); return; }
+  const approvalId = 'ap_' + quoteId;
+  const { data: dishes } = await sb.from('qz_dishes').select('name').in('id', qData.selected_dishes||[]);
+  const menuItems = (dishes||[]).map(d=>d.name);
+  await sb.from('quote_approvals').upsert({
+    quote_id: quoteId,
+    client_name: qData.client_name,
+    client_phone: qData.client_phone||'',
+    event_date: qData.event_date,
+    event_time: qData.event_time,
+    event_type: qData.event_type,
+    address: qData.event_address,
+    guests_adults: qData.guests_adults||0,
+    guests_kids: qData.guests_kids||0,
+    guests_babies: qData.guests_babies||0,
+    menu_items: menuItems,
+    price_before_vat: qData.total_before_vat||0,
+    price_after_vat: qData.total_with_vat||0,
+    notes: qData.notes||'',
+    status: 'pending'
+  }, { onConflict: 'quote_id' });
+  const approvalUrl = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + quoteId;
+  const msg = encodeURIComponent(
+    'שלום ' + qData.client_name + '! 🍕
+' +
+    'הצעת המחיר שלך מ-Pizza Zmani מוכנה לאישור.
+' +
+    'לחץ/י לצפייה ואישור:
+' + approvalUrl
+  );
+  const phone = (qData.client_phone||clientPhone).replace(/\D/g,'').replace(/^0/,'972');
+  window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
+  showToast('נשלח בוואטסאפ ✓','success');
+}
+
+function openPDFFromManager(quoteId) {
+  window.open('quote-builder.html?id=' + quoteId + '&action=pdf', '_blank');
 }
 
 function filterQuotes() { renderQuotes(); }
