@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.6</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -18,7 +18,11 @@
 body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
 
 /* TOPBAR */
-/* edit mode - purple only */
+.topbar.edit-mode{background:#7c3aed!important;}
+.edit-only{display:none!important;}
+.topbar.edit-mode .edit-only{display:flex!important;}
+.topbar.edit-mode .normal-only{display:none!important;}
+body.edit-mode-active{padding-bottom:64px;}
 .topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,0.2);gap:8px;}
 .brand{font-family:'Frank Ruhl Libre',serif;font-size:1rem;color:var(--gold);white-space:nowrap;flex-shrink:0;}
 .topbar-center{display:flex;gap:4px;align-items:center;}
@@ -214,9 +218,10 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 
 /* ══ EDIT MODE ══ */
 .topbar.edit-mode{background:#5b21b6!important;}
-body.edit-mode-active{padding-bottom:64px;}
 .edit-only{display:none!important;}
-.topbar.edit-mode .edit-only{display:inline-flex!important;align-items:center;}
+.topbar.edit-mode .edit-only{display:flex!important;align-items:center;gap:8px;}
+.topbar.edit-mode .normal-only{display:none!important;}
+body.edit-mode-active{padding-bottom:64px;}
 
 /* dish card state colors in edit mode */
 .edit-mode-active .dish-card.newly-added{
@@ -282,7 +287,6 @@ body.edit-mode-active{padding-bottom:64px;}
 .note-toggle{font-size:0.72rem;color:var(--muted);cursor:pointer;text-decoration:underline;display:block;margin-top:5px;}
 .dish-note-area{width:100%;margin-top:4px;font-family:inherit;font-size:0.8rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--cream);outline:none;resize:none;height:46px;display:none;}
 .dish-note-area.open{display:block;}
-.dish-card.selected .note-toggle{display:block;}
 .dish-note-area:focus{border-color:var(--gold);}
 </style>
 </head>
@@ -292,19 +296,19 @@ body.edit-mode-active{padding-bottom:64px;}
 <div class="topbar" id="mainTopbar">
   <div class="brand">🍕 Pizza Zmani</div>
   <span class="edit-only" style="color:rgba(255,255,255,0.5);font-size:0.82rem;font-style:italic;">✏️ מצב עריכה</span>
-  <div class="topbar-center">
+  <div class="topbar-center normal-only">
     <button class="btn btn-mode active" id="btnBuild" onclick="setMode('build')">✏️ בנייה</button>
     <button class="btn btn-mode" id="btnSplit" onclick="setMode('split')">⚡ משולב</button>
     <button class="btn btn-mode" id="btnPreview" onclick="setMode('preview')">👁️ תצוגה</button>
   </div>
-  <div class="topbar-right">
+  <div class="topbar-right normal-only">
     <button class="btn btn-ghost" onclick="resetAll()" title="איפוס">🔄</button>
     <button class="btn btn-ghost" onclick="saveQuote()">💾</button>
     <button class="btn btn-gold" onclick="generatePDF()">📄 PDF</button>
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.6</div>
+  <div class="version">v2.4.7</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -435,6 +439,24 @@ body.edit-mode-active{padding-bottom:64px;}
         <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--muted);padding:2px 0;margin-top:4px;border-top:1px dashed var(--gold);">
           <span>מקדמה (10%)</span><span id="disp-deposit" style="font-weight:600;color:var(--navy);">—</span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- מה מוצג ללקוח -->
+  <div class="section-card">
+    <div class="section-head"><h3>👁️ מה מוצג ללקוח</h3></div>
+    <div class="section-body" style="display:flex;flex-direction:column;gap:8px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;cursor:pointer;"><input type="checkbox" id="show-price-per-adult" checked onchange="updatePreview()"> מחיר למבוגר לאדם</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;cursor:pointer;"><input type="checkbox" id="show-price-per-kid" checked onchange="updatePreview()"> מחיר לילד לאדם</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;cursor:pointer;"><input type="checkbox" id="show-before-vat" checked onchange="updatePreview()"> סה"כ לפני מע"מ</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;cursor:pointer;"><input type="checkbox" id="show-grand-total" checked onchange="updatePreview()"> סה"כ לתשלום</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;cursor:pointer;"><input type="checkbox" id="show-deposit" checked onchange="updatePreview()"> מקדמה</label>
+      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:2px;">
+        <label style="font-size:0.78rem;font-weight:600;color:var(--navy);display:block;margin-bottom:4px;">הערת מחיר (מוצגת ללקוח)</label>
+        <textarea id="price-note" placeholder='למשל: "כולל שתייה ושירות"'
+          style="width:100%;font-family:inherit;font-size:0.82rem;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--cream);outline:none;resize:none;height:52px;"
+          oninput="updatePreview()"></textarea>
       </div>
     </div>
   </div>
@@ -609,6 +631,20 @@ async function init() {
 // ── EDIT MODE STATE ──
 let editOriginalDishes = null;  // snapshot of dishes when loaded
 let editOriginalFields = {};    // snapshot of field values when loaded
+
+function openAmalfiFromEdit() {
+  if(!currentQuoteId){ showToast('שמור קודם','warn'); return; }
+  window.open('amalfi-2000.html?quote_id='+currentQuoteId, '_blank');
+}
+
+async function deleteCurrentQuote() {
+  if(!currentQuoteId){ showToast('אין הצעה למחיקה','error'); return; }
+  if(!confirm('למחוק הצעה זו לצמיתות?')) return;
+  const{error}=await sb.from('qz_quotes').delete().eq('id',currentQuoteId);
+  if(error){ showToast('שגיאה: '+error.message,'error'); return; }
+  showToast('הצעה נמחקה ✓','success');
+  setTimeout(()=>{ window.location.href='quotes-manager.html'; },1000);
+}
 
 async function saveAndReturn() {
   const btn = document.querySelector('.btn-save-changes');
@@ -1008,7 +1044,6 @@ function updatePreview() {
           (d.name_it?'<span class="pdf-dish-it">('+d.name_it+')</span>':'') +
           (d.description?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
           (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
-          (dishNotes[d.id]?'<div class="pdf-dish-note">📝 '+dishNotes[d.id]+'</div>':'') +
           '</div>';
       });
       html+='</div>';
@@ -1248,23 +1283,27 @@ async function generatePDF(){
       <div style="font-size:10px;color:#333;line-height:1.5;">${clientNotes}</div>
     </div>`:'';
 
-  const priceHtml = hidePrices?'':`
+  const priceHtml = hidePrices ? '' : (() => {
+  const showPA  = document.getElementById('show-price-per-adult')?.checked !== false;
+  const showPK  = document.getElementById('show-price-per-kid')?.checked !== false;
+  const showBV  = document.getElementById('show-before-vat')?.checked !== false;
+  const showGT  = document.getElementById('show-grand-total')?.checked !== false;
+  const showDep = document.getElementById('show-deposit')?.checked !== false;
+  const pNote   = (document.getElementById('price-note')?.value||'').trim();
+  const perAdult = billed>0 ? Math.round(grand/billed) : 0;
+  const perKid   = Math.round(perAdult*0.85);
+  return `
     <div style="background:#F8F5EE;border-radius:6px;padding:8px 12px;margin-top:10px;">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;">
-        <span>סה"כ לפני מע"מ</span><span style="font-weight:600;">₪${Math.round(sub).toLocaleString()}</span>
-      </div>
-      ${includeVat?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;">
-        <span>מע"מ (18%)</span><span style="font-weight:600;">₪${Math.round(vat).toLocaleString()}</span>
-      </div>`:''}
-      <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#C9A84C;padding-top:5px;margin-top:3px;border-top:1px solid #DDD;">
-        <span>💰 סה"כ לתשלום</span><span>₪${Math.round(grand).toLocaleString()}</span>
-      </div>
-      ${perP>0?`<div style="font-size:9px;color:#888;text-align:left;margin-top:2px;">עלות ממוצעת לאדם: ₪${perP.toLocaleString()}</div>`:''}
+      ${showPA&&perAdult>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר למבוגר לאדם</span><span style="font-weight:600;">₪${perAdult.toLocaleString()}</span></div>`:''}
+      ${showPK&&perKid>0&&g.kids>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר לילד לאדם</span><span style="font-weight:600;">₪${perKid.toLocaleString()}</span></div>`:''}
+      ${showBV&&sub>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>סה"כ לפני מע"מ</span><span style="font-weight:600;">₪${Math.round(sub).toLocaleString()}</span></div>`:''}
+      ${includeVat?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מע"מ (18%)</span><span style="font-weight:600;">₪${Math.round(vat).toLocaleString()}</span></div>`:''}
+      ${showGT&&grand>0?`<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#C9A84C;padding-top:5px;margin-top:3px;border-top:1px solid #DDD;"><span>💰 סה"כ לתשלום</span><span>₪${Math.round(grand).toLocaleString()}</span></div>`:''}
+      ${pNote?`<div style="font-size:10px;color:#888;margin-top:4px;font-style:italic;">${pNote}</div>`:''}
     </div>
-    <div style="border:1.5px dashed #C9A84C;border-radius:5px;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
-      <span style="font-size:10px;color:#888;">מקדמה לסגירת תאריך (10%)</span>
-      <strong style="font-size:12px;color:#1B2A4A;">₪${Math.round(dep).toLocaleString()}</strong>
-    </div>`;
+    ${showDep&&dep>0?`<div style="border:1.5px dashed #C9A84C;border-radius:5px;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:10px;color:#888;">מקדמה לסגירת תאריך (10%)</span><strong style="font-size:12px;color:#1B2A4A;">₪${Math.round(dep).toLocaleString()}</strong></div>`:''}
+  `;
+})()
 
   const html=`<!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -1537,10 +1576,13 @@ init();
   </a>
 </div>
 <div id="edit-save-bar">
-  <span class="bar-label">✏️ מצב עריכה — שינויים לא נשמרים אוטומטית</span>
+  <span class="bar-label">✏️ מצב עריכה</span>
   <div class="bar-btns">
-    <button class="btn-back-no-save" onclick="exitWithoutSaving()">← צא בלי לשמור</button>
-    <button class="btn-cancel-changes" onclick="reloadQuote()">↩️ בטל שינויים</button>
+    <button class="btn-back-no-save" onclick="exitWithoutSaving()">← צא</button>
+    <button class="btn-cancel-changes" onclick="reloadQuote()">↩️ בטל</button>
+    <button class="btn-cancel-changes" onclick="deleteCurrentQuote()" style="background:rgba(220,38,38,0.25);border-color:rgba(220,38,38,0.5);">🗑️ מחק</button>
+    <button class="btn-cancel-changes" onclick="sendApproval()" style="background:rgba(46,107,79,0.3);border-color:rgba(46,107,79,0.6);">📨 שלח לאישור</button>
+    <button class="btn-cancel-changes" onclick="openAmalfiFromEdit()" style="background:rgba(8,145,178,0.25);border-color:rgba(8,145,178,0.5);">🥦 אמלפי</button>
     <button class="btn-save-changes" onclick="saveAndReturn()">💾 שמור שינויים</button>
   </div>
 </div>
