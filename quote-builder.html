@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.5</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -18,11 +18,7 @@
 body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
 
 /* TOPBAR */
-.topbar.edit-mode{background:#7c3aed!important;}
-.edit-only{display:none!important;}
-.topbar.edit-mode .edit-only{display:flex!important;}
-.topbar.edit-mode .normal-only{display:none!important;}
-body.edit-mode-active{padding-bottom:64px;}
+/* edit mode - purple only */
 .topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,0.2);gap:8px;}
 .brand{font-family:'Frank Ruhl Libre',serif;font-size:1rem;color:var(--gold);white-space:nowrap;flex-shrink:0;}
 .topbar-center{display:flex;gap:4px;align-items:center;}
@@ -218,10 +214,9 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 
 /* ══ EDIT MODE ══ */
 .topbar.edit-mode{background:#5b21b6!important;}
-.edit-only{display:none!important;}
-.topbar.edit-mode .edit-only{display:flex!important;align-items:center;gap:8px;}
-.topbar.edit-mode .normal-only{display:none!important;}
 body.edit-mode-active{padding-bottom:64px;}
+.edit-only{display:none!important;}
+.topbar.edit-mode .edit-only{display:inline-flex!important;align-items:center;}
 
 /* dish card state colors in edit mode */
 .edit-mode-active .dish-card.newly-added{
@@ -297,19 +292,19 @@ body.edit-mode-active{padding-bottom:64px;}
 <div class="topbar" id="mainTopbar">
   <div class="brand">🍕 Pizza Zmani</div>
   <span class="edit-only" style="color:rgba(255,255,255,0.5);font-size:0.82rem;font-style:italic;">✏️ מצב עריכה</span>
-  <div class="topbar-center normal-only">
+  <div class="topbar-center">
     <button class="btn btn-mode active" id="btnBuild" onclick="setMode('build')">✏️ בנייה</button>
     <button class="btn btn-mode" id="btnSplit" onclick="setMode('split')">⚡ משולב</button>
     <button class="btn btn-mode" id="btnPreview" onclick="setMode('preview')">👁️ תצוגה</button>
   </div>
-  <div class="topbar-right normal-only">
+  <div class="topbar-right">
     <button class="btn btn-ghost" onclick="resetAll()" title="איפוס">🔄</button>
     <button class="btn btn-ghost" onclick="saveQuote()">💾</button>
     <button class="btn btn-gold" onclick="generatePDF()">📄 PDF</button>
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.5</div>
+  <div class="version">v2.4.6</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
