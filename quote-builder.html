@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.8</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.9</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -162,6 +162,9 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 .pdf-dish-it{font-size:0.65rem;color:#999;font-style:italic;margin-right:3px;}
 .pdf-dish-desc{font-size:0.68rem;color:#666;margin-top:1px;}
 .pdf-dish-allergy{font-size:0.62rem;color:#B71C1C;margin-top:1px;}
+.pdf-dish-subopt{font-size:0.66rem;color:#2E6B4F;font-weight:600;margin-top:1px;}
+.pdf-dish-note{font-size:0.68rem;color:#1B2A4A;margin-top:1px;}
+.pdf-dish-note strong{font-weight:700;}
 
 /* PDF SINGLE ROW (for fish etc) */
 .pdf-dish-single{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:0.5px solid #F0EDE5;}
@@ -308,7 +311,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.8</div>
+  <div class="version">v2.4.9</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1029,6 +1032,8 @@ function updatePreview() {
             (d.name_it?'<span class="pdf-dish-it" dir="ltr">('+d.name_it+')</span>':'') +
             (d.description?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
             (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
+            (getSubOptLabel(d)?'<div class="pdf-dish-subopt">🔸 '+getSubOptLabel(d)+'</div>':'') +
+            (getDishNote(d)?'<div class="pdf-dish-note"><strong>הערה:</strong> '+getDishNote(d)+'</div>':'') +
           '</div>' +
           (showPrice?'<div class="pdf-dish-price">₪'+total.toLocaleString()+'</div>':'') +
           '</div>';
@@ -1044,6 +1049,8 @@ function updatePreview() {
           (d.name_it?'<span class="pdf-dish-it" dir="ltr">('+d.name_it+')</span>':'') +
           (d.description?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
           (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
+          (getSubOptLabel(d)?'<div class="pdf-dish-subopt">🔸 '+getSubOptLabel(d)+'</div>':'') +
+          (getDishNote(d)?'<div class="pdf-dish-note"><strong>הערה:</strong> '+getDishNote(d)+'</div>':'') +
           '</div>';
       });
       html+='</div>';
@@ -1099,6 +1106,19 @@ const DISH_SUBOPTIONS = {
 let dishSubOpts={};
 let dishNotes={};
 
+// returns the chosen sub-option labels for a dish (e.g. "רוזה, עגבניות") or '' if none
+function getSubOptLabel(d){
+  const def=DISH_SUBOPTIONS[d.name];
+  if(!def) return '';
+  const sel=dishSubOpts[d.id]||{};
+  const labels=def.opts.filter(o=>sel[o.id]).map(o=>o.l);
+  return labels.length?labels.join(', '):'';
+}
+// returns the free-text note for a dish (trimmed) or '' if none
+function getDishNote(d){
+  return (dishNotes[d.id]||'').trim();
+}
+
 function toggleSubOpt(dishId,optId,multi,event){
   event&&event.stopPropagation();
   if(!dishSubOpts[dishId])dishSubOpts[dishId]={};
@@ -1130,6 +1150,7 @@ function toggleNote(dishId,event){
 function saveNote(dishId,val,event){
   event&&event.stopPropagation();
   dishNotes[dishId]=val;
+  if(currentMode!=='build')updatePreview();
 }
  // tracks saved quote ID for upsert
 
@@ -1265,12 +1286,16 @@ async function generatePDF(){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;">`;
     dishes.forEach(d=>{
       const allergyStr=(d.allergens&&d.allergens.length)?d.allergens.join(', '):'';
+      const subOptStr=getSubOptLabel(d);
+      const noteStr=getDishNote(d);
       menuHtml+=`<div style="padding:3px 0;border-bottom:0.5px solid #F0EDE5;">
         <div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">
           <span style="font-size:11px;font-weight:600;color:#1B2A4A;">${d.name}</span>
           ${d.name_it?`<span dir="ltr" style="font-size:9px;color:#bbb;font-style:italic;">${d.name_it}</span>`:''}
         </div>
         ${d.description?`<div style="font-size:9px;color:#666;line-height:1.3;margin-top:1px;">${d.description}</div>`:''}
+        ${subOptStr?`<div style="font-size:9px;color:#2E6B4F;font-weight:600;margin-top:1px;">🔸 ${subOptStr}</div>`:''}
+        ${noteStr?`<div style="font-size:9px;color:#1B2A4A;margin-top:1px;"><strong>הערה:</strong> ${noteStr}</div>`:''}
         ${allergyStr?`<div style="font-size:8px;color:#B71C1C;margin-top:1px;">⚠ ${allergyStr}</div>`:''}
       </div>`;
     });
