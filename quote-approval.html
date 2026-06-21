@@ -38,6 +38,14 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .detail-item span{font-size:0.92rem;font-weight:700;color:var(--navy);}
 .detail-item.full{grid-column:1/-1;}
 
+/* EDITABLE FIELDS */
+.edit-field{font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;color:var(--navy);border:none;border-bottom:1.5px solid transparent;background:transparent;padding:2px 0;width:100%;outline:none;transition:all 0.15s;}
+.edit-field:focus{border-bottom-color:var(--gold);background:#FFFDF5;}
+.edit-field.edited{border-bottom-color:var(--green);background:#F5FBF7;}
+.edit-field::placeholder{color:#bbb;font-weight:400;font-size:0.84rem;}
+.edited-banner{display:none;align-items:center;gap:8px;background:#FFF8E8;border:1px solid #E8C56A;border-radius:8px;padding:8px 14px;font-size:0.76rem;color:#7A5200;margin-top:10px;}
+.edited-banner.show{display:flex;}
+
 /* PRICE */
 .price-rows{display:flex;flex-direction:column;gap:0;}
 .price-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F0EDE5;font-size:0.88rem;}
@@ -122,7 +130,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-logo">🍕 Pizza Zmani</div>
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title">אישור הצעת מחיר</div>
-  <div class="version">v1.0.0</div>
+  <div class="version">v1.1.0</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -163,13 +171,36 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
     <div class="card">
       <div class="card-header"><h3>📅 פרטי האירוע</h3></div>
       <div class="card-body">
+        <p style="font-size:0.74rem;color:var(--muted);margin-bottom:12px;">ניתן לערוך כל פרט שאינו מדויק או חסר</p>
         <div class="detail-grid">
-          <div class="detail-item full"><label>שם לקוח</label><span id="d-name">—</span></div>
-          <div class="detail-item"><label>תאריך</label><span id="d-date">—</span></div>
-          <div class="detail-item"><label>שעת הגשה</label><span id="d-time">—</span></div>
-          <div class="detail-item full"><label>כתובת האירוע</label><span id="d-address">—</span></div>
-          <div class="detail-item"><label>סוג אירוע</label><span id="d-type">—</span></div>
+          <div class="detail-item full">
+            <label>שם לקוח</label>
+            <input class="edit-field" id="d-name" data-field="client_name" oninput="markEdited(this)">
+          </div>
+          <div class="detail-item full">
+            <label>טלפון</label>
+            <input class="edit-field" id="d-phone" data-field="client_phone" oninput="markEdited(this)" placeholder="050-0000000">
+          </div>
+          <div class="detail-item">
+            <label>תאריך</label>
+            <input class="edit-field" id="d-date" data-field="event_date" type="date" oninput="markEdited(this)">
+          </div>
+          <div class="detail-item">
+            <label>שעת הגשה</label>
+            <input class="edit-field" id="d-time" data-field="event_time" type="time" oninput="markEdited(this)">
+          </div>
+          <div class="detail-item full">
+            <label>כתובת האירוע</label>
+            <input class="edit-field" id="d-address" data-field="address" oninput="markEdited(this)" placeholder="רחוב, עיר">
+          </div>
+          <div class="detail-item">
+            <label>סוג אירוע</label>
+            <input class="edit-field" id="d-type" data-field="event_type" oninput="markEdited(this)">
+          </div>
           <div class="detail-item"><label>מספר סועדים</label><span id="d-guests">—</span></div>
+        </div>
+        <div class="edited-banner" id="editedBanner">
+          ✏️ <span>שינית פרטים — הם יישמרו עם האישור הסופי</span>
         </div>
       </div>
     </div>
@@ -281,6 +312,25 @@ const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let quoteData = null;
+let originalValues = {};
+
+// label map for human-readable edited-field summary
+const FIELD_LABELS = {
+  client_name: 'שם לקוח', client_phone: 'טלפון', event_date: 'תאריך',
+  event_time: 'שעה', address: 'כתובת', event_type: 'סוג אירוע',
+};
+
+function markEdited(input) {
+  const field = input.dataset.field;
+  const changed = input.value.trim() !== (originalValues[field] || '').trim();
+  input.classList.toggle('edited', changed);
+  const anyEdited = document.querySelectorAll('.edit-field.edited').length > 0;
+  document.getElementById('editedBanner').classList.toggle('show', anyEdited);
+}
+
+function getEditedFields() {
+  return Array.from(document.querySelectorAll('.edit-field.edited')).map(el => FIELD_LABELS[el.dataset.field] || el.dataset.field);
+}
 let checks = [false, false, false, false];
 let hasSig = false;
 let sigCanvas, sigCtx, isDrawing = false;
@@ -309,15 +359,21 @@ async function init() {
 }
 
 function fillData(d) {
-  setText('d-name', d.client_name || '—');
-  setText('d-address', d.address || '—');
-  setText('d-type', d.event_type || '—');
-
-  if (d.event_date) {
-    const dt = new Date(d.event_date + 'T12:00:00');
-    setText('d-date', dt.toLocaleDateString('he-IL', {weekday:'long',day:'numeric',month:'long',year:'numeric'}));
-  }
-  setText('d-time', d.event_time ? d.event_time.slice(0,5) : '—');
+  // editable fields — set .value, store original for diffing
+  originalValues = {
+    client_name:  d.client_name  || '',
+    client_phone: d.client_phone || '',
+    event_date:   d.event_date   || '',
+    event_time:   d.event_time ? d.event_time.slice(0,5) : '',
+    address:      d.address      || '',
+    event_type:   d.event_type   || '',
+  };
+  document.getElementById('d-name').value   = originalValues.client_name;
+  document.getElementById('d-phone').value  = originalValues.client_phone;
+  document.getElementById('d-date').value   = originalValues.event_date;
+  document.getElementById('d-time').value   = originalValues.event_time;
+  document.getElementById('d-address').value = originalValues.address;
+  document.getElementById('d-type').value   = originalValues.event_type;
 
   const billed = (d.guests_adults||0) + (d.guests_kids||0);
   const total = (d.guests_adults||0) + (d.guests_kids||0) + (d.guests_babies||0);
@@ -419,12 +475,24 @@ async function submitApproval() {
 
   const sigImage = sigCanvas.toDataURL('image/png');
   const now = new Date().toISOString();
+  const editedFields = getEditedFields();
+
+  const updatedFields = {
+    client_name:  document.getElementById('d-name').value.trim(),
+    client_phone: document.getElementById('d-phone').value.trim(),
+    event_date:   document.getElementById('d-date').value || null,
+    event_time:   document.getElementById('d-time').value || null,
+    address:      document.getElementById('d-address').value.trim(),
+    event_type:   document.getElementById('d-type').value.trim(),
+  };
 
   const { error } = await sb.from('quote_approvals')
     .update({
       status: 'approved',
       approved_at: now,
       signature_image: sigImage,
+      client_edited_fields: editedFields,
+      ...updatedFields,
     })
     .eq('quote_id', quoteData.quote_id);
 
@@ -436,12 +504,14 @@ async function submitApproval() {
   }
 
   // WhatsApp notification to Gal
+  const editedNote = editedFields.length ? ('\n✏️ לקוח עדכן: ' + editedFields.join(', ')) : '';
   const msg = encodeURIComponent(
     '✅ הצעת מחיר אושרה!\n' +
-    '👤 ' + quoteData.client_name + '\n' +
-    '📅 ' + (quoteData.event_date || '') + '\n' +
-    '📍 ' + (quoteData.address || '') + '\n' +
-    '💰 ₪' + (quoteData.price_after_vat || '') + ' כולל מע"מ\n' +
+    '👤 ' + updatedFields.client_name + '\n' +
+    '📅 ' + (updatedFields.event_date || '') + '\n' +
+    '📍 ' + (updatedFields.address || '') + '\n' +
+    '💰 ₪' + (quoteData.price_after_vat || '') + ' כולל מע"מ' +
+    editedNote + '\n' +
     '🕐 ' + new Date(now).toLocaleString('he-IL')
   );
   window.open('https://wa.me/972542031181?text=' + msg, '_blank');

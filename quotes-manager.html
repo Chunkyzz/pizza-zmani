@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.0</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.0</div>
+  <div class="version">v1.3.1</div>
 </div>
 
 <div class="main">
@@ -797,7 +797,19 @@ async function loadDishes() {
 async function loadQuotes() {
   const { data, error } = await sb.from('qz_quotes').select('*').order('event_date', { ascending: true });
   if (error) { showToast('שגיאה בטעינה: ' + error.message, 'error'); return; }
-  allQuotes = data || [];
+
+  // fetch approval records to detect client-edited fields
+  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, client_edited_fields, status');
+  const approvalsById = {};
+  (approvals||[]).forEach(a => { approvalsById['ap_'+a.quote_id] = a; approvalsById[a.quote_id] = a; });
+
+  allQuotes = (data || []).map(q => {
+    const ap = approvalsById[q.id] || approvalsById['ap_'+q.id];
+    return {
+      ...q,
+      _clientEditedFields: (ap && ap.client_edited_fields && ap.client_edited_fields.length) ? ap.client_edited_fields : null,
+    };
+  });
   renderQuotes();
 }
 
@@ -858,6 +870,7 @@ function renderQuotes() {
           ${q.total_with_vat?`<span>💰 <strong>₪${q.total_with_vat.toLocaleString()}</strong></span>`:''}
         </div>
         ${q.event_address?`<div class="quote-dishes">📍 ${q.event_address}</div>`:''}
+        ${q._clientEditedFields?`<div style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;background:#FFF3CC;color:#7A5200;font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:6px;border:1.5px solid #C9A84C;">⚠️ לקוח עדכן פרטים: ${q._clientEditedFields.join(', ')} — יש לוודא</div>`:''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <span class="badge ${badgeMap[status]||'badge-draft'}">${statusMap[status]||status}</span>
