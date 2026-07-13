@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – אמלפי 2000 | חומרי גלם והכנות v1.1.0</title>
+<title>Pizza Zmani – אמלפי 2000 | חומרי גלם והכנות v1.1.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -303,7 +303,7 @@ textarea{resize:vertical;min-height:70px;}
   </div>
   <div class="tb-right">
     <div class="tb-event" id="tb-event-display">אין אירוע פעיל</div>
-    <div class="tb-version">v1.1.0</div>
+    <div class="tb-version">v1.1.2</div>
   </div>
 </div>
 
@@ -338,6 +338,7 @@ textarea{resize:vertical;min-height:70px;}
     <div class="sec-title">📦 חומרי גלם לאירוע</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-ghost btn-sm" onclick="openFracModal()" id="frac-btn" style="display:none">⚠️ עגל שברים (<span id="frac-count">0</span>)</button>
+      <button class="btn btn-ghost btn-sm" onclick="openFoodCostModal()">🧾 פוד קוסט מנה</button>
       <button class="btn btn-navy btn-sm" onclick="calcAll()">🔄 חשב מחדש</button>
     </div>
   </div>
@@ -588,6 +589,17 @@ textarea{resize:vertical;min-height:70px;}
   </div>
 </div>
 
+<div class="modal-bg" id="food-cost-modal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-title">🧾 פוד קוסט מנה</div>
+    <p style="font-size:0.84rem;color:var(--muted);margin-bottom:16px;">רשימת מרכיבים מלאה לכל מנה באירוע הנוכחי — כולל שמן, תבלינים, גבינות וכו' (למחשבון עלות בלבד, לא לספק).</p>
+    <div id="food-cost-list" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('food-cost-modal')">סגור</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Task Modal -->
 <div class="modal-bg" id="add-task-modal">
   <div class="modal" style="max-width:480px;">
@@ -677,10 +689,10 @@ const DEFAULT_DISHES = [
   {
     id:'d1', name:'קיסר', cat:'סלטים', base:30, min:0,
     ingredients:[
-      {name:'לבבות חסה',qty:3,unit:'יח\''},
-      {name:'קרוטונים',qty:0.3,unit:'ק"ג'},
-      {name:'פרמזן',qty:0.2,unit:'ק"ג'},
-      {name:'רוטב קיסר',qty:0.4,unit:'ליטר'},
+      {name:'לבבות חסה',qty:3,unit:'יח\'',veg:true},
+      {name:'קרוטונים',qty:0.3,unit:'ק"ג',veg:false},
+      {name:'פרמזן',qty:0.2,unit:'ק"ג',veg:false},
+      {name:'רוטב קיסר',qty:0.4,unit:'ליטר',veg:false},
     ],
     tasks:[
       {name:'הכנת רוטב קיסר',hoursOffset:-24,priority:'med'},
@@ -690,10 +702,10 @@ const DEFAULT_DISHES = [
   {
     id:'d2', name:'קפרזה', cat:'סלטים', base:30, min:0,
     ingredients:[
-      {name:'עגבניות שרי',qty:1.5,unit:'ק"ג'},
-      {name:'מוצרלה טריה',qty:1.2,unit:'ק"ג'},
-      {name:'בזיליקום',qty:1,unit:'צרור'},
-      {name:'שמן זית',qty:0.15,unit:'ליטר'},
+      {name:'עגבניות שרי',qty:1.5,unit:'ק"ג',veg:true},
+      {name:'מוצרלה טריה',qty:1.2,unit:'ק"ג',veg:false},
+      {name:'בזיליקום',qty:1,unit:'צרור',veg:true},
+      {name:'שמן זית',qty:0.15,unit:'ליטר',veg:false},
     ],
     tasks:[
       {name:'פריסת עגבניות ומוצרלה',hoursOffset:-3,priority:'med'},
@@ -702,9 +714,9 @@ const DEFAULT_DISHES = [
   {
     id:'d3', name:'חציל', cat:'סלטים', base:30, min:0,
     ingredients:[
-      {name:'חצילים',qty:3,unit:'ק"ג'},
-      {name:'שמנת חמוצה',qty:0.5,unit:'ליטר'},
-      {name:'שמן זית',qty:0.1,unit:'ליטר'},
+      {name:'חצילים',qty:3,unit:'ק"ג',veg:true},
+      {name:'שמנת חמוצה',qty:0.5,unit:'ליטר',veg:false},
+      {name:'שמן זית',qty:0.1,unit:'ליטר',veg:false},
     ],
     tasks:[
       {name:'צלייה+שריפה חצילים',hoursOffset:-12,priority:'high'},
@@ -714,11 +726,11 @@ const DEFAULT_DISHES = [
   {
     id:'d4', name:'יווני', cat:'סלטים', base:30, min:0,
     ingredients:[
-      {name:'מלפפונים',qty:1.5,unit:'ק"ג'},
-      {name:'עגבניות',qty:1.5,unit:'ק"ג'},
-      {name:'זיתי קלמטה',qty:0.4,unit:'ק"ג'},
-      {name:'גבינה בולגרית',qty:0.6,unit:'ק"ג'},
-      {name:'שמן זית',qty:0.1,unit:'ליטר'},
+      {name:'מלפפונים',qty:1.5,unit:'ק"ג',veg:true},
+      {name:'עגבניות',qty:1.5,unit:'ק"ג',veg:true},
+      {name:'זיתי קלמטה',qty:0.4,unit:'ק"ג',veg:false},
+      {name:'גבינה בולגרית',qty:0.6,unit:'ק"ג',veg:false},
+      {name:'שמן זית',qty:0.1,unit:'ליטר',veg:false},
     ],
     tasks:[
       {name:'קיצוץ ירקות יוונית',hoursOffset:-3,priority:'low'},
@@ -727,10 +739,10 @@ const DEFAULT_DISHES = [
   {
     id:'d5', name:'בורגול סלקים', cat:'סלטים', base:30, min:0,
     ingredients:[
-      {name:'בורגול גס',qty:0.8,unit:'ק"ג'},
-      {name:'סלק',qty:1.5,unit:'ק"ג'},
-      {name:'שקדים',qty:0.2,unit:'ק"ג'},
-      {name:'צימוקים',qty:0.1,unit:'ק"ג'},
+      {name:'בורגול גס',qty:0.8,unit:'ק"ג',veg:false},
+      {name:'סלק',qty:1.5,unit:'ק"ג',veg:true},
+      {name:'שקדים',qty:0.2,unit:'ק"ג',veg:false},
+      {name:'צימוקים',qty:0.1,unit:'ק"ג',veg:false},
     ],
     tasks:[
       {name:'בישול בורגול + צלייה סלק',hoursOffset:-12,priority:'med'},
@@ -739,10 +751,10 @@ const DEFAULT_DISHES = [
   {
     id:'d6', name:'קינואה', cat:'סלטים', base:30, min:0,
     ingredients:[
-      {name:'קינואה',qty:0.6,unit:'ק"ג'},
-      {name:'פלפלים',qty:1,unit:'ק"ג'},
-      {name:'קישוא',qty:0.8,unit:'ק"ג'},
-      {name:'חמוציות',qty:0.1,unit:'ק"ג'},
+      {name:'קינואה',qty:0.6,unit:'ק"ג',veg:false},
+      {name:'פלפלים',qty:1,unit:'ק"ג',veg:true},
+      {name:'קישוא',qty:0.8,unit:'ק"ג',veg:true},
+      {name:'חמוציות',qty:0.1,unit:'ק"ג',veg:false},
     ],
     tasks:[
       {name:'בישול קינואה + ירקות',hoursOffset:-12,priority:'low'},
@@ -751,10 +763,10 @@ const DEFAULT_DISHES = [
   {
     id:'d7', name:"ארנצ'יני", cat:'ראשונות', base:30, min:0,
     ingredients:[
-      {name:'אורז עגול',qty:0.8,unit:'ק"ג'},
-      {name:'גבינה צהובה',qty:0.3,unit:'ק"ג'},
-      {name:'פירורי לחם',qty:0.4,unit:'ק"ג'},
-      {name:'שמן טיגון',qty:2,unit:'ליטר'},
+      {name:'אורז עגול',qty:0.8,unit:'ק"ג',veg:false},
+      {name:'גבינה צהובה',qty:0.3,unit:'ק"ג',veg:false},
+      {name:'פירורי לחם',qty:0.4,unit:'ק"ג',veg:false},
+      {name:'שמן טיגון',qty:2,unit:'ליטר',veg:false},
     ],
     tasks:[
       {name:'בישול אורז + קירור',hoursOffset:-24,priority:'high'},
@@ -765,12 +777,12 @@ const DEFAULT_DISHES = [
   {
     id:'d8', name:'אנטיפסטי', cat:'ראשונות', base:30, min:0,
     ingredients:[
-      {name:'קישואים',qty:1.5,unit:'ק"ג'},
-      {name:'פלפלים',qty:1,unit:'ק"ג'},
-      {name:'בצל',qty:0.5,unit:'ק"ג'},
-      {name:'בטטה',qty:1,unit:'ק"ג'},
-      {name:'תפוחי אדמה',qty:1,unit:'ק"ג'},
-      {name:'שמן זית',qty:0.2,unit:'ליטר'},
+      {name:'קישואים',qty:1.5,unit:'ק"ג',veg:true},
+      {name:'פלפלים',qty:1,unit:'ק"ג',veg:true},
+      {name:'בצל',qty:0.5,unit:'ק"ג',veg:true},
+      {name:'בטטה',qty:1,unit:'ק"ג',veg:true},
+      {name:'תפוחי אדמה',qty:1,unit:'ק"ג',veg:true},
+      {name:'שמן זית',qty:0.2,unit:'ליטר',veg:false},
     ],
     tasks:[
       {name:'חיתוך + תיבול ירקות אנטיפסטי',hoursOffset:-3,priority:'med'},
@@ -780,13 +792,13 @@ const DEFAULT_DISHES = [
   {
     id:'d9', name:'פיצות מהתנור', cat:'פיצות', base:30, min:0,
     ingredients:[
-      {name:'קמח פיצה',qty:3,unit:'ק"ג'},
-      {name:'שמרים',qty:0.05,unit:'ק"ג'},
-      {name:'מלח',qty:0.08,unit:'ק"ג'},
-      {name:'שמן זית',qty:0.15,unit:'ליטר'},
-      {name:'מוצרלה',qty:2.5,unit:'ק"ג'},
-      {name:'רוטב עגבניות',qty:1.5,unit:'ליטר'},
-      {name:'פסטו בזיליקום',qty:0.5,unit:'ק"ג'},
+      {name:'קמח פיצה',qty:3,unit:'ק"ג',veg:false},
+      {name:'שמרים',qty:0.05,unit:'ק"ג',veg:false},
+      {name:'מלח',qty:0.08,unit:'ק"ג',veg:false},
+      {name:'שמן זית',qty:0.15,unit:'ליטר',veg:false},
+      {name:'מוצרלה',qty:2.5,unit:'ק"ג',veg:false},
+      {name:'רוטב עגבניות',qty:1.5,unit:'ליטר',veg:false},
+      {name:'פסטו בזיליקום',qty:0.5,unit:'ק"ג',veg:false},
     ],
     tasks:[
       {name:'הכנת בצק פיצה',hoursOffset:-24,priority:'high'},
@@ -799,9 +811,9 @@ const DEFAULT_DISHES = [
   {
     id:'d10', name:'קלצונה מתוק', cat:'מתוקים', base:30, min:0,
     ingredients:[
-      {name:'בצק קלצונה (כולל בסיס)',qty:1,unit:'ק"ג'},
-      {name:'נוטלה/שוקולד',qty:0.8,unit:'ק"ג'},
-      {name:'אגוזי לוז',qty:0.3,unit:'ק"ג'},
+      {name:'בצק קלצונה (כולל בסיס)',qty:1,unit:'ק"ג',veg:false},
+      {name:'נוטלה/שוקולד',qty:0.8,unit:'ק"ג',veg:false},
+      {name:'אגוזי לוז',qty:0.3,unit:'ק"ג',veg:false},
     ],
     tasks:[
       {name:'הכנת בצק קלצונה (כחלק מבצק פיצה)',hoursOffset:-24,priority:'med'},
@@ -811,10 +823,10 @@ const DEFAULT_DISHES = [
   {
     id:'d11', name:'פסטה קצרה', cat:'פסטה', base:30, min:0,
     ingredients:[
-      {name:'פסטה קצרה יבשה',qty:1.2,unit:'ק"ג'},
-      {name:'רוטב עגבניות',qty:0.8,unit:'ליטר'},
-      {name:'שמנת לבישול',qty:0.4,unit:'ליטר'},
-      {name:'פרמזן',qty:0.2,unit:'ק"ג'},
+      {name:'פסטה קצרה יבשה',qty:1.2,unit:'ק"ג',veg:false},
+      {name:'רוטב עגבניות',qty:0.8,unit:'ליטר',veg:false},
+      {name:'שמנת לבישול',qty:0.4,unit:'ליטר',veg:false},
+      {name:'פרמזן',qty:0.2,unit:'ק"ג',veg:false},
     ],
     tasks:[
       {name:'בישול פסטה al dente',hoursOffset:-1,priority:'high'},
@@ -824,10 +836,10 @@ const DEFAULT_DISHES = [
   {
     id:'d12', name:'סלמון', cat:'דגים', base:30, min:0,
     ingredients:[
-      {name:'סלמון טרי (פילה)',qty:2.2,unit:'ק"ג'},
-      {name:'שמן זית',qty:0.1,unit:'ליטר'},
-      {name:'לימון',qty:3,unit:'יח\''},
-      {name:'עשבי תיבול',qty:1,unit:'צרור'},
+      {name:'סלמון טרי (פילה)',qty:2.2,unit:'ק"ג',veg:false},
+      {name:'שמן זית',qty:0.1,unit:'ליטר',veg:false},
+      {name:'לימון',qty:3,unit:'יח\'',veg:true},
+      {name:'עשבי תיבול',qty:1,unit:'צרור',veg:true},
     ],
     tasks:[
       {name:'הזמנת סלמון טרי מספק',hoursOffset:-48,priority:'high'},
@@ -838,10 +850,10 @@ const DEFAULT_DISHES = [
   {
     id:'d13', name:'דג לבן', cat:'דגים', base:30, min:0,
     ingredients:[
-      {name:'פילה דג לבן טרי',qty:1.8,unit:'ק"ג'},
-      {name:'שמן זית',qty:0.1,unit:'ליטר'},
-      {name:'לימון',qty:3,unit:'יח\''},
-      {name:'שום',qty:4,unit:'שיני'},
+      {name:'פילה דג לבן טרי',qty:1.8,unit:'ק"ג',veg:false},
+      {name:'שמן זית',qty:0.1,unit:'ליטר',veg:false},
+      {name:'לימון',qty:3,unit:'יח\'',veg:true},
+      {name:'שום',qty:4,unit:'שיני',veg:true},
     ],
     tasks:[
       {name:'הזמנת דג לבן טרי',hoursOffset:-48,priority:'high'},
@@ -852,7 +864,7 @@ const DEFAULT_DISHES = [
   {
     id:'d14', name:'טירמיסו', cat:'מתוקים', base:50, min:1,
     ingredients:[
-      {name:'טירמיסו (מגש)',qty:1,unit:'מגש'},
+      {name:'טירמיסו (מגש)',qty:1,unit:'מגש',veg:false},
     ],
     tasks:[
       {name:'הכנת טירמיסו',hoursOffset:-24,priority:'high'},
@@ -862,7 +874,7 @@ const DEFAULT_DISHES = [
   {
     id:'d15', name:'מלבי', cat:'מתוקים', base:50, min:1,
     ingredients:[
-      {name:'מלבי (מגש)',qty:1,unit:'מגש'},
+      {name:'מלבי (מגש)',qty:1,unit:'מגש',veg:false},
     ],
     tasks:[
       {name:'הכנת מלבי',hoursOffset:-12,priority:'med'},
@@ -871,9 +883,9 @@ const DEFAULT_DISHES = [
   {
     id:'d16', name:'שתייה קלה', cat:'שתייה', base:30, min:0,
     ingredients:[
-      {name:'מים מינרלים 0.5L',qty:4,unit:'בקבוקים'},
-      {name:'לימונדה',qty:3,unit:'ליטר'},
-      {name:'מיץ תפוזים',qty:2,unit:'ליטר'},
+      {name:'מים מינרלים 0.5L',qty:4,unit:'בקבוקים',veg:false},
+      {name:'לימונדה',qty:3,unit:'ליטר',veg:false},
+      {name:'מיץ תפוזים',qty:2,unit:'ליטר',veg:false},
     ],
     tasks:[
       {name:'קניית שתייה',hoursOffset:-48,priority:'low'},
@@ -882,10 +894,10 @@ const DEFAULT_DISHES = [
   {
     id:'d17', name:'מאפייה מהטאבון', cat:'פיצות', base:30, min:0,
     ingredients:[
-      {name:'בצק לפוקאצ\'ה/פלוט',qty:0.8,unit:'ק"ג'},
-      {name:'שמן זית',qty:0.1,unit:'ליטר'},
-      {name:'גרגירי מלח גס',qty:0.05,unit:'ק"ג'},
-      {name:'רוזמרין',qty:1,unit:'ענף'},
+      {name:'בצק לפוקאצ\'ה/פלוט',qty:0.8,unit:'ק"ג',veg:false},
+      {name:'שמן זית',qty:0.1,unit:'ליטר',veg:false},
+      {name:'גרגירי מלח גס',qty:0.05,unit:'ק"ג',veg:false},
+      {name:'רוזמרין',qty:1,unit:'ענף',veg:true},
     ],
     tasks:[
       {name:'הכנת בצק מאפייה',hoursOffset:-12,priority:'med'},
@@ -1000,6 +1012,35 @@ function deleteEvent(id) {
 // ═══════════════════════════════════════════
 //  CALC INGREDIENTS
 // ═══════════════════════════════════════════
+function openFoodCostModal() {
+  const ev = events.find(e => e.id === activeEventId);
+  const listEl = document.getElementById('food-cost-list');
+  if (!ev) {
+    listEl.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">בחר אירוע פעיל קודם</div>';
+    document.getElementById('food-cost-modal').classList.add('open');
+    return;
+  }
+  const guests = ev.guests;
+  const evDishes = dishes.filter(d => ev.dishIds.includes(d.id));
+  let html = '';
+  evDishes.forEach(dish => {
+    const ratio = dish.min > 0 ? Math.max(dish.min, Math.ceil(guests / dish.base)) : guests / dish.base;
+    html += `<div style="margin-bottom:14px;">
+      <div style="font-weight:700;color:var(--navy);padding:6px 0;border-bottom:1.5px solid var(--border);">🍽️ ${dish.name}</div>`;
+    (dish.ingredients || []).forEach(ing => {
+      const qty = ing.qty * ratio;
+      const qtyStr = qty % 1 === 0 ? qty : qty.toFixed(2);
+      html += `<div style="display:flex;justify-content:space-between;padding:4px 8px;font-size:0.85rem;${ing.veg===false?'color:#888;':'color:var(--text);'}">
+        <span>${ing.name}${ing.veg===false?' <span style="font-size:0.7rem;color:var(--muted);">(לא ירק)</span>':''}</span>
+        <span style="font-weight:600;">${qtyStr} ${ing.unit}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  listEl.innerHTML = html || '<div style="color:var(--muted);padding:20px;text-align:center;">אין מנות באירוע זה</div>';
+  document.getElementById('food-cost-modal').classList.add('open');
+}
+
 function calcAll() {
   const ev = events.find(e => e.id === activeEventId);
   if (!ev) {
@@ -1024,6 +1065,7 @@ function calcAll() {
       : guests / dish.base;
 
     (dish.ingredients || []).forEach(ing => {
+      if (ing.veg === false) return; // בטבלה הראשית מציגים רק ירקות — שאר המרכיבים בפוד קוסט הנפרד
       const key = `${ing.name}||${ing.unit}||${dish.name}`;
       if (!aggrMap[key]) aggrMap[key] = { name: ing.name, unit: ing.unit, dish: dish.name, raw: 0 };
       aggrMap[key].raw += ing.qty * ratio;
@@ -1438,7 +1480,7 @@ function renderNeDishes() {
   if (!el) return;
   el.innerHTML = dishes.map(d => `
     <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:white;font-weight:400;">
-      <input type="checkbox" value="${d.id}" checked style="width:auto;">
+      <input type="checkbox" value="${d.id}" style="width:auto;">
       ${d.name}
     </label>`).join('');
 }
