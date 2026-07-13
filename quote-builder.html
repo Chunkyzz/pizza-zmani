@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.14</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.16</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -316,7 +316,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.14</div>
+  <div class="version">v2.4.16</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1271,7 +1271,6 @@ let currentQuoteId = null;
 // ── SUB-OPTIONS ──
 const DISH_SUBOPTIONS = {
   'פסטה קצרה':{title:'בחירת רוטב (ראשון כלול, כל נוסף +₪5/אדם)',opts:[{id:'rosa',l:'רוזה'},{id:'tomato',l:'עגבניות'},{id:'cream',l:'שמנת'},{id:'pesto',l:'פסטו'}],multi:true,base:1,extra:5},
-  'ניוקי צבעוני':{title:'בחירת רוטב',opts:[{id:'butter',l:'חמאת מרווה'},{id:'cream2',l:'שמנת עשבי תיבול'}],multi:false,base:1,extra:0},
 };
 let dishSubOpts={};
 let dishNotes={};
@@ -1339,7 +1338,8 @@ async function saveQuote(silent=false){
   const name=document.getElementById('cl-name').value.trim();
   if(!name){if(!silent)showToast('נא להזין שם לקוח','error');return null;}
   const g=getGuests();
-  const sub  = parseFloat(document.getElementById('manual-subtotal').value)||0;
+  const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
+  const sub  = useOverride ? (parseFloat(document.getElementById('manual-subtotal').value)||0) : getAutoSubtotal().sub;
   const grand= sub+(includeVat?sub*0.18:0);
   const payload={
     client_name:name,
@@ -1374,13 +1374,10 @@ async function sendApproval(){
   const name=document.getElementById('cl-name').value.trim();
   if(!name){showToast('נא להזין שם לקוח','error');return;}
   await saveQuote(true); // שמירה אוטומטית
-  const g=getGuests(),billed=g.adults+g.kids;
+  const g=getGuests();
   const sel=allDishes.filter(d=>selectedDishes.has(d.id));
-  let base=0,addon=0;
-  sel.forEach(d=>{base+=d.base_price||0;addon+=(d.addon_per_person||0)*billed;});
-  const sub0=base+addon;
-  const kDisc=billed>0?g.kids*(sub0/billed)*0.15:0;
-  const sub=sub0-kDisc;
+  const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
+  const sub = useOverride ? (parseFloat(document.getElementById('manual-subtotal').value)||0) : getAutoSubtotal().sub;
   const grand=sub+(includeVat?sub*0.18:0);
   const quoteId='q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
   const{error}=await sb.from('quote_approvals').insert({
