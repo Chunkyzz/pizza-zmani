@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.19</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.21</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -316,7 +316,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.19</div>
+  <div class="version">v2.4.21</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -454,6 +454,9 @@ body.edit-mode-active{padding-bottom:64px;}
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--green);padding:1px 0;font-weight:600;">
           <span>מחיר לאדם</span><span id="disp-per-person">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--green);padding:1px 0;font-weight:600;" id="disp-per-child-row">
+          <span>מחיר לילד</span><span id="disp-per-child">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);padding:3px 0;border-top:1px solid var(--border);margin-top:4px;">
           <span>לפני מע"מ</span><span id="disp-sub" style="font-weight:600;color:var(--navy);">—</span>
@@ -1083,13 +1086,14 @@ function calcAutoPrice() {
   const g = getGuests();
   const billed = g.adults + g.kids;
 
-  let sub;
+  let sub, perAdult = 0;
   const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
   if (useOverride) {
     sub = parseFloat(document.getElementById('manual-subtotal').value) || 0;
   } else {
     const r = getAutoSubtotal();
     sub = r.sub;
+    perAdult = billed > 0 ? (r.pizzas + r.addons) / billed : 0; // תעריף בסיס לאדם, לפני הנחת ילדים ולפני מע"מ
     const fmt0 = n => n > 0 ? '₪'+Math.round(n).toLocaleString() : '—';
     const el_p = document.getElementById('disp-pizzas');
     const el_a = document.getElementById('disp-addons');
@@ -1112,7 +1116,11 @@ function calcAutoPrice() {
   document.getElementById('disp-deposit').textContent = fmt(dep);
   document.getElementById('disp-vat-row').style.display = includeVat ? '' : 'none';
   const ppEl = document.getElementById('disp-per-person');
-  if (ppEl) ppEl.textContent = billed>0 ? '₪'+Math.round(grand/billed).toLocaleString() : '—';
+  if (ppEl) ppEl.textContent = perAdult > 0 ? '₪'+Math.round(perAdult).toLocaleString() : '—';
+  const pcEl = document.getElementById('disp-per-child');
+  if (pcEl) pcEl.textContent = perAdult > 0 ? '₪'+Math.round(perAdult*0.85).toLocaleString() : '—';
+  const pcRow = document.getElementById('disp-per-child-row');
+  if (pcRow) pcRow.style.display = (g.kids > 0 && perAdult > 0) ? '' : 'none';
 
   // sync to preview
   document.getElementById('t-subtotal').textContent = fmt(sub);
@@ -1241,16 +1249,17 @@ function updatePreview() {
 
   // totals — use same logic as calcAutoPrice
   const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
-  let sub;
+  let sub, perAdult = 0;
   if (useOverride) {
     sub = parseFloat(document.getElementById('manual-subtotal').value) || 0;
   } else {
-    sub = getAutoSubtotal().sub;
+    const r2 = getAutoSubtotal();
+    sub = r2.sub;
+    perAdult = billed>0 ? (r2.pizzas + r2.addons) / billed : 0;
   }
   const vat2 = includeVat ? sub*0.18 : 0;
   const grand2 = sub + vat2;
   const dep2 = grand2*0.10;
-  const perPerson = billed>0 ? Math.round(grand2/billed) : 0;
   const fmt2 = n => n>0 ? '₪'+Math.round(n).toLocaleString() : '—';
 
   document.getElementById('priceBlock').style.display=hidePrices?'none':'';
@@ -1261,7 +1270,9 @@ function updatePreview() {
     document.getElementById('t-vat-row').style.display=(includeVat&&showVat)?'':'none';
     document.getElementById('t-grand').textContent=fmt2(grand2);
     document.getElementById('t-deposit').textContent=fmt2(dep2);
-    document.getElementById('t-per-person').textContent=billed>0?'עלות ממוצעת לאדם: ₪'+perPerson.toLocaleString():'';
+    let ppText = perAdult>0 ? 'מחיר לאדם: ₪'+Math.round(perAdult).toLocaleString() : '';
+    if (g.kids>0 && perAdult>0) ppText += ' | מחיר לילד: ₪'+Math.round(perAdult*0.85).toLocaleString();
+    document.getElementById('t-per-person').textContent = ppText;
   }
 }
 
@@ -1444,7 +1455,7 @@ async function generatePDF(){
   const vat   = includeVat ? sub * 0.18 : 0;
   const grand = sub + vat;
   const dep   = grand * 0.10;
-  const perP  = billed > 0 ? Math.round(grand / billed) : 0;
+  const perP  = billed > 0 ? Math.round(sub / billed) : 0;
 
   // menu html
   const catOrder = allCats.map(c=>c.name);
@@ -1501,7 +1512,11 @@ async function generatePDF(){
   const showDep = document.getElementById('show-deposit')?.checked !== false;
   const showVat = document.getElementById('show-vat-row')?.checked !== false;
   const pNote   = (document.getElementById('price-note')?.value||'').trim();
-  const perAdult = billed>0 ? Math.round(grand/billed) : 0;
+  let perAdult = 0;
+  if (!useOverridePdf && billed > 0) {
+    const rr = getAutoSubtotal();
+    perAdult = Math.round((rr.pizzas + rr.addons) / billed); // תעריף בסיס לאדם, לפני הנחת ילדים ולפני מע"מ
+  }
   const perKid   = Math.round(perAdult*0.85);
   return `
     <div style="background:#F8F5EE;border-radius:6px;padding:8px 12px;margin-top:10px;">
