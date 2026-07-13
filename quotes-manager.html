@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.1</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.1</div>
+  <div class="version">v1.3.2</div>
 </div>
 
 <div class="main">
@@ -1066,7 +1066,7 @@ async function sendToAmalfi() {
   let successCount = 0;
   for (const q of selected) {
     const total  = (q.guests_adults||0)+(q.guests_kids||0)+(q.guests_babies||0);
-    const dishIds = [];
+    const dishNames = [];
 
     if (Array.isArray(q.selected_dishes)) {
       // selected_dishes are qz_dishes IDs — need to load their names first
@@ -1076,26 +1076,23 @@ async function sendToAmalfi() {
           const match = amalfiDishes.find(a =>
             a.name.trim()===qd.name.trim()||a.name.includes(qd.name)||qd.name.includes(a.name)
           );
-          if (match) dishIds.push(String(match.id));
+          if (match) dishNames.push(match.name); // amalfi-orders matches items by NAME, not ID
         });
       }
     }
 
+    // veggie_orders only has: event_name, guests, items, status, created_at — fold group/note into the event name
+    const eventName = [q.client_name, group ? '(' + group + ')' : ''].filter(Boolean).join(' ');
+
     const payload = {
-      name:        q.client_name,
-      client_name: q.client_name,
+      event_name:  eventName,
       guests:      total,
-      items:       dishIds,
-      event_date:  q.event_date || null,
-      event_time:  q.event_time || null,
-      event_type:  q.event_type || null,
-      address:     q.event_address || null,
-      notes:       [group?'קבוצה: '+group:'', note, q.notes].filter(Boolean).join(' | ') || null,
+      items:       dishNames,
       status:      'pending',
       created_at:  new Date().toISOString(),
     };
 
-    const { error } = await sbA.from('orders').insert(payload);
+    const { error } = await sbA.from('veggie_orders').insert(payload);
     if (!error) successCount++;
   }
 
