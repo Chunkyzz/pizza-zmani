@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.17</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.19</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -316,7 +316,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.17</div>
+  <div class="version">v2.4.19</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1024,10 +1024,18 @@ function getAutoSubtotal() {
   sel.forEach(d => {
     if (d.category === 'פיצות') return; // מחיר פיצות כבר חושב
     const overridePerPerson = dishPriceOverrides[d.id];
-    const price = overridePerPerson !== undefined ? overridePerPerson : (d.addon_per_person || 0);
     // סלטים — חישוב מיוחד (₪20/אדם עד 4, +₪5 לכל נוסף) רק אם אין עקיפה
     if (d.category === 'סלטים' && overridePerPerson === undefined) return; // נחשב בנפרד
-    addons += price * billed;
+    if (overridePerPerson !== undefined) {
+      addons += overridePerPerson * billed;
+      return;
+    }
+    if (d.base_price) {
+      // מחיר קבוע למנה (לא לפי אדם) — למשל דג כבוש, טירמיסו, מלבי
+      addons += d.base_price;
+    } else {
+      addons += (d.addon_per_person || 0) * billed;
+    }
   });
 
   // סלטים בחישוב מיוחד
@@ -1376,8 +1384,8 @@ async function sendApproval(){
   const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
   const sub = useOverride ? (parseFloat(document.getElementById('manual-subtotal').value)||0) : getAutoSubtotal().sub;
   const grand=sub+(includeVat?sub*0.18:0);
-  const quoteId='q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  const{error}=await sb.from('quote_approvals').insert({
+  const quoteId = currentQuoteId; // מזהה קבוע של ההצעה — אותו לינק תמיד, מתעדכן בכל שליחה חוזרת (לא נוצר לינק חדש כל פעם)
+  const{error}=await sb.from('quote_approvals').upsert({
     quote_id:quoteId,client_name:name,
     client_phone:document.getElementById('cl-phone').value,
     event_date:document.getElementById('cl-date').value||null,
@@ -1388,7 +1396,7 @@ async function sendApproval(){
     menu_items:sel.map(d=>d.name),
     price_before_vat:Math.round(sub),price_after_vat:Math.round(grand),
     status:'pending',created_at:new Date().toISOString()
-  });
+  }, {onConflict:'quote_id'});
   if(error){showToast('שגיאה: '+error.message,'error');return;}
   const link='https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id='+quoteId;
   navigator.clipboard.writeText(link).catch(()=>{});
