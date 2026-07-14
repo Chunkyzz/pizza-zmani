@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.2</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.2</div>
+  <div class="version">v1.3.4</div>
 </div>
 
 <div class="main">
@@ -867,7 +867,7 @@ function renderQuotes() {
           ${q.event_time?`<span>🕐 <strong>${q.event_time.slice(0,5)}</strong></span>`:''}
           <span>👥 <strong>${total} אנשים</strong>${q.guests_kids>0?' (כולל '+q.guests_kids+' ילדים)':''}</span>
           ${q.event_type?`<span>🎉 <strong>${q.event_type}</strong></span>`:''}
-          ${q.total_with_vat?`<span>💰 <strong>₪${q.total_with_vat.toLocaleString()}</strong></span>`:''}
+          ${q.total_before_vat?`<span>💰 <strong>₪${q.total_before_vat.toLocaleString()}</strong></span>`:''}
         </div>
         ${q.event_address?`<div class="quote-dishes">📍 ${q.event_address}</div>`:''}
         ${q._clientEditedFields?`<div style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;background:#FFF3CC;color:#7A5200;font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:6px;border:1.5px solid #C9A84C;">⚠️ לקוח עדכן פרטים: ${q._clientEditedFields.join(', ')} — יש לוודא</div>`:''}
@@ -1063,20 +1063,35 @@ async function sendToAmalfi() {
   // load amalfi dishes for name matching
   const { data: amalfiDishes } = await sbA.from('dishes').select('id, name');
 
+  // ידני: מנות שהשמות שלהן במערכת ההצעות שונים מהותית מהשם באמלפי (לא ניתן להתאים לפי substring)
+  const NAME_ALIASES = {
+    'פיצה אדומה':'פיצה כללי', 'פיצה ירוקה':'פיצה כללי', 'פיצה צהובה':'פיצה כללי',
+    'פיצה סגולה':'פיצה כללי', 'פיצה לבנה':'פיצה כללי',
+  };
+  // מנרמל גרש עברי (׳) מול גרש רגיל (') וגרשיים דומים, כדי שהתאמת שמות לא תיכשל על הבדל תו בלתי נראה
+  const normalize = s => s.trim().replace(/['׳’`]/g, "'");
+
   let successCount = 0;
   for (const q of selected) {
     const total  = (q.guests_adults||0)+(q.guests_kids||0)+(q.guests_babies||0);
-    const dishNames = [];
+    const dishNames = new Set(); // Set — כדי שכל 5 הפיצות ימופו פעם אחת בלבד ל"פיצה כללי"
 
     if (Array.isArray(q.selected_dishes)) {
       // selected_dishes are qz_dishes IDs — need to load their names first
       const { data: qzDishes } = await sb.from('qz_dishes').select('id,name').in('id', q.selected_dishes);
       if (qzDishes && amalfiDishes) {
         qzDishes.forEach(qd => {
-          const match = amalfiDishes.find(a =>
-            a.name.trim()===qd.name.trim()||a.name.includes(qd.name)||qd.name.includes(a.name)
-          );
-          if (match) dishNames.push(match.name); // amalfi-orders matches items by NAME, not ID
+          const aliasTarget = NAME_ALIASES[qd.name.trim()];
+          if (aliasTarget) {
+            const aliasMatch = amalfiDishes.find(a => normalize(a.name) === normalize(aliasTarget));
+            if (aliasMatch) { dishNames.add(aliasMatch.name); return; }
+          }
+          const qdNorm = normalize(qd.name);
+          const match = amalfiDishes.find(a => {
+            const aNorm = normalize(a.name);
+            return aNorm === qdNorm || aNorm.includes(qdNorm) || qdNorm.includes(aNorm);
+          });
+          if (match) dishNames.add(match.name); // amalfi-orders matches items by NAME, not ID
         });
       }
     }
@@ -1087,7 +1102,7 @@ async function sendToAmalfi() {
     const payload = {
       event_name:  eventName,
       guests:      total,
-      items:       dishNames,
+      items:       [...dishNames],
       status:      'pending',
       created_at:  new Date().toISOString(),
     };
