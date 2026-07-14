@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – אמלפי 2000 | חומרי גלם והכנות v1.1.2</title>
+<title>Pizza Zmani – אמלפי 2000 | חומרי גלם והכנות v1.1.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -126,7 +126,9 @@ tbody td{padding:10px 14px;font-size:0.86rem;vertical-align:middle;}
   border-radius:7px;font-size:0.88rem;text-align:center;font-family:inherit;
   background:white;outline:none;transition:border 0.2s;}
 .qty-input:focus{border-color:var(--gold);}
-.qty-input.warn{border-color:var(--warn);background:var(--warn-bg);}
+.qty-input.warn{border-color:var(--danger);background:#FDECEA;color:var(--danger);font-weight:700;}
+tr.row-warn{background:#FDECEA !important;}
+tr.row-warn .td-name{color:var(--danger);font-weight:700;}
 .ingr-cat{background:var(--cream2);font-size:0.72rem;font-weight:700;
   color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;
   padding:7px 14px;border-bottom:1px solid var(--border);}
@@ -303,7 +305,7 @@ textarea{resize:vertical;min-height:70px;}
   </div>
   <div class="tb-right">
     <div class="tb-event" id="tb-event-display">אין אירוע פעיל</div>
-    <div class="tb-version">v1.1.2</div>
+    <div class="tb-version">v1.1.6</div>
   </div>
 </div>
 
@@ -499,6 +501,9 @@ textarea{resize:vertical;min-height:70px;}
             <input type="text" id="new-ingr-name" placeholder="שם חומר גלם" style="flex:2">
             <input type="number" id="new-ingr-qty" placeholder="כמות" style="flex:1;max-width:80px" min="0" step="0.1">
             <input type="text" id="new-ingr-unit" placeholder="יחידה" style="flex:1;max-width:80px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;color:var(--muted);white-space:nowrap;" title="מסומן = ירק, יופיע ברשימה לספק. לא מסומן = לא ירק (שמן/תבלין/גבינה וכו'), יופיע רק בפוד קוסט">
+              <input type="checkbox" id="new-ingr-veg" checked style="width:auto;">ירק
+            </label>
             <button class="btn btn-navy btn-sm" onclick="addIngr()">+</button>
           </div>
 
@@ -904,6 +909,19 @@ const DEFAULT_DISHES = [
       {name:'אפיית מאפים מהטאבון',hoursOffset:-1,priority:'med'},
     ]
   },
+  {
+    id:'d18', name:'שורשים', cat:'סלטים', base:30, min:0,
+    ingredients:[
+      {name:'קולורבי',qty:1.2,unit:'ק"ג',veg:true},
+      {name:'סלק',qty:1,unit:'ק"ג',veg:true},
+      {name:'גזר',qty:1,unit:'ק"ג',veg:true},
+      {name:'כרוב סגול',qty:0.8,unit:'ק"ג',veg:true},
+      {name:'בוטנים',qty:0.2,unit:'ק"ג',veg:false},
+    ],
+    tasks:[
+      {name:'קילוף וקיצוץ שורשים',hoursOffset:-4,priority:'med'},
+    ]
+  },
 ];
 
 // ═══════════════════════════════════════════
@@ -1116,7 +1134,7 @@ function renderIngrTable(rows, evDishes) {
       const fracClass = isFrac && manualQty[manualKey] === undefined ? 'warn' : 'ok';
       const fracText = isFrac && manualQty[manualKey] === undefined ? '⚠ שבר' : (roundedVal !== '' ? '✓ ' + roundedVal : '');
 
-      html += `<tr>
+      html += `<tr class="${isFrac && manualQty[manualKey] === undefined ? 'row-warn' : ''}">
         <td class="td-name">${r.name}</td>
         <td class="td-unit">${r.unit}</td>
         <td><span class="frac-badge frac-ok">${displayRaw} ${r.unit}</span></td>
@@ -1550,6 +1568,9 @@ function renderIngrEditor(ingrs) {
       <input type="text" value="${ing.name}" onchange="updateIngr(${i},'name',this.value)">
       <input type="number" value="${ing.qty}" step="0.1" onchange="updateIngr(${i},'qty',parseFloat(this.value))">
       <input type="text" value="${ing.unit}" onchange="updateIngr(${i},'unit',this.value)">
+      <label style="display:flex;align-items:center;gap:3px;font-size:0.72rem;color:var(--muted);white-space:nowrap;" title="מסומן = ירק (ברשימה לספק). לא מסומן = לא ירק (רק בפוד קוסט)">
+        <input type="checkbox" ${ing.veg!==false?'checked':''} onchange="updateIngr(${i},'veg',this.checked)" style="width:auto;">ירק
+      </label>
       <button class="btn btn-danger btn-sm" onclick="removeIngr(${i})">✕</button>
     </div>`).join('');
 }
@@ -1573,33 +1594,37 @@ function renderTaskEditor(tasks) {
 
 function updateIngr(i, field, val) {
   const d = dishes.find(x => x.id === editingDishId);
-  if (d && d.ingredients[i]) d.ingredients[i][field] = val;
+  if (d && d.ingredients[i]) { d.ingredients[i][field] = val; saveDishesLS(); }
 }
 function removeIngr(i) {
   const d = dishes.find(x => x.id === editingDishId);
-  if (d) { d.ingredients.splice(i, 1); renderIngrEditor(d.ingredients); }
+  if (d) { d.ingredients.splice(i, 1); renderIngrEditor(d.ingredients); saveDishesLS(); }
 }
 function addIngr() {
   const name = document.getElementById('new-ingr-name').value.trim();
   const qty = parseFloat(document.getElementById('new-ingr-qty').value) || 0;
   const unit = document.getElementById('new-ingr-unit').value.trim() || 'ק"ג';
+  const veg = document.getElementById('new-ingr-veg').checked;
   if (!name) { showToast('נדרש שם', 'warn'); return; }
   const d = dishes.find(x => x.id === editingDishId);
   if (!d) return;
   if (!d.ingredients) d.ingredients = [];
-  d.ingredients.push({ name, qty, unit });
+  d.ingredients.push({ name, qty, unit, veg });
   document.getElementById('new-ingr-name').value = '';
   document.getElementById('new-ingr-qty').value = '';
+  document.getElementById('new-ingr-veg').checked = true;
   renderIngrEditor(d.ingredients);
+  saveDishesLS();
+  showToast('מרכיב נוסף ונשמר ✓', 'success');
 }
 
 function updateTaskEdit(i, field, val) {
   const d = dishes.find(x => x.id === editingDishId);
-  if (d && d.tasks[i]) d.tasks[i][field] = val;
+  if (d && d.tasks[i]) { d.tasks[i][field] = val; saveDishesLS(); }
 }
 function removeTask(i) {
   const d = dishes.find(x => x.id === editingDishId);
-  if (d) { d.tasks.splice(i, 1); renderTaskEditor(d.tasks); }
+  if (d) { d.tasks.splice(i, 1); renderTaskEditor(d.tasks); saveDishesLS(); }
 }
 function addTask() {
   const name = document.getElementById('new-task-name').value.trim();
@@ -1614,6 +1639,8 @@ function addTask() {
   });
   document.getElementById('new-task-name').value = '';
   renderTaskEditor(d.tasks);
+  saveDishesLS();
+  showToast('משימה נוספה ונשמרה ✓', 'success');
 }
 
 function saveDish() {
