@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.4</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.4</div>
+  <div class="version">v1.3.5</div>
 </div>
 
 <div class="main">
@@ -935,8 +935,13 @@ function openPDFFromManager(quoteId) {
   window.open('quote-builder.html?id=' + quoteId + '&action=pdf', '_blank');
 }
 
-function openAmalfi(quoteId) {
-  window.open('amalfi-2000.html?quote_id=' + quoteId, '_blank');
+async function openAmalfi(quoteId) {
+  const prevSelection = new Set(selectedIds);
+  selectedIds = new Set([quoteId]);
+  await sendToAmalfi(); // שולח למאגר הנכון (veggie_orders → amalfi-orders), עם התאמת השמות התקינה
+  selectedIds = prevSelection;
+  updateSelectionUI(); renderQuotes();
+  window.open('https://chunkyzz.github.io/amalfi-orders/', '_blank');
 }
 
 function filterQuotes() { renderQuotes(); }
