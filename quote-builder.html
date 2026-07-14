@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.21</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.22</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -313,10 +313,11 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-ghost" onclick="resetAll()" title="איפוס">🔄</button>
     <button class="btn btn-ghost" onclick="saveQuote()">💾</button>
     <button class="btn btn-gold" onclick="generatePDF()">📄 PDF</button>
+    <button class="btn btn-ghost" onclick="syncOnly()" title="מעדכן את הנתונים ל-Supabase (למשל בשביל אמלפי) בלי לשלוח הודעה ללקוח">🔃 עדכן פנימי</button>
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.21</div>
+  <div class="version">v2.4.22</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1386,9 +1387,9 @@ async function saveQuote(silent=false){
 }
 
 // SEND APPROVAL
-async function sendApproval(){
+async function syncApprovalData(){
   const name=document.getElementById('cl-name').value.trim();
-  if(!name){showToast('נא להזין שם לקוח','error');return;}
+  if(!name){showToast('נא להזין שם לקוח','error');return null;}
   await saveQuote(true); // שמירה אוטומטית
   const g=getGuests();
   const sel=allDishes.filter(d=>selectedDishes.has(d.id));
@@ -1408,7 +1409,20 @@ async function sendApproval(){
     price_before_vat:Math.round(sub),price_after_vat:Math.round(grand),
     status:'pending',created_at:new Date().toISOString()
   }, {onConflict:'quote_id'});
-  if(error){showToast('שגיאה: '+error.message,'error');return;}
+  if(error){showToast('שגיאה: '+error.message,'error');return null;}
+  return {quoteId, name};
+}
+
+async function syncOnly(){
+  const r = await syncApprovalData();
+  if(!r) return;
+  showToast('עודכן פנימית — לא נשלח ללקוח ✓','success');
+}
+
+async function sendApproval(){
+  const r = await syncApprovalData();
+  if(!r) return;
+  const{quoteId,name}=r;
   const link='https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id='+quoteId;
   navigator.clipboard.writeText(link).catch(()=>{});
   const phone=document.getElementById('cl-phone').value.replace(/\D/g,'').replace(/^0/,'972');
