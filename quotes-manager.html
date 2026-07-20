@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.5</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.5</div>
+  <div class="version">v1.3.6</div>
 </div>
 
 <div class="main">
@@ -488,6 +488,19 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('waEditModal')">ביטול</button>
       <button class="btn btn-gold" onclick="saveWaEdit()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="sigModal">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:480px;">
+    <div class="modal-title">✍️ אישור וחתימת לקוח</div>
+    <div id="sig-meta" style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;"></div>
+    <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;">
+      <img id="sig-img" src="" alt="חתימת לקוח" style="display:block;width:100%;">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('sigModal')">סגור</button>
     </div>
   </div>
 </div>
@@ -774,6 +787,15 @@ function saveWaEdit(){customWaText=document.getElementById('wa-edit-area').value
 
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
+function showSignature(quoteId){
+  const q = allQuotes.find(x=>x.id===quoteId);
+  if(!q || !q._approval || !q._approval.signature_image){ showToast('אין חתימה שמורה עבור הצעה זו','error'); return; }
+  const ts = q._approval.approved_at ? new Date(q._approval.approved_at).toLocaleString('he-IL') : '—';
+  document.getElementById('sig-meta').textContent = `${q.client_name||''} — אושר בתאריך ${ts}`;
+  document.getElementById('sig-img').src = q._approval.signature_image;
+  document.getElementById('sigModal').classList.add('open');
+}
+
 const AMALFI_URL = 'https://qgmyaxxzebwcatetbngs.supabase.co';
 const AMALFI_KEY = 'sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq';
 const sbA = supabase.createClient(AMALFI_URL, AMALFI_KEY);
@@ -798,8 +820,8 @@ async function loadQuotes() {
   const { data, error } = await sb.from('qz_quotes').select('*').order('event_date', { ascending: true });
   if (error) { showToast('שגיאה בטעינה: ' + error.message, 'error'); return; }
 
-  // fetch approval records to detect client-edited fields
-  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, client_edited_fields, status');
+  // fetch approval records to detect client-edited fields + approval evidence (signature/timestamp)
+  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, client_edited_fields, status, signature_image, approved_at');
   const approvalsById = {};
   (approvals||[]).forEach(a => { approvalsById['ap_'+a.quote_id] = a; approvalsById[a.quote_id] = a; });
 
@@ -808,6 +830,7 @@ async function loadQuotes() {
     return {
       ...q,
       _clientEditedFields: (ap && ap.client_edited_fields && ap.client_edited_fields.length) ? ap.client_edited_fields : null,
+      _approval: ap || null,
     };
   });
   renderQuotes();
@@ -880,6 +903,7 @@ function renderQuotes() {
           <button class="btn btn-gold btn-sm" onclick="openPDFFromManager(${q.id})" title="PDF">📄</button>
           <button class="btn btn-green btn-sm" onclick="sendFromManager(${q.id},'${q.client_name||''}','${q.client_phone||''}')" title="שלח לאישור">📨</button>
           <button class="btn btn-green btn-sm" onclick="openAmalfi(${q.id})" title="אמלפי" style="background:#0891b2;">🥦</button>
+          ${(q._approval && q._approval.status==='approved' && q._approval.signature_image)?`<button class="btn btn-gold btn-sm" onclick="showSignature(${q.id})" title="צפה בחתימה">✍️</button>`:''}
           <button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id},'${(q.client_name||'').replace(/'/g,'')}')" title="מחק">🗑️</button>
         </div>
       </div>
