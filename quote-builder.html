@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.23</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.24</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -91,6 +91,8 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 
 /* DISH CARDS */
 .dishes-grid{display:flex;flex-direction:column;gap:5px;}
+.dish-cat-header{font-family:'Frank Ruhl Libre',serif;font-size:0.88rem;font-weight:700;color:var(--navy);border-bottom:2px solid var(--gold);padding:10px 4px 5px;margin-top:6px;}
+.dish-cat-header:first-child{margin-top:0;}
 .dish-card{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);background:white;cursor:pointer;transition:all 0.15s;}
 .dish-card:hover{border-color:var(--gold);background:#FFFDF5;}
 .dish-card.selected{border-color:var(--gold);background:#FFFBEE;box-shadow:0 2px 8px rgba(201,168,76,0.12);}
@@ -317,7 +319,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.23</div>
+  <div class="version">v2.4.24</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -880,36 +882,49 @@ function renderDishes() {
   const grid = document.getElementById('dishesGrid');
   const list = activeCats.size>0 ? allDishes.filter(d=>activeCats.has(d.category)) : allDishes;
   if (!list.length) { grid.innerHTML='<div style="text-align:center;padding:16px;color:var(--muted);">אין מנות</div>'; return; }
-  grid.innerHTML = list.map(d => {
-    const sel = selectedDishes.has(d.id);
-    const badges = [];
-    if(d.is_vegan) badges.push('<span class="dbadge dbadge-vegan">🌱</span>');
-    if(d.is_gluten_free) badges.push('<span class="dbadge dbadge-gf">GF</span>');
-    if(d.allergens&&d.allergens.length) badges.push('<span class="dbadge dbadge-allergy">⚠️ '+d.allergens.join(', ')+'</span>');
-    return '<div class="dish-card'+(sel?' selected':'')+'" onclick="toggleDish('+d.id+')">' +
-      '<div class="dish-check">'+(sel?'✓':'')+'</div>' +
-      '<div class="dish-info">' +
-        '<div class="dish-name">'+d.name+(d.name_it?' <span class="dish-name-it">('+d.name_it+')</span>':'')+'</div>' +
-        (d.description?'<div class="dish-desc">'+d.description+'</div>':'') +
-        (badges.length?'<div class="dish-badges">'+badges.join('')+'</div>':'') +
-      '</div>' +
-      '<div class="dish-price">' +
-        (d.base_price?'<div class="dish-price-base" id="dpo-base-'+d.id+'">₪'+d.base_price+'</div>':'') +
-        (d.addon_per_person||d.category==='פיצות'||d.category==='סלטים'?
-          '<div class="dish-price-addon" id="dpo-show-'+d.id+'">'+(d.addon_per_person?'+₪'+d.addon_per_person+'/אדם':(d.category==='פיצות'?'₪100/אדם':(d.category==='סלטים'?'₪20/אדם':'')))+'</div>':''
-        ) +
-        '<div class="dish-price-override" id="dpo-wrap-'+d.id+'" style="display:none;">' +
-          '<input type="number" class="dpo-input" id="dpo-'+d.id+'" placeholder="₪/אדם" min="0" step="1" ' +
-          'onclick="event.stopPropagation()" oninput="setDishOverride('+d.id+',this.value)">' +
+
+  // קיבוץ המנות לפי קטגוריה, לפי סדר התפריט הנכון (allCats.sort_order) — לא לפי מיון אלפביתי
+  const catOrder = allCats.map(c=>c.name);
+  const bycat = {};
+  list.forEach(d=>{ if(!bycat[d.category]) bycat[d.category]=[]; bycat[d.category].push(d); });
+  // קטגוריות שלא מופיעות ב-allCats (אם יש) — נוסיף בסוף כדי לא לאבד מנות
+  const extraCats = Object.keys(bycat).filter(c=>!catOrder.includes(c));
+  const orderedCats = [...catOrder, ...extraCats].filter(c=>bycat[c]&&bycat[c].length);
+
+  grid.innerHTML = orderedCats.map(cat => {
+    const catHeader = '<div class="dish-cat-header">' + cat + '</div>';
+    const cards = bycat[cat].map(d => {
+      const sel = selectedDishes.has(d.id);
+      const badges = [];
+      if(d.is_vegan) badges.push('<span class="dbadge dbadge-vegan">🌱</span>');
+      if(d.is_gluten_free) badges.push('<span class="dbadge dbadge-gf">GF</span>');
+      if(d.allergens&&d.allergens.length) badges.push('<span class="dbadge dbadge-allergy">⚠️ '+d.allergens.join(', ')+'</span>');
+      return '<div class="dish-card'+(sel?' selected':'')+'" onclick="toggleDish('+d.id+')">' +
+        '<div class="dish-check">'+(sel?'✓':'')+'</div>' +
+        '<div class="dish-info">' +
+          '<div class="dish-name">'+d.name+(d.name_it?' <span class="dish-name-it">('+d.name_it+')</span>':'')+'</div>' +
+          (d.description?'<div class="dish-desc">'+d.description+'</div>':'') +
+          (badges.length?'<div class="dish-badges">'+badges.join('')+'</div>':'') +
         '</div>' +
-        '<button class="dpo-btn" id="dpo-btn-'+d.id+'" onclick="toggleDishOverride('+d.id+',event)" title="שנה מחיר">✏️</button>' +
-      '</div>' +
-      (DISH_SUBOPTIONS[d.name]?'<div class="dish-subopts" id="so-'+d.id+'" onclick="event.stopPropagation()"></div>':'') +
-      '<div style="padding:0 8px 6px;" onclick="event.stopPropagation()">' +
-        '<span class="note-toggle" onclick="toggleNote('+d.id+',event)">+ הערה למנה</span>' +
-        '<textarea class="dish-note-area" id="dn-'+d.id+'" placeholder="הערה ספציפית ללקוח..." oninput="saveNote('+d.id+',this.value,event)"></textarea>' +
-      '</div>' +
-    '</div>';
+        '<div class="dish-price">' +
+          (d.base_price?'<div class="dish-price-base" id="dpo-base-'+d.id+'">₪'+d.base_price+'</div>':'') +
+          (d.addon_per_person||d.category==='פיצות'||d.category==='סלטים'?
+            '<div class="dish-price-addon" id="dpo-show-'+d.id+'">'+(d.addon_per_person?'+₪'+d.addon_per_person+'/אדם':(d.category==='פיצות'?'₪100/אדם':(d.category==='סלטים'?'₪20/אדם':'')))+'</div>':''
+          ) +
+          '<div class="dish-price-override" id="dpo-wrap-'+d.id+'" style="display:none;">' +
+            '<input type="number" class="dpo-input" id="dpo-'+d.id+'" placeholder="₪/אדם" min="0" step="1" ' +
+            'onclick="event.stopPropagation()" oninput="setDishOverride('+d.id+',this.value)">' +
+          '</div>' +
+          '<button class="dpo-btn" id="dpo-btn-'+d.id+'" onclick="toggleDishOverride('+d.id+',event)" title="שנה מחיר">✏️</button>' +
+        '</div>' +
+        (DISH_SUBOPTIONS[d.name]?'<div class="dish-subopts" id="so-'+d.id+'" onclick="event.stopPropagation()"></div>':'') +
+        '<div style="padding:0 8px 6px;" onclick="event.stopPropagation()">' +
+          '<span class="note-toggle" onclick="toggleNote('+d.id+',event)">+ הערה למנה</span>' +
+          '<textarea class="dish-note-area" id="dn-'+d.id+'" placeholder="הערה ספציפית ללקוח..." oninput="saveNote('+d.id+',this.value,event)"></textarea>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    return catHeader + cards;
   }).join('');
 }
 
