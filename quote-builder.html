@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.22</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.23</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -317,7 +317,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.22</div>
+  <div class="version">v2.4.23</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1393,6 +1393,27 @@ async function syncApprovalData(){
   await saveQuote(true); // שמירה אוטומטית
   const g=getGuests();
   const sel=allDishes.filter(d=>selectedDishes.has(d.id));
+
+  // תפריט עשיר ומסודר לפי קטגוריה (כמו ב-PDF) — נשמר כתמונת מצב קפואה בזמן השליחה
+  const catOrder = allCats.map(c=>c.name);
+  const catItMap = {}; allCats.forEach(c=>{ catItMap[c.name]=c.name_it||''; });
+  const bycat = {};
+  sel.forEach(d=>{ if(!bycat[d.category]) bycat[d.category]=[]; bycat[d.category].push(d); });
+  const menuItemsRich = [];
+  catOrder.forEach(cat=>{
+    if(!bycat[cat]||!bycat[cat].length) return;
+    bycat[cat].forEach(d=>{
+      menuItemsRich.push({
+        name: d.name,
+        name_it: d.name_it || '',
+        description: d.description || '',
+        category: d.category,
+        category_it: catItMap[d.category] || '',
+        allergens: d.allergens || []
+      });
+    });
+  });
+
   const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
   const sub = useOverride ? (parseFloat(document.getElementById('manual-subtotal').value)||0) : getAutoSubtotal().sub;
   const grand=sub+(includeVat?sub*0.18:0);
@@ -1405,7 +1426,7 @@ async function syncApprovalData(){
     event_type:getEventType(),address:document.getElementById('cl-address').value,
     notes:document.getElementById('cl-notes').value,
     guests_adults:g.adults,guests_kids:g.kids,guests_babies:g.babies,
-    menu_items:sel.map(d=>d.name),
+    menu_items:menuItemsRich,
     price_before_vat:Math.round(sub),price_after_vat:Math.round(grand),
     status:'pending',created_at:new Date().toISOString()
   }, {onConflict:'quote_id'});

@@ -130,7 +130,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-logo">🍕 Pizza Zmani</div>
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title">אישור הצעת מחיר</div>
-  <div class="version">v1.1.1</div>
+  <div class="version">v1.1.2</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -393,14 +393,41 @@ function fillData(d) {
   setText('d-deposit',    '₪' + deposit.toLocaleString());
   setText('cb1-price',    '₪' + afterVat.toLocaleString());
 
-  // Menu items
+  // Menu items — grouped by category with Italian name + description (rich format)
+  // Falls back to a flat list for older approvals saved before this format existed.
   if (d.menu_items && d.menu_items.length) {
     const menuEl = document.getElementById('d-menu');
-    menuEl.innerHTML = d.menu_items.map(item =>
-      '<div style="padding:7px 0;border-bottom:1px solid #F0EDE5;font-size:0.86rem;color:var(--navy);display:flex;justify-content:space-between;">' +
-        '<span>' + item + '</span>' +
-      '</div>'
-    ).join('').replace(/border-bottom[^;]+;(?=[^<]*<\/div>\s*$)/, '');
+    const isRich = typeof d.menu_items[0] === 'object' && d.menu_items[0] !== null;
+
+    if (isRich) {
+      let html = '', lastCat = null;
+      d.menu_items.forEach(item => {
+        if (item.category !== lastCat) {
+          lastCat = item.category;
+          html += '<div style="font-family:\'Frank Ruhl Libre\',serif;font-size:0.8rem;font-weight:700;color:var(--navy);border-bottom:1.5px solid var(--gold);padding-bottom:4px;margin:16px 0 8px;">' +
+            (html === '' ? '' : '') + item.category +
+            (item.category_it ? ' <bdi style="font-size:0.68rem;color:var(--muted);font-weight:400;font-style:italic;">' + item.category_it + '</bdi>' : '') +
+            '</div>';
+        }
+        html += '<div style="padding:6px 0;border-bottom:1px solid #F0EDE5;">' +
+          '<div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">' +
+            '<span style="font-weight:600;color:var(--navy);font-size:0.86rem;">' + item.name + '</span>' +
+            (item.name_it ? '<bdi style="font-size:0.72rem;color:var(--muted);font-style:italic;">' + item.name_it + '</bdi>' : '') +
+          '</div>' +
+          (item.description ? '<div style="font-size:0.74rem;color:#666;line-height:1.4;margin-top:2px;">' + item.description + '</div>' : '') +
+          (item.allergens && item.allergens.length ? '<div style="font-size:0.68rem;color:var(--danger);margin-top:2px;">⚠ ' + item.allergens.join(', ') + '</div>' : '') +
+        '</div>';
+      });
+      // remove top margin from the very first category header
+      html = html.replace('margin:16px 0 8px;', 'margin:0 0 8px;');
+      menuEl.innerHTML = html;
+    } else {
+      menuEl.innerHTML = d.menu_items.map(item =>
+        '<div style="padding:7px 0;border-bottom:1px solid #F0EDE5;font-size:0.86rem;color:var(--navy);display:flex;justify-content:space-between;">' +
+          '<span>' + item + '</span>' +
+        '</div>'
+      ).join('');
+    }
     show('menuCard');
   }
 
