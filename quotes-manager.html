@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.9</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.10</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.9</div>
+  <div class="version">v1.3.10</div>
 </div>
 
 <div class="main">
@@ -233,6 +233,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
   <!-- TABS -->
   <div class="tabs">
     <button class="tab active" id="tab-quotes" onclick="switchMainTab('quotes',this)">📅 הצעות מחיר</button>
+    <button class="tab" id="tab-leads" onclick="switchMainTab('leads',this)">🎯 לידים <span id="leadsCountBadge" style="display:none;background:var(--gold);color:var(--navy);border-radius:10px;padding:1px 7px;font-size:0.7rem;margin-right:4px;"></span></button>
     <button class="tab" id="tab-ingr" onclick="switchMainTab('ingr',this)">🥦 חומרי גלם</button>
     <button class="tab" id="tab-tasks" onclick="switchMainTab('tasks',this)">📋 משימות הכנה</button>
     <button class="tab" id="tab-supplier" onclick="switchMainTab('supplier',this)">🛒 הזמנת ספק</button>
@@ -362,6 +363,14 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
         </div>
       </div>
     </div>
+  </div>
+
+  <div id="screen-leads" class="screen">
+    <div class="sec-header">
+      <div class="sec-title">🎯 לידים מהסימולציה</div>
+      <div style="font-size:0.78rem;color:var(--muted);">כל מי שמילא את quote-simulator.html ולא נהפך עדיין להצעה רשמית</div>
+    </div>
+    <div id="leadsList"></div>
   </div>
 
 </div><!-- /main -->
@@ -819,6 +828,7 @@ async function init() {
   loadLocalState();
   await loadDishes();
   await loadQuotes();
+  await loadLeads();
 }
 
 async function loadDishes() {
@@ -935,6 +945,92 @@ async function resolveChangeRequest(id) {
   if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
   showToast('בקשת השינוי סומנה כטופלה ✓', 'success');
   await loadQuotes();
+}
+
+// ══ LEADS (מהסימולציה) ══
+let allLeads = [];
+
+async function loadLeads() {
+  const { data, error } = await sb.from('qz_leads').select('*').order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  allLeads = data || [];
+  const badge = document.getElementById('leadsCountBadge');
+  if (allLeads.length) { badge.textContent = allLeads.length; badge.style.display = ''; }
+  else { badge.style.display = 'none'; }
+  renderLeads();
+}
+
+function renderLeads() {
+  const el = document.getElementById('leadsList');
+  if (!allLeads.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🎯</div><div>אין לידים חדשים מהסימולציה</div></div>';
+    return;
+  }
+  el.innerHTML = allLeads.map(l => {
+    const dateStr = l.event_date
+      ? new Date(l.event_date+'T12:00:00').toLocaleDateString('he-IL',{weekday:'short',day:'numeric',month:'long',year:'numeric'})
+      : (l.no_date_yet ? 'עדיין אין תאריך — רק מתעניין/ת' : '—');
+    const createdStr = l.created_at ? new Date(l.created_at).toLocaleString('he-IL') : '—';
+    const total = (l.guests_adults||0) + (l.guests_kids||0) + (l.guests_babies||0);
+    const dishesStr = Array.isArray(l.selected_dishes) ? l.selected_dishes.join(', ') : '';
+    const phoneDigits = (l.client_phone||'').replace(/\D/g,'').replace(/^0/,'972');
+    return `<div class="quote-card">
+      <div class="quote-info">
+        <div class="quote-name">${l.client_name||'—'}</div>
+        <div class="quote-meta">
+          <span>📅 <strong>${dateStr}</strong></span>
+          <span>👥 <strong>${total} אנשים</strong></span>
+          ${l.event_type?`<span>🎉 <strong>${l.event_type}</strong></span>`:''}
+          ${l.estimated_price?`<span>💰 <strong>₪${Math.round(l.estimated_price).toLocaleString()}</strong> (הערכה)</span>`:''}
+        </div>
+        ${l.address?`<div class="quote-dishes">📍 ${l.address}</div>`:''}
+        ${dishesStr?`<div class="quote-dishes" style="font-size:0.76rem;">🍽️ ${dishesStr}</div>`:''}
+        ${l.note?`<div class="quote-dishes" style="font-style:italic;">📝 "${l.note}"</div>`:''}
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:6px;">מולא ב-${createdStr}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <div class="quote-actions">
+          <a class="btn btn-green btn-sm" href="https://wa.me/${phoneDigits}" target="_blank" title="וואטסאפ">💬</a>
+          <button class="btn btn-gold btn-sm" onclick="convertLeadToQuote(${l.id})" title="הפוך להצעה רשמית">📝 הצעה</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLead(${l.id})" title="מחק">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteLead(id) {
+  if (!confirm('למחוק ליד זה?')) return;
+  const { error } = await sb.from('qz_leads').delete().eq('id', id);
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  showToast('ליד נמחק', 'success');
+  await loadLeads();
+}
+
+async function convertLeadToQuote(id) {
+  const l = allLeads.find(x => x.id === id);
+  if (!l) return;
+  // התאמת שמות המנות שנבחרו בסימולציה למזהי מנות אמיתיים
+  const dishNames = Array.isArray(l.selected_dishes) ? l.selected_dishes : [];
+  const dishIds = allDishes.filter(d => dishNames.includes(d.name)).map(d => d.id);
+
+  const { data, error } = await sb.from('qz_quotes').insert({
+    client_name: l.client_name,
+    client_phone: l.client_phone,
+    event_date: l.event_date,
+    event_type: l.event_type,
+    event_address: l.address,
+    guests_adults: l.guests_adults||0,
+    guests_kids: l.guests_kids||0,
+    guests_babies: l.guests_babies||0,
+    selected_dishes: dishIds,
+    notes: l.note || '',
+    status: 'draft',
+  }).select().single();
+
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  showToast('נוצרה טיוטת הצעה ✓ פותח לעריכה...', 'success');
+  setTimeout(() => { window.location.href = 'quote-builder.html?id=' + data.id; }, 700);
 }
 
 async function showHistory(quoteId) {
