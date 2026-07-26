@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.6</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.6</div>
+  <div class="version">v1.3.7</div>
 </div>
 
 <div class="main">
@@ -821,7 +821,7 @@ async function loadQuotes() {
   if (error) { showToast('שגיאה בטעינה: ' + error.message, 'error'); return; }
 
   // fetch approval records to detect client-edited fields + approval evidence (signature/timestamp)
-  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, client_edited_fields, status, signature_image, approved_at');
+  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, client_edited_fields, status, signature_image, approved_at, change_request_text, change_request_at');
   const approvalsById = {};
   (approvals||[]).forEach(a => { approvalsById['ap_'+a.quote_id] = a; approvalsById[a.quote_id] = a; });
 
@@ -830,6 +830,7 @@ async function loadQuotes() {
     return {
       ...q,
       _clientEditedFields: (ap && ap.client_edited_fields && ap.client_edited_fields.length) ? ap.client_edited_fields : null,
+      _changeRequest: (ap && ap.change_request_text) ? ap.change_request_text : null,
       _approval: ap || null,
     };
   });
@@ -894,6 +895,7 @@ function renderQuotes() {
         </div>
         ${q.event_address?`<div class="quote-dishes">📍 ${q.event_address}</div>`:''}
         ${q._clientEditedFields?`<div style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;background:#FFF3CC;color:#7A5200;font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:6px;border:1.5px solid #C9A84C;">⚠️ לקוח עדכן פרטים: ${q._clientEditedFields.join(', ')} — יש לוודא</div>`:''}
+        ${q._changeRequest?`<div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#E3F2FD;color:#1565C0;font-size:0.72rem;font-weight:600;padding:5px 10px;border-radius:6px;border:1.5px solid #90CAF9;">🔄 בקשת שינוי מהלקוח: "${q._changeRequest}" <button class="btn btn-navy btn-sm" style="padding:2px 9px;font-size:0.68rem;" onclick="event.stopPropagation();resolveChangeRequest(${q.id})">✓ טופל</button></div>`:''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <span class="badge ${badgeMap[status]||'badge-draft'}">${statusMap[status]||status}</span>
@@ -911,6 +913,15 @@ function renderQuotes() {
   }).join('');
 }
 
+async function resolveChangeRequest(id) {
+  const { error } = await sb.from('quote_approvals')
+    .update({ change_request_text: null, change_request_at: null })
+    .eq('quote_id', id);
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  showToast('בקשת השינוי סומנה כטופלה ✓', 'success');
+  await loadQuotes();
+}
+
 async function deleteQuote(id, name) {
   if(!confirm('למחוק את הצעת המחיר של ' + name + '?')) return;
   const { error } = await sb.from('qz_quotes').delete().eq('id', id);
@@ -924,6 +935,7 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
   // Create/update approval record
   const { data: qData } = await sb.from('qz_quotes').select('*').eq('id', quoteId).single();
   if(!qData){ showToast('לא נמצאה הצעה','error'); return; }
+  const wasApproved = allQuotes.find(q=>q.id===quoteId)?._approval?.status === 'approved';
   const approvalId = 'ap_' + quoteId;
   const { data: dishes } = await sb.from('qz_dishes').select('name').in('id', qData.selected_dishes||[]);
   const menuItems = (dishes||[]).map(d=>d.name);
@@ -945,14 +957,19 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
     status: 'pending'
   }, { onConflict: 'quote_id' });
   const approvalUrl = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + quoteId;
-  const msg = encodeURIComponent(
-    'שלום ' + qData.client_name + '! 🍕' + '\n' +
-    'הצעת המחיר שלך מ-Pizza Zmani מוכנה לאישור.' + '\n' +
-    'לחץ/י לצפייה ואישור:' + '\n' + approvalUrl
-  );
+  const msg = wasApproved
+    ? encodeURIComponent(
+        'שלום ' + qData.client_name + '! 🍕' + '\n' +
+        'עדכנו פרט/ים בהצעה שכבר אישרת — נא לעבור שוב ולאשר את השינוי:' + '\n' + approvalUrl
+      )
+    : encodeURIComponent(
+        'שלום ' + qData.client_name + '! 🍕' + '\n' +
+        'הצעת המחיר שלך מ-Pizza Zmani מוכנה לאישור.' + '\n' +
+        'לחץ/י לצפייה ואישור:' + '\n' + approvalUrl
+      );
   const phone = (qData.client_phone||clientPhone).replace(/\D/g,'').replace(/^0/,'972');
   window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
-  showToast('נשלח בוואטסאפ ✓','success');
+  showToast(wasApproved ? 'נשלח לאישור מחדש ✓' : 'נשלח בוואטסאפ ✓','success');
 }
 
 function openPDFFromManager(quoteId) {

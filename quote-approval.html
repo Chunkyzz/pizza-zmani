@@ -150,7 +150,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-logo">🍕 Pizza Zmani</div>
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title">אישור הצעת מחיר</div>
-  <div class="version">v1.1.5</div>
+  <div class="version">v1.1.6</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -291,6 +291,17 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
       </div>
     </div>
 
+    <!-- בקשת שינוי (רק בצפייה של הזמנה מאושרת) -->
+    <div class="card" id="changeReqCard" style="display:none">
+      <div class="card-header"><h3>🔄 רוצה לשנות משהו?</h3></div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">כתוב/י מה צריך לעדכן (כתובת, מספר סועדים, שעה וכו') ואנחנו נחזור אליך לאישור השינוי.</p>
+        <textarea id="changeReqText" rows="3" style="width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:9px;font-family:'Heebo',sans-serif;font-size:0.88rem;resize:vertical;outline:none;" placeholder="לדוגמה: השעה צריכה להיות 13:00 ולא 12:00"></textarea>
+        <button class="btn-ghost-send" id="changeReqBtn" onclick="sendChangeRequest()" style="margin-top:10px;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--navy);background:white;color:var(--navy);font-family:'Heebo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">📨 שלח בקשה</button>
+        <p id="changeReqDone" style="display:none;text-align:center;color:var(--green);font-size:0.85rem;font-weight:600;margin-top:10px;">✓ הבקשה נשלחה, גל יחזור אליך בקרוב</p>
+      </div>
+    </div>
+
     <!-- Checkboxes -->
     <div class="card" id="checksCard">
       <div class="card-header"><h3>✅ אישורים נדרשים</h3></div>
@@ -419,6 +430,9 @@ function showReadOnly(d) {
   hide('sigDrawCard');
   hide('submitBtn');
   hide('submitNote');
+
+  // הצגת כרטיס בקשת שינוי
+  show('changeReqCard');
 
   // הצגת החתימה השמורה, אם קיימת
   if (d.signature_image) {
@@ -564,6 +578,41 @@ function clearSignature() {
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
   document.getElementById('sigPlaceholder').classList.remove('hidden');
   hasSig = false; updateSubmitBtn();
+}
+
+// ── CHANGE REQUEST (post-approval) ──
+async function sendChangeRequest() {
+  const text = document.getElementById('changeReqText').value.trim();
+  if (!text) { showToast('נא לכתוב מה צריך לשנות', 'error'); return; }
+  if (!quoteData) return;
+
+  const btn = document.getElementById('changeReqBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ שולח...';
+
+  const now = new Date().toISOString();
+  const { error } = await sb.from('quote_approvals')
+    .update({ change_request_text: text, change_request_at: now })
+    .eq('quote_id', quoteData.quote_id);
+
+  if (error) {
+    showToast('שגיאה בשליחה: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '📨 שלח בקשה';
+    return;
+  }
+
+  const msg = encodeURIComponent(
+    '🔄 בקשת שינוי להזמנה!\n' +
+    '👤 ' + (quoteData.client_name||'') + '\n' +
+    '📅 ' + (quoteData.event_date||'') + '\n' +
+    '📝 ' + text
+  );
+  window.open('https://wa.me/972542031181?text=' + msg, '_blank');
+
+  document.getElementById('changeReqText').style.display = 'none';
+  btn.style.display = 'none';
+  show('changeReqDone');
 }
 
 // ── SUBMIT ──
