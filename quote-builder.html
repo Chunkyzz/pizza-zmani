@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.25</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.26</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -319,7 +319,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.25</div>
+  <div class="version">v2.4.26</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1861,6 +1861,9 @@ init();
   <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-approval.html" id="nav-approval">
     <span class="icon">✅</span>אישור הצעה (לקוח)
   </a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-simulator.html" id="nav-simulator">
+    <span class="icon">🎯</span>סימולציית הצעה (לקוח)
+  </a>
   <a class="unav-link" href="https://chunkyzz.github.io/amalfi-orders/" id="nav-amalfi">
     <span class="icon">🥦</span>אמלפי — הזמנת ירקות
   </a>
@@ -1898,6 +1901,7 @@ function closeUnav(){
     'quote-builder.html':'nav-quote-builder',
     'quote-admin.html':'nav-quote-admin',
     'quote-approval.html':'nav-approval',
+    'quote-simulator.html':'nav-simulator',
     'catering-order.html':'nav-catering-order',
     'catering-admin.html':'nav-catering-admin',
   };

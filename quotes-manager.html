@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.7</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.9</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.7</div>
+  <div class="version">v1.3.9</div>
 </div>
 
 <div class="main">
@@ -501,6 +501,16 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('sigModal')">סגור</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="historyModal">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:560px;">
+    <div class="modal-title">🕐 היסטוריית שינויים</div>
+    <div id="history-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('historyModal')">סגור</button>
     </div>
   </div>
 </div>
@@ -825,6 +835,9 @@ async function loadQuotes() {
   const approvalsById = {};
   (approvals||[]).forEach(a => { approvalsById['ap_'+a.quote_id] = a; approvalsById[a.quote_id] = a; });
 
+  const { data: histRows } = await sb.from('qz_approval_history').select('quote_id');
+  const historyQuoteIds = new Set((histRows||[]).map(h=>h.quote_id));
+
   allQuotes = (data || []).map(q => {
     const ap = approvalsById[q.id] || approvalsById['ap_'+q.id];
     return {
@@ -832,6 +845,7 @@ async function loadQuotes() {
       _clientEditedFields: (ap && ap.client_edited_fields && ap.client_edited_fields.length) ? ap.client_edited_fields : null,
       _changeRequest: (ap && ap.change_request_text) ? ap.change_request_text : null,
       _approval: ap || null,
+      _hasHistory: historyQuoteIds.has(q.id),
     };
   });
   renderQuotes();
@@ -906,6 +920,7 @@ function renderQuotes() {
           <button class="btn btn-green btn-sm" onclick="sendFromManager(${q.id},'${q.client_name||''}','${q.client_phone||''}')" title="שלח לאישור">📨</button>
           <button class="btn btn-green btn-sm" onclick="openAmalfi(${q.id})" title="אמלפי" style="background:#0891b2;">🥦</button>
           ${(q._approval && q._approval.status==='approved' && q._approval.signature_image)?`<button class="btn btn-gold btn-sm" onclick="showSignature(${q.id})" title="צפה בחתימה">✍️</button>`:''}
+          ${q._hasHistory?`<button class="btn btn-ghost btn-sm" onclick="showHistory(${q.id})" title="היסטוריית שינויים">🕐</button>`:''}
           <button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id},'${(q.client_name||'').replace(/'/g,'')}')" title="מחק">🗑️</button>
         </div>
       </div>
@@ -922,6 +937,33 @@ async function resolveChangeRequest(id) {
   await loadQuotes();
 }
 
+async function showHistory(quoteId) {
+  const { data, error } = await sb.from('qz_approval_history').select('*').eq('quote_id', quoteId).order('archived_at', {ascending:false});
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  const body = document.getElementById('history-body');
+  if (!data || !data.length) {
+    body.innerHTML = '<div class="empty"><div class="empty-icon">🕐</div><div>אין היסטוריה שמורה</div></div>';
+  } else {
+    body.innerHTML = data.map(h => {
+      const s = h.snapshot || {};
+      const ts = h.archived_at ? new Date(h.archived_at).toLocaleString('he-IL') : '—';
+      const wasSigned = s.status === 'approved';
+      return `<div style="border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:${wasSigned?'#F0FFF4':'#FFF8F0'}">
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;">גרסה מ-${ts} ${wasSigned?' • הייתה חתומה ✍️':''}</div>
+        <div style="font-size:0.85rem;line-height:1.7;">
+          <div>👤 <strong>${s.client_name||'—'}</strong> · 📞 ${s.client_phone||'—'}</div>
+          <div>📅 ${s.event_date||'—'} ${s.event_time?('· 🕐 '+s.event_time.slice(0,5)):''}</div>
+          <div>📍 ${s.address||'—'}</div>
+          <div>👥 מבוגרים: ${s.guests_adults||0} · ילדים: ${s.guests_kids||0} · פעוטות: ${s.guests_babies||0}</div>
+          <div>💰 ₪${(s.price_before_vat||0).toLocaleString()} לפני מע"מ</div>
+          ${s.notes?('<div>📝 '+s.notes+'</div>'):''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('historyModal').classList.add('open');
+}
+
 async function deleteQuote(id, name) {
   if(!confirm('למחוק את הצעת המחיר של ' + name + '?')) return;
   const { error } = await sb.from('qz_quotes').delete().eq('id', id);
@@ -936,6 +978,17 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
   const { data: qData } = await sb.from('qz_quotes').select('*').eq('id', quoteId).single();
   if(!qData){ showToast('לא נמצאה הצעה','error'); return; }
   const wasApproved = allQuotes.find(q=>q.id===quoteId)?._approval?.status === 'approved';
+
+  // אם כבר קיימת רשומת אישור — נשמור אותה כתמונת מצב לפני שדורסים אותה
+  const { data: existingApproval } = await sb.from('quote_approvals').select('*').eq('quote_id', quoteId).maybeSingle();
+  if (existingApproval) {
+    await sb.from('qz_approval_history').insert({
+      quote_id: quoteId,
+      snapshot: existingApproval,
+      archived_at: new Date().toISOString(),
+    });
+  }
+
   const approvalId = 'ap_' + quoteId;
   const { data: dishes } = await sb.from('qz_dishes').select('name').in('id', qData.selected_dishes||[]);
   const menuItems = (dishes||[]).map(d=>d.name);
@@ -1207,6 +1260,9 @@ init();
   <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-approval.html" id="nav-approval">
     <span class="icon">✅</span>אישור הצעה (לקוח)
   </a>
+  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-simulator.html" id="nav-simulator">
+    <span class="icon">🎯</span>סימולציית הצעה (לקוח)
+  </a>
   <a class="unav-link" href="https://chunkyzz.github.io/amalfi-orders/" id="nav-amalfi">
     <span class="icon">🥦</span>אמלפי — הזמנת ירקות
   </a>
@@ -1233,6 +1289,7 @@ function closeUnav(){
     'quote-builder.html':'nav-quote-builder',
     'quote-admin.html':'nav-quote-admin',
     'quote-approval.html':'nav-approval',
+    'quote-simulator.html':'nav-simulator',
     'catering-order.html':'nav-catering-order',
     'catering-admin.html':'nav-catering-admin',
   };
