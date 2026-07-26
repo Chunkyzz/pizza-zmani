@@ -150,7 +150,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-logo">🍕 Pizza Zmani</div>
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title">אישור הצעת מחיר</div>
-  <div class="version">v1.1.7</div>
+  <div class="version">v1.1.8</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -193,6 +193,20 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
       <div class="txt">
         <strong>ההזמנה הזו כבר אושרה וחתומה</strong>
         <span id="approvedBannerSub">לצפייה בלבד — לא ניתן לחתום פעמיים</span>
+      </div>
+    </div>
+
+    <!-- בקשת שינוי — כפתור קומפקטי, נפתח בלחיצה (רק בצפייה של הזמנה מאושרת) -->
+    <div id="changeReqCard" style="display:none;margin-bottom:16px;">
+      <button id="changeReqToggle" onclick="openChangeReq()" style="width:100%;padding:13px;border-radius:12px;border:1.5px dashed var(--gold);background:#FFFDF5;color:var(--navy);font-family:'Heebo',sans-serif;font-size:0.88rem;font-weight:700;cursor:pointer;">🔄 רוצים לשנות משהו? לעדכן?</button>
+      <div id="changeReqBox" class="card" style="display:none;margin-top:10px;margin-bottom:0;">
+        <div class="card-header"><h3>🔄 בקשת שינוי</h3></div>
+        <div class="card-body">
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">כתוב/י מה צריך לעדכן (כתובת, מספר סועדים, שעה וכו') ואנחנו נחזור אליך לאישור השינוי.</p>
+          <textarea id="changeReqText" rows="3" style="width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:9px;font-family:'Heebo',sans-serif;font-size:0.88rem;resize:vertical;outline:none;" placeholder="לדוגמה: השעה צריכה להיות 13:00 ולא 12:00"></textarea>
+          <button class="btn-ghost-send" id="changeReqBtn" onclick="sendChangeRequest()" style="margin-top:10px;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--navy);background:white;color:var(--navy);font-family:'Heebo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">📨 שלח בקשה</button>
+          <p id="changeReqDone" style="display:none;text-align:center;color:var(--green);font-size:0.85rem;font-weight:600;margin-top:10px;">✓ הבקשה נשלחה, גל יחזור אליך בקרוב</p>
+        </div>
       </div>
     </div>
 
@@ -288,17 +302,6 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
       <div class="card-body">
         <div class="sig-view-wrap"><img id="sigViewImg" alt="חתימה"></div>
         <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:8px;" id="sigViewDate"></p>
-      </div>
-    </div>
-
-    <!-- בקשת שינוי (רק בצפייה של הזמנה מאושרת) -->
-    <div class="card" id="changeReqCard" style="display:none">
-      <div class="card-header"><h3>🔄 רוצה לשנות משהו?</h3></div>
-      <div class="card-body">
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">כתוב/י מה צריך לעדכן (כתובת, מספר סועדים, שעה וכו') ואנחנו נחזור אליך לאישור השינוי.</p>
-        <textarea id="changeReqText" rows="3" style="width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:9px;font-family:'Heebo',sans-serif;font-size:0.88rem;resize:vertical;outline:none;" placeholder="לדוגמה: השעה צריכה להיות 13:00 ולא 12:00"></textarea>
-        <button class="btn-ghost-send" id="changeReqBtn" onclick="sendChangeRequest()" style="margin-top:10px;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--navy);background:white;color:var(--navy);font-family:'Heebo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">📨 שלח בקשה</button>
-        <p id="changeReqDone" style="display:none;text-align:center;color:var(--green);font-size:0.85rem;font-weight:600;margin-top:10px;">✓ הבקשה נשלחה, גל יחזור אליך בקרוב</p>
       </div>
     </div>
 
@@ -581,6 +584,12 @@ function clearSignature() {
 }
 
 // ── CHANGE REQUEST (post-approval) ──
+function openChangeReq() {
+  hide('changeReqToggle');
+  show('changeReqBox');
+  document.getElementById('changeReqText').focus();
+}
+
 async function sendChangeRequest() {
   const text = document.getElementById('changeReqText').value.trim();
   if (!text) { showToast('נא לכתוב מה צריך לשנות', 'error'); return; }
