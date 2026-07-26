@@ -118,6 +118,15 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   .menu-cat-grid{grid-template-columns:1fr;}
 }
 
+/* APPROVED READ-ONLY BANNER */
+.approved-banner{background:linear-gradient(135deg,#2E6B4F 0%,#3A8264 100%);color:white;border-radius:14px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(46,107,79,0.25);}
+.approved-banner .icon{font-size:1.8rem;flex-shrink:0;}
+.approved-banner .txt strong{display:block;font-family:'Frank Ruhl Libre',serif;font-size:1rem;margin-bottom:2px;}
+.approved-banner .txt span{font-size:0.78rem;opacity:0.9;}
+.edit-field:disabled{background:#F7F5F0;color:var(--navy);opacity:1;cursor:default;-webkit-text-fill-color:var(--navy);}
+.sig-view-wrap{border:2px solid var(--border);border-radius:10px;overflow:hidden;background:white;padding:8px;text-align:center;}
+.sig-view-wrap img{max-width:100%;max-height:140px;}
+
 /* ══ UNIVERSAL NAV ══ */
 .unav-btn{position:fixed;bottom:24px;left:24px;width:52px;height:52px;border-radius:50%;background:#1B2A4A;color:#C9A84C;border:none;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9000;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
 .unav-btn:hover{transform:scale(1.1);background:#243660;}
@@ -141,7 +150,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-logo">🍕 Pizza Zmani</div>
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title">אישור הצעת מחיר</div>
-  <div class="version">v1.1.4</div>
+  <div class="version">v1.1.5</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -178,11 +187,20 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <!-- Main content -->
   <div id="mainContent" style="display:none">
 
+    <!-- Banner: מוצג רק כשההזמנה כבר אושרה (צפייה בלבד) -->
+    <div class="approved-banner" id="approvedBanner" style="display:none">
+      <div class="icon">✅</div>
+      <div class="txt">
+        <strong>ההזמנה הזו כבר אושרה וחתומה</strong>
+        <span id="approvedBannerSub">לצפייה בלבד — לא ניתן לחתום פעמיים</span>
+      </div>
+    </div>
+
     <!-- פרטי אירוע -->
     <div class="card">
       <div class="card-header"><h3>📅 פרטי האירוע</h3></div>
       <div class="card-body">
-        <p style="font-size:0.74rem;color:var(--muted);margin-bottom:12px;">ניתן לערוך כל פרט שאינו מדויק או חסר</p>
+        <p style="font-size:0.74rem;color:var(--muted);margin-bottom:12px;" id="editHint">ניתן לערוך כל פרט שאינו מדויק או חסר</p>
         <div class="detail-grid">
           <div class="detail-item full">
             <label>שם לקוח</label>
@@ -264,8 +282,17 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
       </div>
     </div>
 
+    <!-- חתימה שמורה (רק בצפייה של הזמנה מאושרת) -->
+    <div class="card" id="sigViewCard" style="display:none">
+      <div class="card-header"><h3>✍️ חתימה שמורה</h3></div>
+      <div class="card-body">
+        <div class="sig-view-wrap"><img id="sigViewImg" alt="חתימה"></div>
+        <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:8px;" id="sigViewDate"></p>
+      </div>
+    </div>
+
     <!-- Checkboxes -->
-    <div class="card">
+    <div class="card" id="checksCard">
       <div class="card-header"><h3>✅ אישורים נדרשים</h3></div>
       <div class="card-body">
         <div class="checks">
@@ -294,7 +321,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
     </div>
 
     <!-- חתימה -->
-    <div class="card">
+    <div class="card" id="sigDrawCard">
       <div class="card-header"><h3>✍️ חתימה</h3></div>
       <div class="card-body">
         <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">חתום/י בתיבה למטה באצבע (מובייל) או בעכבר (מחשב)</p>
@@ -310,7 +337,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
     <button class="submit-btn" id="submitBtn" onclick="submitApproval()" disabled>
       ✅ אני מאשר/ת את ההצעה
     </button>
-    <div class="submit-note">לחיצה על הכפתור מהווה אישור מחייב ויישמר עם חותמת זמן</div>
+    <div class="submit-note" id="submitNote">לחיצה על הכפתור מהווה אישור מחייב ויישמר עם חותמת זמן</div>
 
   </div><!-- /mainContent -->
 </div><!-- /container -->
@@ -357,16 +384,51 @@ async function init() {
 
   if (error || !data) { showError(); return; }
 
-  if (data.status === 'approved') {
-    showLocked(data.approved_at);
-    return;
-  }
-
   quoteData = data;
   fillData(data);
+
+  if (data.status === 'approved') {
+    showReadOnly(data);
+  }
+
   show('mainContent');
   hide('loadingState');
-  initCanvas();
+
+  if (data.status !== 'approved') {
+    initCanvas();
+  }
+}
+
+// מצב צפייה בלבד — ההזמנה כבר אושרה וחתומה
+function showReadOnly(d) {
+  show('approvedBanner');
+  if (d.approved_at) {
+    const dt = new Date(d.approved_at);
+    setText('approvedBannerSub', 'נחתם ב-' + dt.toLocaleDateString('he-IL') + ' בשעה ' + dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}));
+  }
+  setText('editHint', 'הצעה זו כבר אושרה — הפרטים מוצגים לצפייה בלבד');
+
+  // שדות הופכים לקריאה בלבד
+  ['d-name','d-phone','d-date','d-time','d-address','d-type'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = true;
+  });
+
+  // הסתרת כרטיס האישורים וכרטיס חתימת ה-canvas + כפתור השליחה
+  hide('checksCard');
+  hide('sigDrawCard');
+  hide('submitBtn');
+  hide('submitNote');
+
+  // הצגת החתימה השמורה, אם קיימת
+  if (d.signature_image) {
+    document.getElementById('sigViewImg').src = d.signature_image;
+    if (d.approved_at) {
+      const dt = new Date(d.approved_at);
+      setText('sigViewDate', 'נחתם ב-' + dt.toLocaleDateString('he-IL') + ' בשעה ' + dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}));
+    }
+    show('sigViewCard');
+  }
 }
 
 function fillData(d) {

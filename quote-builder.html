@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.24</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.25</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -319,7 +319,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.24</div>
+  <div class="version">v2.4.25</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -650,6 +650,19 @@ const AMALFI_KEY = 'sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq';
 const sbA = supabase.createClient(AMALFI_URL, AMALFI_KEY);
 
 let allDishes = [], allCats = [], selectedDishes = new Set(), activeCats = new Set();
+
+// סדר קבוע למנות בתוך קטגוריות מסוימות (לא לפי מיון DB אקראי)
+const CATEGORY_DISH_ORDER = {
+  'פיצות': ['פיצה אדומה','פיצה ירוקה','פיצה צהובה','פיצה סגולה','פיצה לבנה','מאפייה מהטאבון']
+};
+function sortByCategoryOrder(cat, dishes) {
+  const order = CATEGORY_DISH_ORDER[cat];
+  if (!order) return dishes;
+  return [...dishes].sort((a,b) => {
+    const ia = order.indexOf(a.name), ib = order.indexOf(b.name);
+    return (ia===-1?999:ia) - (ib===-1?999:ib);
+  });
+}
 let includeVat = true, hidePrices = false;
 let currentMode = 'build';
 
@@ -887,6 +900,7 @@ function renderDishes() {
   const catOrder = allCats.map(c=>c.name);
   const bycat = {};
   list.forEach(d=>{ if(!bycat[d.category]) bycat[d.category]=[]; bycat[d.category].push(d); });
+  Object.keys(bycat).forEach(c=>{ bycat[c] = sortByCategoryOrder(c, bycat[c]); });
   // קטגוריות שלא מופיעות ב-allCats (אם יש) — נוסיף בסוף כדי לא לאבד מנות
   const extraCats = Object.keys(bycat).filter(c=>!catOrder.includes(c));
   const orderedCats = [...catOrder, ...extraCats].filter(c=>bycat[c]&&bycat[c].length);
@@ -1197,6 +1211,7 @@ function updatePreview() {
   const catAddon={};allCats.forEach(c=>{catAddon[c.name]=0;});
   const bycat={};
   sel.forEach(d=>{if(!bycat[d.category])bycat[d.category]=[];bycat[d.category].push(d);});
+  Object.keys(bycat).forEach(c=>{ bycat[c] = sortByCategoryOrder(c, bycat[c]); });
 
   let html='', baseTotal=0, addonTotal=0;
 
@@ -1512,6 +1527,7 @@ async function generatePDF(){
   const catItMap = {}; allCats.forEach(c=>{ catItMap[c.name]=c.name_it||''; });
   const bycat = {};
   sel.forEach(d=>{ if(!bycat[d.category]) bycat[d.category]=[]; bycat[d.category].push(d); });
+  Object.keys(bycat).forEach(c=>{ bycat[c] = sortByCategoryOrder(c, bycat[c]); });
 
   let menuHtml = '';
   catOrder.forEach(cat=>{
