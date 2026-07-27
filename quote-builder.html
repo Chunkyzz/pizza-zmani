@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.32</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.33</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -319,7 +319,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.32</div>
+  <div class="version">v2.4.33</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -831,10 +831,12 @@ async function loadExistingQuote(id) {
   });
 
   // Manual price
+  const overrideChk = document.getElementById('chk-override');
+  if (overrideChk) overrideChk.checked = !!data.price_override;
   if (data.total_before_vat) {
     document.getElementById('manual-subtotal').value = data.total_before_vat;
-    calcManualPrice();
   }
+  togglePriceOverride(); // מסנכרן תצוגה (ידני/אוטומטי) + מחשב מחדש לפי המצב הנכון
 
   // VAT
   includeVat = data.include_vat !== false;
@@ -1425,16 +1427,18 @@ async function saveQuote(silent=false){
     selected_dishes:[...selectedDishes],
     dish_subopts:dishSubOpts,
     dish_notes:dishNotes,
+    price_override:useOverride,
     total_before_vat:Math.round(sub),
     total_with_vat:Math.round(grand),
-    include_vat:includeVat,
-    status:'draft'
+    include_vat:includeVat
   };
   let error;
   if(currentQuoteId){
+    // בעדכון הצעה קיימת — לא נוגעים בסטטוס (draft/pending/approved וכו').
+    // שמירה רגילה לא אמורה "לשדרג לאחור" הצעה שכבר אושרה בחזרה לטיוטה.
     ({error}=await sb.from('qz_quotes').update(payload).eq('id',currentQuoteId));
   } else {
-    const{data,error:err}=await sb.from('qz_quotes').insert(payload).select('id').single();
+    const{data,error:err}=await sb.from('qz_quotes').insert({...payload, status:'draft'}).select('id').single();
     error=err;
     if(data) currentQuoteId=data.id;
   }
