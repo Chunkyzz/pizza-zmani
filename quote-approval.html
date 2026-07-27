@@ -110,6 +110,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .menu-item .mi-name span{font-weight:600;color:var(--navy);font-size:0.82rem;}
 .menu-item .mi-name bdi{font-size:0.68rem;color:var(--muted);font-style:italic;}
 .menu-item .mi-desc{font-size:0.7rem;color:#777;line-height:1.35;margin-top:1px;}
+.menu-item .mi-subopt{font-size:0.68rem;color:var(--green);font-weight:600;margin-top:2px;}
 .menu-item .mi-allergens{font-size:0.64rem;color:var(--danger);margin-top:1px;opacity:0.85;}
 
 @media(max-width:400px){
@@ -150,7 +151,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-logo">🍕 Pizza Zmani</div>
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title">אישור הצעת מחיר</div>
-  <div class="version">v1.1.8</div>
+  <div class="version">v1.1.9</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -506,6 +507,7 @@ function fillData(d) {
             (item.name_it ? '<bdi>' + item.name_it + '</bdi>' : '') +
           '</div>' +
           (item.description ? '<div class="mi-desc">' + item.description + '</div>' : '') +
+          (item.subopt ? '<div class="mi-subopt">🔸 ' + item.subopt + '</div>' : '') +
           (item.allergens && item.allergens.length ? '<div class="mi-allergens">⚠ ' + item.allergens.join(', ') + '</div>' : '') +
         '</div>';
       });
