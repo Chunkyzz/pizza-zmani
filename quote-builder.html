@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.27</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.29</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -319,7 +319,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.27</div>
+  <div class="version">v2.4.29</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -811,6 +811,24 @@ async function loadExistingQuote(id) {
     data.selected_dishes.forEach(id => selectedDishes.add(Number(id)));
     renderDishes();
   }
+
+  // בחירות רוטב/תוספת והערות פר-מנה — משוחזרות מהצעה שמורה (נשמרות ב-qz_quotes.dish_subopts / dish_notes)
+  if (data.dish_subopts && typeof data.dish_subopts === 'object') {
+    dishSubOpts = data.dish_subopts;
+  }
+  if (data.dish_notes && typeof data.dish_notes === 'object') {
+    dishNotes = data.dish_notes;
+  }
+  // מציג בפועל את הצ'יפים/הערות שכבר היו בחורים על כל מנה שכבר נבחרה בהצעה הזו
+  selectedDishes.forEach(id => {
+    const dish = allDishes.find(d => d.id === id);
+    if (dish && DISH_SUBOPTIONS[dish.name]) {
+      const el = document.getElementById('so-' + id);
+      if (el) buildSubOptsHTML(el, id);
+    }
+    const noteEl = document.getElementById('dn-' + id);
+    if (noteEl && dishNotes[id]) { noteEl.value = dishNotes[id]; noteEl.classList.add('open'); }
+  });
 
   // Manual price
   if (data.total_before_vat) {
@@ -1398,6 +1416,8 @@ async function saveQuote(silent=false){
     notes:document.getElementById('cl-notes').value,
     guests_adults:g.adults,guests_kids:g.kids,guests_babies:g.babies,
     selected_dishes:[...selectedDishes],
+    dish_subopts:dishSubOpts,
+    dish_notes:dishNotes,
     total_before_vat:Math.round(sub),
     total_with_vat:Math.round(grand),
     include_vat:includeVat,
@@ -1480,7 +1500,7 @@ async function sendApproval(){
   navigator.clipboard.writeText(link).catch(()=>{});
   const phone=document.getElementById('cl-phone').value.replace(/\D/g,'').replace(/^0/,'972');
   const waPhone=phone.length>8?phone:'972542031181';
-  const waMsg=encodeURIComponent("שלום "+name+"!\n\nמצורפת הצעת המחיר שלנו לאירוע שלך.\nאנא עיין/י בפרטים וחתום/י:\n\n"+link+"\n\nPizza Zmani - 054-203-1181");
+  const waMsg=encodeURIComponent("שלום "+name+"!\n\nמצורפת הצעת המחיר שלנו לאירוע שלך מ-Pizza Zmani (054-203-1181).\nאנא עיין/י בפרטים וחתום/י:\n\n"+link);
   window.open('https://wa.me/'+waPhone+'?text='+waMsg,'_blank');
   showToast('לינק נוצר ונשלח ✓','success');
 }
