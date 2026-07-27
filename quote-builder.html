@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.31</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.32</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -319,7 +319,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.31</div>
+  <div class="version">v2.4.32</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1263,17 +1263,21 @@ function updatePreview() {
         baseTotal+=base; addonTotal+=addon;
         const total=base+addon;
         const showPrice=false; // prices hidden — manual mode
-        html+='<div class="pdf-dish-single">' +
-          '<div>' +
-            '<span class="pdf-dish-name">'+(getDishNote(d)?'★ ':'')+d.name+'</span>' +
-            (d.name_it?'<span class="pdf-dish-it" dir="ltr">('+d.name_it+')</span>':'') +
-            (d.description&&!getSubOptLabelClient(d)?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
-            (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
-            (getSubOptLabelClient(d)?'<div class="pdf-dish-subopt">🔸 '+getSubOptLabelClient(d)+'</div>':'') +
-            (getDishNote(d)?'<div class="pdf-dish-note">✏️ '+getDishNote(d)+'</div>':'') +
-          '</div>' +
-          (showPrice?'<div class="pdf-dish-price">₪'+total.toLocaleString()+'</div>':'') +
-          '</div>';
+        const def=DISH_SUBOPTIONS[d.name];
+        const chosenOpts=def?def.opts.filter(o=>(dishSubOpts[d.id]||{})[o.id]):[];
+        const variants=chosenOpts.length?chosenOpts.map(o=>'ברוטב '+o.l):[d.description||''];
+        variants.forEach(descText=>{
+          html+='<div class="pdf-dish-single">' +
+            '<div>' +
+              '<span class="pdf-dish-name">'+(getDishNote(d)?'★ ':'')+d.name+'</span>' +
+              (d.name_it?'<span class="pdf-dish-it" dir="ltr">('+d.name_it+')</span>':'') +
+              (descText?'<div class="pdf-dish-desc">'+descText+'</div>':'') +
+              (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
+              (getDishNote(d)?'<div class="pdf-dish-note">✏️ '+getDishNote(d)+'</div>':'') +
+            '</div>' +
+            (showPrice?'<div class="pdf-dish-price">₪'+total.toLocaleString()+'</div>':'') +
+            '</div>';
+        });
       });
     } else {
       html+='<div class="pdf-dishes-grid">';
@@ -1281,14 +1285,18 @@ function updatePreview() {
         const base=d.base_price||0;
         const addon=(d.addon_per_person||0)*billed;
         baseTotal+=base; addonTotal+=addon;
-        html+='<div class="pdf-dish-row">' +
-          '<span class="pdf-dish-name">'+(getDishNote(d)?'★ ':'')+d.name+'</span>' +
-          (d.name_it?'<span class="pdf-dish-it" dir="ltr">('+d.name_it+')</span>':'') +
-          (d.description&&!getSubOptLabelClient(d)?'<div class="pdf-dish-desc">'+d.description+'</div>':'') +
-          (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
-          (getSubOptLabelClient(d)?'<div class="pdf-dish-subopt">🔸 '+getSubOptLabelClient(d)+'</div>':'') +
-          (getDishNote(d)?'<div class="pdf-dish-note">✏️ '+getDishNote(d)+'</div>':'') +
-          '</div>';
+        const def=DISH_SUBOPTIONS[d.name];
+        const chosenOpts=def?def.opts.filter(o=>(dishSubOpts[d.id]||{})[o.id]):[];
+        const variants=chosenOpts.length?chosenOpts.map(o=>'ברוטב '+o.l):[d.description||''];
+        variants.forEach(descText=>{
+          html+='<div class="pdf-dish-row">' +
+            '<span class="pdf-dish-name">'+(getDishNote(d)?'★ ':'')+d.name+'</span>' +
+            (d.name_it?'<span class="pdf-dish-it" dir="ltr">('+d.name_it+')</span>':'') +
+            (descText?'<div class="pdf-dish-desc">'+descText+'</div>':'') +
+            (d.allergens&&d.allergens.length?'<div class="pdf-dish-allergy">⚠️ '+d.allergens.join(', ')+'</div>':'') +
+            (getDishNote(d)?'<div class="pdf-dish-note">✏️ '+getDishNote(d)+'</div>':'') +
+            '</div>';
+        });
       });
       html+='</div>';
     }
@@ -1583,18 +1591,21 @@ async function generatePDF(){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;">`;
     dishes.forEach(d=>{
       const allergyStr=(d.allergens&&d.allergens.length)?d.allergens.join(', '):'';
-      const subOptStr=getSubOptLabelClient(d);
       const noteStr=getDishNote(d);
-      menuHtml+=`<div style="padding:3px 0;border-bottom:0.5px solid #F0EDE5;">
-        <div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">
-          <span style="font-size:11px;font-weight:600;color:#1B2A4A;">${noteStr?'★ ':''}${d.name}</span>
-          ${d.name_it?`<bdi style="font-size:9px;color:#bbb;font-style:italic;unicode-bidi:isolate;">${d.name_it}</bdi>`:''}
-        </div>
-        ${d.description&&!subOptStr?`<div style="font-size:9px;color:#666;line-height:1.3;margin-top:1px;">${d.description}</div>`:''}
-        ${subOptStr?`<div style="font-size:9px;color:#2E6B4F;font-weight:600;margin-top:1px;">🔸 ${subOptStr}</div>`:''}
-        ${noteStr?`<div style="display:inline-block;margin-top:4px;background:#FFF3CC;color:#7A5200;font-size:8px;font-weight:600;padding:2px 7px;border-radius:4px;border:2px solid #C9A84C;">✏️ ${noteStr}</div>`:''}
-        ${allergyStr?`<div style="font-size:8px;color:#B71C1C;margin-top:1px;">⚠ ${allergyStr}</div>`:''}
-      </div>`;
+      const def=DISH_SUBOPTIONS[d.name];
+      const chosenOpts=def?def.opts.filter(o=>(dishSubOpts[d.id]||{})[o.id]):[];
+      const variants=chosenOpts.length?chosenOpts.map(o=>'ברוטב '+o.l):[d.description||''];
+      variants.forEach(descText=>{
+        menuHtml+=`<div style="padding:3px 0;border-bottom:0.5px solid #F0EDE5;">
+          <div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">
+            <span style="font-size:11px;font-weight:600;color:#1B2A4A;">${noteStr?'★ ':''}${d.name}</span>
+            ${d.name_it?`<bdi style="font-size:9px;color:#bbb;font-style:italic;unicode-bidi:isolate;">${d.name_it}</bdi>`:''}
+          </div>
+          ${descText?`<div style="font-size:9px;color:#666;line-height:1.3;margin-top:1px;">${descText}</div>`:''}
+          ${noteStr?`<div style="display:inline-block;margin-top:4px;background:#FFF3CC;color:#7A5200;font-size:8px;font-weight:600;padding:2px 7px;border-radius:4px;border:2px solid #C9A84C;">✏️ ${noteStr}</div>`:''}
+          ${allergyStr?`<div style="font-size:8px;color:#B71C1C;margin-top:1px;">⚠ ${allergyStr}</div>`:''}
+        </div>`;
+      });
     });
     menuHtml+='</div></div>';
   });
