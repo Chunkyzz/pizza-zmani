@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.29</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.31</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -319,7 +319,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.29</div>
+  <div class="version">v2.4.31</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1354,9 +1354,8 @@ function getSubOptLabelClient(d){
   const def=DISH_SUBOPTIONS[d.name];
   if(!def) return '';
   const sel=dishSubOpts[d.id]||{};
-  const chosenCount=def.opts.filter(o=>sel[o.id]).length;
-  if(chosenCount===0) return '';
-  return 'ברוטב - בחירה';
+  const labels=def.opts.filter(o=>sel[o.id]).map(o=>o.l);
+  return labels.length ? ('רוטב: '+labels.join(', ')) : '';
 }
 // returns the free-text note for a dish (trimmed) or '' if none
 function getDishNote(d){
@@ -1453,16 +1452,30 @@ async function syncApprovalData(){
   catOrder.forEach(cat=>{
     if(!bycat[cat]||!bycat[cat].length) return;
     bycat[cat].forEach(d=>{
-      const subopt = getSubOptLabelClient(d);
-      menuItemsRich.push({
-        name: d.name,
-        name_it: d.name_it || '',
-        description: d.description || '',
-        category: d.category,
-        category_it: catItMap[d.category] || '',
-        allergens: d.allergens || [],
-        subopt: subopt || ''
-      });
+      const def = DISH_SUBOPTIONS[d.name];
+      const chosenOpts = def ? def.opts.filter(o => (dishSubOpts[d.id]||{})[o.id]) : [];
+      if (def && chosenOpts.length) {
+        // מנה עם רוטב/תוספת שנבחרה — שורה נפרדת לכל רוטב שנבחר, עם התיאור מוחלף לרוטב הספציפי בלבד
+        chosenOpts.forEach(o => {
+          menuItemsRich.push({
+            name: d.name,
+            name_it: d.name_it || '',
+            description: 'ברוטב ' + o.l,
+            category: d.category,
+            category_it: catItMap[d.category] || '',
+            allergens: d.allergens || []
+          });
+        });
+      } else {
+        menuItemsRich.push({
+          name: d.name,
+          name_it: d.name_it || '',
+          description: d.description || '',
+          category: d.category,
+          category_it: catItMap[d.category] || '',
+          allergens: d.allergens || []
+        });
+      }
     });
   });
 

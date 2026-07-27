@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.11</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.3.13</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -225,7 +225,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.11</div>
+  <div class="version">v1.3.13</div>
 </div>
 
 <div class="main">
@@ -1076,13 +1076,6 @@ async function deleteQuote(id, name) {
 const DISH_SUBOPTIONS_MGR = {
   'פסטה קצרה':{title:'בחירת רוטב',opts:[{id:'rosa',l:'רוזה'},{id:'tomato',l:'עגבניות'},{id:'cream',l:'שמנת'},{id:'pesto',l:'פסטו'}]},
 };
-function getSubOptLabelClientMgr(dishName, dishSubopts, dishId){
-  const def = DISH_SUBOPTIONS_MGR[dishName];
-  if(!def) return '';
-  const sel = (dishSubopts && dishSubopts[dishId]) || {};
-  const chosenCount = def.opts.filter(o=>sel[o.id]).length;
-  return chosenCount>0 ? 'ברוטב - בחירה' : '';
-}
 
 async function sendFromManager(quoteId, clientName, clientPhone) {
   if(!clientPhone){ showToast('אין מספר טלפון ללקוח','error'); return; }
@@ -1105,7 +1098,7 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
   const selectedIds = qData.selected_dishes || [];
   const selectedFull = allDishes.filter(d => selectedIds.includes(d.id));
 
-  // תפריט עשיר ומסודר לפי קטגוריה — בדיוק כמו quote-builder.html, כולל הערת רוטב אם רלוונטי
+  // תפריט עשיר ומסודר לפי קטגוריה — בדיוק כמו quote-builder.html, כולל שורה נפרדת לכל רוטב שנבחר
   const catOrder = allCats.map(c=>c.name);
   const catItMap = {}; allCats.forEach(c=>{ catItMap[c.name]=c.name_it||''; });
   const bycat = {};
@@ -1115,15 +1108,30 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
   orderedCats.forEach(cat=>{
     if(!bycat[cat]||!bycat[cat].length) return;
     bycat[cat].forEach(d=>{
-      menuItemsRich.push({
-        name: d.name,
-        name_it: d.name_it || '',
-        description: d.description || '',
-        category: d.category,
-        category_it: catItMap[d.category] || '',
-        allergens: d.allergens || [],
-        subopt: getSubOptLabelClientMgr(d.name, qData.dish_subopts, d.id)
-      });
+      const def = DISH_SUBOPTIONS_MGR[d.name];
+      const sel = (qData.dish_subopts && qData.dish_subopts[d.id]) || {};
+      const chosenOpts = def ? def.opts.filter(o=>sel[o.id]) : [];
+      if (def && chosenOpts.length) {
+        chosenOpts.forEach(o => {
+          menuItemsRich.push({
+            name: d.name,
+            name_it: d.name_it || '',
+            description: 'ברוטב ' + o.l,
+            category: d.category,
+            category_it: catItMap[d.category] || '',
+            allergens: d.allergens || []
+          });
+        });
+      } else {
+        menuItemsRich.push({
+          name: d.name,
+          name_it: d.name_it || '',
+          description: d.description || '',
+          category: d.category,
+          category_it: catItMap[d.category] || '',
+          allergens: d.allergens || []
+        });
+      }
     });
   });
 
