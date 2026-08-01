@@ -136,7 +136,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold);}
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title">בואו נבנה יחד הערכת מחיר ראשונית</div>
   <div class="header-note">זו סימולציה להתרשמות בלבד — המחיר הסופי נקבע בשיחה אישית 📞 054-203-1181</div>
-  <div class="version">v1.0.0</div>
+  <div class="version">v1.1.0</div>
 </div>
 
 <div class="container">
@@ -252,12 +252,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold);}
       <div class="card-header"><h3>💰 הערכת מחיר</h3></div>
       <div class="card-body">
         <div class="price-rows">
-          <div class="price-row"><span>לפני מע"מ</span><span class="val" id="p-before">—</span></div>
-          <div class="price-row"><span>מע"מ (18%)</span><span class="val" id="p-vat">—</span></div>
-          <div class="price-row grand"><span>💰 הערכה כוללת</span><span class="val" id="p-total">—</span></div>
+          <div class="price-row grand"><span>💰 מחיר לאדם, החל מ-</span><span class="val" id="p-perperson">—</span></div>
+        </div>
+        <div class="price-disclaimer" id="minNotice" style="display:none;">
+          ℹ️ לתשומת ליבכם — מינימום הזמנה לאירוע הוא ₪3,000, ללא קשר למספר הסועדים.
         </div>
         <div class="price-disclaimer">
-          ⚠️ זו הערכה ראשונית בלבד ואינה מהווה הצעת מחיר סופית או התחייבות. המחיר הסופי נקבע בשיחה אישית עם גל, ולעיתים כולל הנחה של 5%–10%.
+          ⚠️ זו הערכה ראשונית בלבד ואינה מהווה הצעת מחיר סופית או התחייבות. המחיר לא כולל מע"מ, ותלוי בבחירות הסופיות. המחיר המדויק נקבע בשיחה אישית עם גל.
         </div>
       </div>
     </div>
@@ -413,38 +414,41 @@ function calcPrice() {
   const billed = g.adults + g.kids;
 
   if (!billed) {
-    setText('p-before','—'); setText('p-vat','—'); setText('p-total','—');
-    return {sub:0, afterVat:0};
+    setText('p-perperson','—');
+    document.getElementById('minNotice').style.display = 'none';
+    return {sub:0, afterVat:0, perPerson:0};
   }
 
-  // פיצות — כלולות תמיד
-  let pizzas = 100 * billed;
+  // פיצות — כלולות תמיד, ₪100 לאדם קבוע
+  const pizzaPP = 100;
 
-  // תוספות
-  let addons = 0;
+  // תוספות לאדם (addon_per_person) + תוספות בסכום קבוע (base_price — למשל מגש קינוח)
+  let addonPP = 0;
+  let flatAddons = 0;
   addonDishes.forEach(d => {
     if (!selectedAddons.has(d.id)) return;
-    if (d.base_price) addons += d.base_price;
-    else addons += (d.addon_per_person || 0) * billed;
+    if (d.base_price) flatAddons += d.base_price;
+    else addonPP += (d.addon_per_person || 0);
   });
 
-  // סלטים
+  // סלטים — לאדם
   const saladCount = selectedSalads.size;
-  if (saladCount > 0) {
-    addons += 20 * billed + (saladCount > 4 ? (saladCount-4)*5*billed : 0);
-  }
+  const saladPP = saladCount > 0 ? (20 + (saladCount > 4 ? (saladCount-4)*5 : 0)) : 0;
 
-  const sub0 = pizzas + addons;
-  const kDisc = billed > 0 && g.kids > 0 ? g.kids * (sub0/billed) * 0.15 : 0;
+  // מחיר לאדם — לא תלוי במספר האורחים שהוזן (חוץ מפיזור תוספות בסכום קבוע, ליתר דיוק)
+  const perPerson = pizzaPP + addonPP + saladPP + (flatAddons / billed);
+
+  // חישוב מלא — פנימי בלבד, לשמירה בליד ולהודעת הוואטסאפ לגל. לא מוצג ללקוח.
+  const sub0 = perPerson * billed;
+  const kDisc = g.kids > 0 ? g.kids * perPerson * 0.15 : 0;
   const sub = sub0 - kDisc;
   const vat = sub * 0.18;
   const afterVat = sub + vat;
 
-  setText('p-before', '₪' + Math.round(sub).toLocaleString());
-  setText('p-vat',    '₪' + Math.round(vat).toLocaleString());
-  setText('p-total',  '₪' + Math.round(afterVat).toLocaleString());
+  setText('p-perperson', '₪' + Math.round(perPerson).toLocaleString());
+  document.getElementById('minNotice').style.display = (sub < 3000) ? '' : 'none';
 
-  return {sub, afterVat};
+  return {sub, afterVat, perPerson};
 }
 
 // ── SUBMIT ──
@@ -506,7 +510,7 @@ async function submitLead() {
     (noDetails ? '📅 עדיין אין תאריך/כתובת — רק מתעניין/ת\n' : ('📅 ' + (date||'—') + '\n' + '📍 ' + (address||'—') + '\n')) +
     '🎉 ' + (eventType||'—') + '\n' +
     '👥 ' + (g.adults+g.kids+g.babies) + ' אנשים (' + g.adults + ' מבוגרים, ' + g.kids + ' ילדים, ' + g.babies + ' פעוטות)\n' +
-    '💰 הערכה: ₪' + Math.round(priceCalc.afterVat).toLocaleString() + '\n' +
+    '💰 הערכה: ₪' + Math.round(priceCalc.afterVat).toLocaleString() + ' (כ-₪' + Math.round(priceCalc.perPerson).toLocaleString() + ' לאדם, לפני מע"מ)\n' +
     (note ? ('📝 ' + note + '\n') : '')
   );
   window.open('https://wa.me/972542031181?text=' + msg, '_blank');

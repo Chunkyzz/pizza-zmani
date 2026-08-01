@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.34</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.35</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -315,11 +315,12 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-ghost" onclick="resetAll()" title="איפוס">🔄</button>
     <button class="btn btn-ghost" onclick="saveQuote()">💾</button>
     <button class="btn btn-gold" onclick="generatePDF()">📄 PDF</button>
+    <button class="btn btn-ghost" onclick="generatePDF(true)" title="מדפיס רק את דף התפריט, בלי דף תנאים/דיסקליימר — לעובד בשטח">🧑‍🍳 ייצוא לעובד</button>
     <button class="btn btn-ghost" onclick="syncOnly()" title="מעדכן את הנתונים ל-Supabase (למשל בשביל אמלפי) בלי לשלוח הודעה ללקוח">🔃 עדכן פנימי</button>
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.34</div>
+  <div class="version">v2.4.35</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -507,6 +508,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <div style="display:flex;gap:6px;">
       <button class="btn btn-ghost" style="border-color:var(--navy);color:var(--navy);" onclick="saveQuote()">💾 שמור</button>
       <button class="btn btn-gold" onclick="generatePDF()">📄 הורד PDF</button>
+      <button class="btn btn-ghost" onclick="generatePDF(true)" title="רק דף התפריט, בלי תנאים — לעובד בשטח">🧑‍🍳 לעובד</button>
     </div>
   </div>
 
@@ -1536,7 +1538,7 @@ async function sendApproval(){
 }
 
 // PDF
-async function generatePDF(){
+async function generatePDF(workerMode){
   updatePreview();
   await saveQuote(true); // שמירה אוטומטית
 
@@ -1556,9 +1558,11 @@ async function generatePDF(){
     ? new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL').split('/').join('-')
     : new Date().toLocaleDateString('he-IL').split('/').join('-');
   const timeStr = timeVal ? timeVal.slice(0,5) : '—';
-  const filename = customName
-    ? (customName.endsWith('.pdf') ? customName : customName+'.pdf')
-    : 'Pizza_Zmani_'+clientName+'_'+dateShort+'.pdf';
+  const filename = workerMode
+    ? 'Pizza_Zmani_'+clientName+'_'+dateShort+'_עובד.pdf'
+    : (customName
+      ? (customName.endsWith('.pdf') ? customName : customName+'.pdf')
+      : 'Pizza_Zmani_'+clientName+'_'+dateShort+'.pdf');
 
   const g = getGuests();
   const billed = g.adults + g.kids;
@@ -1652,6 +1656,32 @@ async function generatePDF(){
   `;
 })()
 
+  const page2Html = workerMode ? '' : `
+<!-- PAGE 2 — תנאים -->
+<div class="page page-break" style="margin-top:0;">
+  <div style="background:#1B2A4A;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-family:'Frank Ruhl Libre',serif;font-size:14px;color:#C9A84C;">📋 תנאים ומדיניות</div>
+    <div style="font-size:8px;color:rgba(255,255,255,0.3);">${clientName} • ${dateShort}</div>
+  </div>
+  <div style="padding:14px 16px;font-size:10px;color:#444;line-height:1.85;direction:rtl;">
+    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">כללי</div>
+    <p style="margin-bottom:10px;">ההצעה תקפה לאחר אישורה בכתב ותשלום מקדמה של 10%. המחירים לפני מע"מ (18%). שינוי בכמות האורחים – לא יותר מ-10% ללא עדכון הצעה.</p>
+    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">ביטולים</div>
+    <p style="margin-bottom:10px;">עד 72 שעות לפני: 10% מהסכום. בין 72–24 שעות לפני: 30% מהסכום. פחות מ-24 שעות לפני: 100% מהסכום. ביטול עקב כוח עליון (פיקוד העורף) – בהתאם להנחיות.</p>
+    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">⚠ אלרגיות</div>
+    <p style="margin-bottom:10px;">אין ביכולתינו להתחייב על אלרגן מכל סוג שהוא. נא לעדכן על רגישויות מוקדם ככל האפשר.</p>
+    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">ציוד והגשה</div>
+    <p style="margin-bottom:10px;">נגיע עם כל הציוד הדרוש. שתייה: שעה וחצי בופה מלא + חצי שעה קינוחים. הגשה כוללת כלי הגשה ואנשי צוות.</p>
+    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">לוגיסטיקה</div>
+    <p style="margin-bottom:10px;">הובלה כלולה בין גדרה–נתניה–מודיעין. על המזמין לדאוג: מים זורמים בקרבת מקום, חשמל, 2 חניות ואזור פריקה. 3 מדרגות ומעלה — תחושב תוספת.</p>
+    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">תשלום</div>
+    <p>מקדמה של 10% במעמד סגירת הפגישה. יתרה ביום האירוע — כנגד חשבונית. תשלום חשבופלוס — יש לציין מראש.</p>
+  </div>
+  <div style="text-align:center;font-size:8px;color:#bbb;padding:6px 16px;border-top:0.5px solid #EEE;" dir="ltr">
+    Pizza Zmani &nbsp;•&nbsp; 054-203-1181 &nbsp;•&nbsp; אוכל איטלקי שמח
+  </div>
+</div>`;
+
   const html=`<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -1722,30 +1752,7 @@ html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;fo
 
 </div>
 
-<!-- PAGE 2 — תנאים -->
-<div class="page page-break" style="margin-top:0;">
-  <div style="background:#1B2A4A;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
-    <div style="font-family:'Frank Ruhl Libre',serif;font-size:14px;color:#C9A84C;">📋 תנאים ומדיניות</div>
-    <div style="font-size:8px;color:rgba(255,255,255,0.3);">${clientName} • ${dateShort}</div>
-  </div>
-  <div style="padding:14px 16px;font-size:10px;color:#444;line-height:1.85;direction:rtl;">
-    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">כללי</div>
-    <p style="margin-bottom:10px;">ההצעה תקפה לאחר אישורה בכתב ותשלום מקדמה של 10%. המחירים לפני מע"מ (18%). שינוי בכמות האורחים – לא יותר מ-10% ללא עדכון הצעה.</p>
-    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">ביטולים</div>
-    <p style="margin-bottom:10px;">עד 72 שעות לפני: 10% מהסכום. בין 72–24 שעות לפני: 30% מהסכום. פחות מ-24 שעות לפני: 100% מהסכום. ביטול עקב כוח עליון (פיקוד העורף) – בהתאם להנחיות.</p>
-    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">⚠ אלרגיות</div>
-    <p style="margin-bottom:10px;">אין ביכולתינו להתחייב על אלרגן מכל סוג שהוא. נא לעדכן על רגישויות מוקדם ככל האפשר.</p>
-    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">ציוד והגשה</div>
-    <p style="margin-bottom:10px;">נגיע עם כל הציוד הדרוש. שתייה: שעה וחצי בופה מלא + חצי שעה קינוחים. הגשה כוללת כלי הגשה ואנשי צוות.</p>
-    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">לוגיסטיקה</div>
-    <p style="margin-bottom:10px;">הובלה כלולה בין גדרה–נתניה–מודיעין. על המזמין לדאוג: מים זורמים בקרבת מקום, חשמל, 2 חניות ואזור פריקה. 3 מדרגות ומעלה — תחושב תוספת.</p>
-    <div style="font-size:11px;font-weight:700;color:#1B2A4A;margin-bottom:4px;">תשלום</div>
-    <p>מקדמה של 10% במעמד סגירת הפגישה. יתרה ביום האירוע — כנגד חשבונית. תשלום חשבופלוס — יש לציין מראש.</p>
-  </div>
-  <div style="text-align:center;font-size:8px;color:#bbb;padding:6px 16px;border-top:0.5px solid #EEE;" dir="ltr">
-    Pizza Zmani &nbsp;•&nbsp; 054-203-1181 &nbsp;•&nbsp; אוכל איטלקי שמח
-  </div>
-</div>
+${page2Html}
 
 <script>
 window.onload=function(){setTimeout(function(){window.focus();window.print();},1800);};
@@ -1934,6 +1941,8 @@ init();
     <button class="btn-cancel-changes" onclick="deleteCurrentQuote()" style="background:rgba(220,38,38,0.25);border-color:rgba(220,38,38,0.5);">🗑️ מחק</button>
     <button class="btn-cancel-changes" onclick="sendApproval()" style="background:rgba(46,107,79,0.3);border-color:rgba(46,107,79,0.6);">📨 שלח לאישור</button>
     <button class="btn-cancel-changes" onclick="openAmalfiFromEdit()" style="background:rgba(8,145,178,0.25);border-color:rgba(8,145,178,0.5);">🥦 אמלפי</button>
+    <button class="btn-cancel-changes" onclick="generatePDF()" style="background:rgba(201,168,76,0.25);border-color:rgba(201,168,76,0.5);">📄 PDF</button>
+    <button class="btn-cancel-changes" onclick="generatePDF(true)" title="מדפיס רק את דף התפריט, בלי תנאים — לעובד בשטח">🧑‍🍳 לעובד</button>
     <button class="btn-save-changes" onclick="saveAndReturn()">💾 שמור שינויים</button>
   </div>
 </div>
