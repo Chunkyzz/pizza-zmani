@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.4.35</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.4.36</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -320,7 +320,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.4.35</div>
+  <div class="version">v2.4.36</div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1482,7 +1482,8 @@ async function syncApprovalData(){
             description: 'ברוטב ' + o.l,
             category: d.category,
             category_it: catItMap[d.category] || '',
-            allergens: d.allergens || []
+            allergens: d.allergens || [],
+            note: getDishNote(d)
           });
         });
       } else {
@@ -1492,7 +1493,8 @@ async function syncApprovalData(){
           description: d.description || '',
           category: d.category,
           category_it: catItMap[d.category] || '',
-          allergens: d.allergens || []
+          allergens: d.allergens || [],
+          note: getDishNote(d)
         });
       }
     });
