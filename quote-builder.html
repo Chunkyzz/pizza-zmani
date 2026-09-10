@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.5.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.6.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -347,7 +347,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.5.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.6.1 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -483,11 +483,26 @@ body.edit-mode-active{padding-bottom:64px;}
         <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);padding:1px 0;" id="disp-kids-row">
           <span>הנחת ילדים</span><span id="disp-kids-disc" style="font-weight:600;color:#C0392B;">—</span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--green);padding:1px 0;font-weight:600;">
-          <span>מחיר לאדם</span><span id="disp-per-person">—</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;color:var(--green);padding:2px 0;font-weight:600;gap:6px;">
+          <span>מחיר סופי לאדם</span>
+          <span style="display:flex;align-items:center;gap:4px;">
+            <input type="number" id="final-price-adult" min="0" step="1" placeholder="—"
+              style="width:74px;text-align:center;font-family:inherit;font-size:0.85rem;font-weight:700;color:var(--navy);border:1.5px solid var(--border);border-radius:6px;padding:3px 4px;background:#fff;"
+              oninput="onFinalPriceInput('adult')">
+            <button type="button" id="reset-final-adult" onclick="resetFinalPrice('adult')" title="חזרה לחישוב אוטומטי" style="display:none;background:none;border:none;cursor:pointer;font-size:0.9rem;color:var(--muted);">↺</button>
+          </span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--green);padding:1px 0;font-weight:600;" id="disp-per-child-row">
-          <span>מחיר לילד</span><span id="disp-per-child">—</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;color:var(--green);padding:2px 0;font-weight:600;gap:6px;" id="disp-per-child-row">
+          <span>מחיר סופי לילד</span>
+          <span style="display:flex;align-items:center;gap:4px;">
+            <input type="number" id="final-price-kid" min="0" step="1" placeholder="—"
+              style="width:74px;text-align:center;font-family:inherit;font-size:0.85rem;font-weight:700;color:var(--navy);border:1.5px solid var(--border);border-radius:6px;padding:3px 4px;background:#fff;"
+              oninput="onFinalPriceInput('kid')">
+            <button type="button" id="reset-final-kid" onclick="resetFinalPrice('kid')" title="חזרה לחישוב אוטומטי" style="display:none;background:none;border:none;cursor:pointer;font-size:0.9rem;color:var(--muted);">↺</button>
+          </span>
+        </div>
+        <div style="display:none;justify-content:space-between;font-size:0.72rem;color:#B8860B;padding:2px 0;" id="disp-min-row">
+          <span>⚠️ הובא למינימום אירוע (₪3,000)</span><span id="disp-min-note" style="font-weight:600;">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);padding:3px 0;border-top:1px solid var(--border);margin-top:4px;">
           <span>לפני מע"מ</span><span id="disp-sub" style="font-weight:600;color:var(--navy);">—</span>
@@ -910,6 +925,15 @@ async function loadExistingQuote(id) {
   if (data.total_before_vat) {
     document.getElementById('manual-subtotal').value = data.total_before_vat;
   }
+
+  // מחיר סופי לאדם/לילד — עקיפה נפרדת (אם נשמרה בהצעה)
+  finalPriceOverride.adult = (data.final_price_adult !== undefined && data.final_price_adult !== null) ? data.final_price_adult : null;
+  finalPriceOverride.kid   = (data.final_price_kid   !== undefined && data.final_price_kid   !== null) ? data.final_price_kid   : null;
+  const raAdult = document.getElementById('reset-final-adult');
+  const raKid   = document.getElementById('reset-final-kid');
+  if (raAdult) raAdult.style.display = finalPriceOverride.adult !== null ? '' : 'none';
+  if (raKid)   raKid.style.display   = finalPriceOverride.kid   !== null ? '' : 'none';
+
   togglePriceOverride(); // מסנכרן תצוגה (ידני/אוטומטי) + מחשב מחדש לפי המצב הנכון
 
   // VAT
@@ -1134,52 +1158,83 @@ function togglePriceOverride() {
   calcAutoPrice();
 }
 
-function getAutoSubtotal() {
-  const g = getGuests();
-  const adults = g.adults, kids = g.kids;
-  const billed = adults + kids;
-  if (!billed) return {sub:0, pizzas:0, addons:0, kDisc:0};
+// ── מחיר סופי לאדם/לילד — עקיפה ידנית נפרדת, לתיקוני מקרים חריגים ──
+// (הנחת ילדים גדולה יותר, הנחה על מנה, מנה במתנה, הורדת חלק מהילדים מהחישוב וכו')
+// עדיפות נמוכה מ"עקיפת מחיר כוללת" (chk-override) אבל גבוהה מהחישוב האוטומטי.
+let finalPriceOverride = { adult: null, kid: null };
 
+function onFinalPriceInput(which) {
+  const el = document.getElementById('final-price-' + which);
+  const v = parseFloat(el.value);
+  finalPriceOverride[which] = (el.value !== '' && !isNaN(v)) ? v : null;
+  const resetBtn = document.getElementById('reset-final-' + which);
+  if (resetBtn) resetBtn.style.display = finalPriceOverride[which] !== null ? '' : 'none';
+  calcAutoPrice();
+  if (currentMode !== 'build') updatePreview();
+}
+
+function resetFinalPrice(which) {
+  finalPriceOverride[which] = null;
+  const el = document.getElementById('final-price-' + which);
+  if (el) el.value = '';
+  const resetBtn = document.getElementById('reset-final-' + which);
+  if (resetBtn) resetBtn.style.display = 'none';
+  calcAutoPrice();
+  if (currentMode !== 'build') updatePreview();
+}
+
+const MIN_EVENT_PRICE = 3000; // אף אירוע לא יוצא מתחת לזה לפני מע"מ
+
+// מחשב תעריף בסיס נפרד לאדם ולילד. "מנת ילדים" (kids_priced=false) מוציאה
+// מנה לגמרי מתמחור הילד (לא רק הנחה) — זה נפרד לגמרי מהתג הקוסמטי "מתאים לילדים".
+function computeBaseRates() {
   const sel = allDishes.filter(d => selectedDishes.has(d.id));
 
-  // פיצות: ₪100/אדם קבוע (אם נבחרה לפחות פיצה אחת)
+  // פיצות: ₪100/אדם קבוע (אם נבחרה לפחות פיצה אחת) — משותף למבוגר ולילד
   const hasPizzas = sel.some(d => d.category === 'פיצות' && d.name !== 'מאפייה מהטאבון');
-  let pizzas = hasPizzas ? (dishPriceOverrides['pizza'] !== undefined ? dishPriceOverrides['pizza'] : 100) * billed : 0;
+  const pizzaRate = hasPizzas ? (dishPriceOverrides['pizza'] !== undefined ? dishPriceOverrides['pizza'] : 100) : 0;
 
-  // תוספות מנות
-  let addons = 0;
+  let adultExtra = 0, kidExtra = 0, flatExtras = 0;
+
   sel.forEach(d => {
     if (d.category === 'פיצות') return; // מחיר פיצות כבר חושב
-    const overridePerPerson = dishPriceOverrides[d.id];
-    // סלטים — חישוב מיוחד (₪20/אדם עד 4, +₪5 לכל נוסף) רק אם אין עקיפה
-    if (d.category === 'סלטים' && overridePerPerson === undefined) return; // נחשב בנפרד
-    if (overridePerPerson !== undefined) {
-      addons += overridePerPerson * billed;
+    if (d.category === 'סלטים') return; // נחשב בנפרד למטה
+    if (d.name === 'מאפייה מהטאבון') return; // נחשב בנפרד למטה
+    const ov = dishPriceOverrides[d.id];
+    const kidsOk = d.kids_priced !== false; // ברירת מחדל: ילדים כן מחויבים, אלא אם סומן "מנת ילדים" כבוי
+    if (ov !== undefined) {
+      adultExtra += ov;
+      if (kidsOk) kidExtra += ov;
       return;
     }
     if (d.base_price) {
-      // מחיר קבוע למנה (לא לפי אדם) — למשל דג כבוש, טירמיסו, מלבי
-      addons += d.base_price;
+      // מחיר קבוע למנה (לא לפי אדם) — למשל דג כבוש, טירמיסו, מלבי. לא מושפע מ"מנת ילדים".
+      flatExtras += d.base_price;
     } else {
-      addons += (d.addon_per_person || 0) * billed;
+      const rate = d.addon_per_person || 0;
+      adultExtra += rate;
+      if (kidsOk) kidExtra += rate;
     }
   });
 
-  // סלטים בחישוב מיוחד
+  // סלטים בחישוב מיוחד (₪20/אדם עד 4, +₪5/אדם לכל נוסף)
   const salads = sel.filter(d => d.category === 'סלטים');
   const saladCount = salads.length;
   if (saladCount > 0) {
-    // אם יש עקיפה לכל סלט — השתמש בה, אחרת חישוב רגיל
     const hasAnyOverride = salads.some(d => dishPriceOverrides[d.id] !== undefined);
     if (hasAnyOverride) {
-      // כל סלט עם עקיפה — לפי העקיפה שלו
       salads.forEach(d => {
         const ov = dishPriceOverrides[d.id];
-        if (ov !== undefined) addons += ov * billed;
-        else addons += 20 * billed; // ללא עקיפה — ₪20 בסיס
+        const rate = ov !== undefined ? ov : 20;
+        const kidsOk = d.kids_priced !== false;
+        adultExtra += rate;
+        if (kidsOk) kidExtra += rate;
       });
     } else {
-      addons += 20 * billed + (saladCount > 4 ? (saladCount-4)*5*billed : 0);
+      const rate = 20 + (saladCount > 4 ? (saladCount-4)*5 : 0);
+      const anyKidsOk = salads.some(d => d.kids_priced !== false); // סלטים בד"כ כולם "כבוי" יחד
+      adultExtra += rate;
+      if (anyKidsOk) kidExtra += rate;
     }
   }
 
@@ -1187,37 +1242,107 @@ function getAutoSubtotal() {
   const bakery = sel.find(d => d.name === 'מאפייה מהטאבון');
   if (bakery) {
     const ov = dishPriceOverrides[bakery.id];
-    addons += (ov !== undefined ? ov : 10) * billed;
+    const rate = ov !== undefined ? ov : 10;
+    const kidsOk = bakery.kids_priced !== false;
+    adultExtra += rate;
+    if (kidsOk) kidExtra += rate;
   }
 
-  // תוספת רטבים נוספים (sub-options עם extra>0)
+  // תוספת רטבים נוספים (sub-options עם extra>0) — עוקבת אחרי "מנת ילדים" של המנה עצמה
   sel.forEach(d => {
     const def = DISH_SUBOPTIONS[d.name];
     if (!def || !def.extra) return;
     const chosen = dishSubOpts[d.id] || {};
     const selCount = def.opts.filter(o => chosen[o.id]).length;
     const extraCount = Math.max(0, selCount - def.base);
-    if (extraCount > 0) addons += extraCount * def.extra * billed;
+    if (extraCount > 0) {
+      const rate = extraCount * def.extra;
+      const kidsOk = d.kids_priced !== false;
+      adultExtra += rate;
+      if (kidsOk) kidExtra += rate;
+    }
   });
 
-  const sub0 = pizzas + addons;
-  const kDisc = billed > 0 && kids > 0 ? kids * (sub0/billed) * 0.15 : 0;
-  const sub = sub0 - kDisc;
-  return {sub, pizzas, addons, kDisc};
+  const adultPerPerson = pizzaRate + adultExtra;
+  const kidPerPersonRaw = pizzaRate + kidExtra;
+  const kidPerPerson = Math.floor(kidPerPersonRaw * 0.85); // הנחת 15% — מעוגל למטה לפי בקשה מפורשת
+
+  return { pizzaRate, adultExtra, kidExtra, adultPerPerson, kidPerPerson, flatExtras };
+}
+
+// מפעיל את חוק מינימום האירוע (₪3,000 לפני מע"מ): רצפה פשוטה על הסה"כ הטבעי.
+// ברגע שהסה"כ האמיתי (הכל, כולל כל המנות) מגיע ל-3,000 — אין שום נגיעה, משלמים בדיוק
+// לפי מה שנבחר. רק כשהוא נמוך מזה, המחיר עולה בדיוק ל-3,000 (בלי תוספת מעבר).
+// (גרסה קודמת ניסתה להוסיף את עלות המנות הנוספות *מעבר* ל-3,000 גם כשכבר עברנו את הסף —
+// זה יצר "מדרון" לא הגיוני: קבוצה גדולה במקצת יכלה לשלם פחות מקבוצה קטנה יותר. הרצפה
+// הפשוטה היא היחידה שעולה בצורה רציפה עם מספר האנשים/המנות, בלי קפיצות.)
+function applyMinimumEvent(rates, g) {
+  const billed = g.adults + g.kids;
+  if (!billed) return { sub: 0, naturalTotal: 0, minApplied: false, minTopUp: 0 };
+
+  const naturalTotal = g.adults * rates.adultPerPerson + g.kids * rates.kidPerPerson + rates.flatExtras;
+
+  if (naturalTotal >= MIN_EVENT_PRICE) {
+    return { sub: naturalTotal, naturalTotal, minApplied: false, minTopUp: 0 };
+  }
+  return { sub: MIN_EVENT_PRICE, naturalTotal, minApplied: true, minTopUp: MIN_EVENT_PRICE - naturalTotal };
+}
+
+// חישוב אוטומטי מלא (ללא עקיפות ידניות). משמר שדות legacy (pizzas/addons/kDisc)
+// לתאימות לאחור + שדות חדשים: adultPerPerson, kidPerPerson, flatExtras, minApplied, minTopUp.
+function getAutoSubtotal() {
+  const g = getGuests();
+  const billed = g.adults + g.kids;
+  if (!billed) return {sub:0, pizzas:0, addons:0, kDisc:0, adultPerPerson:0, kidPerPerson:0, flatExtras:0, minApplied:false, minTopUp:0, naturalTotal:0};
+
+  const rates = computeBaseRates();
+  const { sub, naturalTotal, minApplied, minTopUp } = applyMinimumEvent(rates, g);
+
+  // שדות legacy לשמירת תאימות עם תצוגת "פיצות/תוספות/הנחת ילדים"
+  const pizzas = rates.pizzaRate * billed;
+  const addons = naturalTotal - pizzas; // כולל flatExtras
+  const kDisc  = g.kids > 0 ? g.kids * (rates.adultPerPerson - rates.kidPerPerson) : 0;
+
+  return {
+    sub, pizzas, addons, kDisc,
+    adultPerPerson: rates.adultPerPerson, kidPerPerson: rates.kidPerPerson, flatExtras: rates.flatExtras,
+    minApplied, minTopUp, naturalTotal
+  };
+}
+
+// מחזיר את המחיר הסופי בפועל, לפי סדר עדיפות:
+// 1. עקיפת מחיר כוללת (chk-override) — מחליפה הכל.
+// 2. עקיפת מחיר סופי לאדם/לילד שהוזנה ידנית — אם הוזן לפחות אחד מהם.
+// 3. חישוב אוטומטי (כולל מינימום אירוע).
+function getFinalTotals() {
+  const g = getGuests();
+  const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
+  const r = getAutoSubtotal();
+
+  if (useOverride) {
+    const sub = parseFloat(document.getElementById('manual-subtotal').value) || 0;
+    return { sub, adultPerPerson: r.adultPerPerson, kidPerPerson: r.kidPerPerson, auto: r, usedOverride: 'total' };
+  }
+
+  const usingFinalOverride = finalPriceOverride.adult !== null || finalPriceOverride.kid !== null;
+  const adultFinal = finalPriceOverride.adult !== null ? finalPriceOverride.adult : r.adultPerPerson;
+  const kidFinal    = finalPriceOverride.kid   !== null ? finalPriceOverride.kid   : r.kidPerPerson;
+
+  const sub = usingFinalOverride
+    ? (g.adults * adultFinal + g.kids * kidFinal + r.flatExtras)
+    : r.sub;
+
+  return { sub, adultPerPerson: adultFinal, kidPerPerson: kidFinal, auto: r, usedOverride: usingFinalOverride ? 'final' : null };
 }
 
 function calcAutoPrice() {
   const g = getGuests();
-  const billed = g.adults + g.kids;
-
-  let sub, perAdult = 0;
   const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
-  if (useOverride) {
-    sub = parseFloat(document.getElementById('manual-subtotal').value) || 0;
-  } else {
-    const r = getAutoSubtotal();
-    sub = r.sub;
-    perAdult = billed > 0 ? (r.pizzas + r.addons) / billed : 0; // תעריף בסיס לאדם, לפני הנחת ילדים ולפני מע"מ
+  const ft  = getFinalTotals();
+  const r   = ft.auto;
+  const sub = ft.sub;
+
+  if (!useOverride) {
     const fmt0 = n => n > 0 ? '₪'+Math.round(n).toLocaleString() : '—';
     const el_p = document.getElementById('disp-pizzas');
     const el_a = document.getElementById('disp-addons');
@@ -1239,12 +1364,30 @@ function calcAutoPrice() {
   document.getElementById('disp-grand').textContent   = fmt(grand);
   document.getElementById('disp-deposit').textContent = fmt(dep);
   document.getElementById('disp-vat-row').style.display = includeVat ? '' : 'none';
-  const ppEl = document.getElementById('disp-per-person');
-  if (ppEl) ppEl.textContent = perAdult > 0 ? '₪'+Math.round(perAdult).toLocaleString() : '—';
-  const pcEl = document.getElementById('disp-per-child');
-  if (pcEl) pcEl.textContent = perAdult > 0 ? '₪'+Math.round(perAdult*0.85).toLocaleString() : '—';
+
+  // שדות "מחיר סופי לאדם/לילד" — מתעדכנים אוטומטית כל עוד לא נערכו ידנית (ולא בפוקוס כרגע)
+  const faEl = document.getElementById('final-price-adult');
+  const fkEl = document.getElementById('final-price-kid');
+  if (faEl && finalPriceOverride.adult === null && document.activeElement !== faEl) {
+    faEl.value = r.adultPerPerson > 0 ? Math.round(r.adultPerPerson) : '';
+  }
+  if (fkEl && finalPriceOverride.kid === null && document.activeElement !== fkEl) {
+    fkEl.value = r.kidPerPerson > 0 ? Math.round(r.kidPerPerson) : '';
+  }
   const pcRow = document.getElementById('disp-per-child-row');
-  if (pcRow) pcRow.style.display = (g.kids > 0 && perAdult > 0) ? '' : 'none';
+  if (pcRow) pcRow.style.display = (g.kids > 0) ? '' : 'none';
+
+  // הערת מינימום אירוע — רק כשהחישוב האוטומטי הוא זה שקובע בפועל
+  const minRow  = document.getElementById('disp-min-row');
+  const minNote = document.getElementById('disp-min-note');
+  if (minRow && minNote) {
+    if (ft.usedOverride === null && r.minApplied) {
+      minRow.style.display = 'flex';
+      minNote.textContent = '+₪' + Math.round(r.minTopUp).toLocaleString();
+    } else {
+      minRow.style.display = 'none';
+    }
+  }
 
   // sync to preview
   document.getElementById('t-subtotal').textContent = fmt(sub);
@@ -1381,15 +1524,10 @@ function updatePreview() {
   body.innerHTML=html;
 
   // totals — use same logic as calcAutoPrice
-  const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
-  let sub, perAdult = 0;
-  if (useOverride) {
-    sub = parseFloat(document.getElementById('manual-subtotal').value) || 0;
-  } else {
-    const r2 = getAutoSubtotal();
-    sub = r2.sub;
-    perAdult = billed>0 ? (r2.pizzas + r2.addons) / billed : 0;
-  }
+  const ft2 = getFinalTotals();
+  const sub = ft2.sub;
+  const perAdult = ft2.adultPerPerson;
+  const perKid = ft2.kidPerPerson;
   const vat2 = includeVat ? sub*0.18 : 0;
   const grand2 = sub + vat2;
   const dep2 = grand2*0.10;
@@ -1404,7 +1542,7 @@ function updatePreview() {
     document.getElementById('t-grand').textContent=fmt2(grand2);
     document.getElementById('t-deposit').textContent=fmt2(dep2);
     let ppText = perAdult>0 ? 'מחיר לאדם: ₪'+Math.round(perAdult).toLocaleString() : '';
-    if (g.kids>0 && perAdult>0) ppText += ' | מחיר לילד: ₪'+Math.round(perAdult*0.85).toLocaleString();
+    if (g.kids>0 && perKid>0) ppText += ' | מחיר לילד: ₪'+Math.round(perKid).toLocaleString();
     document.getElementById('t-per-person').textContent = ppText;
   }
 }
@@ -1487,7 +1625,8 @@ async function saveQuote(silent=false){
   if(!name){if(!silent)showToast('נא להזין שם לקוח','error');return null;}
   const g=getGuests();
   const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
-  const sub  = useOverride ? (parseFloat(document.getElementById('manual-subtotal').value)||0) : getAutoSubtotal().sub;
+  const ft = getFinalTotals();
+  const sub = ft.sub;
   const grand= sub+(includeVat?sub*0.18:0);
   const payload={
     client_name:name,
@@ -1502,6 +1641,8 @@ async function saveQuote(silent=false){
     dish_subopts:dishSubOpts,
     dish_notes:dishNotes,
     price_override:useOverride,
+    final_price_adult: finalPriceOverride.adult,
+    final_price_kid: finalPriceOverride.kid,
     total_before_vat:Math.round(sub),
     total_with_vat:Math.round(grand),
     include_vat:includeVat
@@ -1567,8 +1708,8 @@ async function syncApprovalData(){
     });
   });
 
-  const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
-  const sub = useOverride ? (parseFloat(document.getElementById('manual-subtotal').value)||0) : getAutoSubtotal().sub;
+  const ftApproval = getFinalTotals();
+  const sub = ftApproval.sub;
   const grand=sub+(includeVat?sub*0.18:0);
   const quoteId = currentQuoteId; // מזהה קבוע של ההצעה — אותו לינק תמיד, מתעדכן בכל שליחה חוזרת (לא נוצר לינק חדש כל פעם)
   const{error}=await sb.from('quote_approvals').upsert({
@@ -1640,12 +1781,11 @@ async function generatePDF(workerMode){
   // price — auto calculation or manual override
   const sel = allDishes.filter(d=>selectedDishes.has(d.id));
   const saladCount = sel.filter(d=>d.category==='סלטים').length;
-  const useOverridePdf = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
-  const sub   = useOverridePdf ? (parseFloat(document.getElementById('manual-subtotal').value) || 0) : getAutoSubtotal().sub;
+  const ftPdf = getFinalTotals();
+  const sub   = ftPdf.sub;
   const vat   = includeVat ? sub * 0.18 : 0;
   const grand = sub + vat;
   const dep   = grand * 0.10;
-  const perP  = billed > 0 ? Math.round(sub / billed) : 0;
 
   // menu html
   const catOrder = allCats.map(c=>c.name);
@@ -1706,12 +1846,8 @@ async function generatePDF(workerMode){
   const showDep = document.getElementById('show-deposit')?.checked !== false;
   const showVat = document.getElementById('show-vat-row')?.checked !== false;
   const pNote   = (document.getElementById('price-note')?.value||'').trim();
-  let perAdult = 0;
-  if (!useOverridePdf && billed > 0) {
-    const rr = getAutoSubtotal();
-    perAdult = Math.round((rr.pizzas + rr.addons) / billed); // תעריף בסיס לאדם, לפני הנחת ילדים ולפני מע"מ
-  }
-  const perKid   = Math.round(perAdult*0.85);
+  const perAdult = Math.round(ftPdf.adultPerPerson);
+  const perKid   = Math.round(ftPdf.kidPerPerson);
   return `
     <div style="background:#F8F5EE;border-radius:6px;padding:8px 12px;margin-top:10px;">
       ${showPA&&perAdult>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר למבוגר לאדם</span><span style="font-weight:600;">₪${perAdult.toLocaleString()}</span></div>`:''}
@@ -1839,6 +1975,9 @@ window.onload=function(){setTimeout(function(){window.focus();window.print();},1
 function resetAll(){
   if(!confirm('לאפס?'))return;
   selectedDishes.clear();
+  finalPriceOverride = { adult: null, kid: null };
+  const raA = document.getElementById('reset-final-adult'); if (raA) raA.style.display = 'none';
+  const raK = document.getElementById('reset-final-kid');   if (raK) raK.style.display = 'none';
   ['cl-name','cl-phone','cl-address','cl-notes','cl-filename','cl-type-custom'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cl-date').value='';
   document.getElementById('cl-time').value='';
@@ -1861,20 +2000,20 @@ function showToast(msg,type=''){
 // DEMO DATA
 function getDefaultCats(){return[{id:1,name:'סלטים',name_it:'Insalata'},{id:2,name:'ראשונות',name_it:'Primato'},{id:3,name:'פיצות',name_it:'Forno'},{id:4,name:'פסטה',name_it:'Linguine'},{id:5,name:'דגים',name_it:'Pesce'},{id:6,name:'מתוקים',name_it:'Dolci'},{id:7,name:'שתייה',name_it:'Bevande'}];}
 function getDemoMenu(){return[
-  {id:1,name:'קיסר',name_it:'Caesar',description:'לבבות קיסר, קרוטונים, פרמזן',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:2,name:'קפרזה',name_it:'Caprese',description:'עגבניות שרי, מוצרלה, פסטו',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true},
-  {id:3,name:'חציל',name_it:'Melanzane',description:'חציל שרוף, שמן זית, רכז רימונים',category:'סלטים',base_price:null,addon_per_person:0,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true},
-  {id:4,name:'יווני',name_it:'Greco',description:'מלפפון, זיתי קלמטה, גבינה בולגרית',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true},
-  {id:12,name:'פיצה אדומה',name_it:'Pizza Rossa',description:'רוטב עגבניות, מוצרלה, נגיעות פסטו',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:13,name:'פיצה ירוקה',name_it:'Pizza Verde',description:'קרם פסטו, מוצרלה',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:14,name:'פיצה צהובה',name_it:'Pizza Gialla',description:'פולנטה, מוצרלה, פטריות, כמהין',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:15,name:'פיצה סגולה',name_it:'Pizza Viola',description:'קרם סלק, מוצרלה, גבינה מלוחה',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:16,name:'פיצה לבנה',name_it:'Pizza Bianca',description:'מוצרלה, פטריות, שמן כמהין',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:17,name:'מאפייה מהטאבון',name_it:'Pane dal Forno',description:'פוגאס, פוקאצה, פלוט, בייגלה לצד מתבלים',category:'פיצות',base_price:null,addon_per_person:10,allergens:['גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:22,name:'פילה מיקס סלמון + דג לבן',name_it:'Filetto Misto',description:'חצי מהאורחים סלמון, חצי דג לבן',category:'דגים',base_price:null,addon_per_person:53,allergens:['דגים'],is_active:true,is_vegan:false,is_gluten_free:true},
-  {id:24,name:'קלצונה מתוק',name_it:'Calzone Dolce',description:'שוקולד-אגוזים / בייגלה מלוח / קרמל עוגיות',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:26,name:'טירמיסו',name_it:'Tiramisù',description:'קינוח איטלקי קלאסי',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false},
-  {id:27,name:'מלבי',name_it:'Malabi',description:'קינוח מזרחי עדין',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true}
+  {id:1,name:'קיסר',name_it:'Caesar',description:'לבבות קיסר, קרוטונים, פרמזן',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:false},
+  {id:2,name:'קפרזה',name_it:'Caprese',description:'עגבניות שרי, מוצרלה, פסטו',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,kids_priced:false},
+  {id:3,name:'חציל',name_it:'Melanzane',description:'חציל שרוף, שמן זית, רכז רימונים',category:'סלטים',base_price:null,addon_per_person:0,allergens:[],is_active:true,is_vegan:true,is_gluten_free:true,kids_priced:false},
+  {id:4,name:'יווני',name_it:'Greco',description:'מלפפון, זיתי קלמטה, גבינה בולגרית',category:'סלטים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,kids_priced:false},
+  {id:12,name:'פיצה אדומה',name_it:'Pizza Rossa',description:'רוטב עגבניות, מוצרלה, נגיעות פסטו',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:true},
+  {id:13,name:'פיצה ירוקה',name_it:'Pizza Verde',description:'קרם פסטו, מוצרלה',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:true},
+  {id:14,name:'פיצה צהובה',name_it:'Pizza Gialla',description:'פולנטה, מוצרלה, פטריות, כמהין',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:true},
+  {id:15,name:'פיצה סגולה',name_it:'Pizza Viola',description:'קרם סלק, מוצרלה, גבינה מלוחה',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:true},
+  {id:16,name:'פיצה לבנה',name_it:'Pizza Bianca',description:'מוצרלה, פטריות, שמן כמהין',category:'פיצות',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:true},
+  {id:17,name:'מאפייה מהטאבון',name_it:'Pane dal Forno',description:'פוגאס, פוקאצה, פלוט, בייגלה לצד מתבלים',category:'פיצות',base_price:null,addon_per_person:10,allergens:['גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:true},
+  {id:22,name:'פילה מיקס סלמון + דג לבן',name_it:'Filetto Misto',description:'חצי מהאורחים סלמון, חצי דג לבן',category:'דגים',base_price:null,addon_per_person:53,allergens:['דגים'],is_active:true,is_vegan:false,is_gluten_free:true,kids_priced:false},
+  {id:24,name:'קלצונה מתוק',name_it:'Calzone Dolce',description:'שוקולד-אגוזים / בייגלה מלוח / קרמל עוגיות',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן','אגוזים'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:true},
+  {id:26,name:'טירמיסו',name_it:'Tiramisù',description:'קינוח איטלקי קלאסי',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב','גלוטן'],is_active:true,is_vegan:false,is_gluten_free:false,kids_priced:true},
+  {id:27,name:'מלבי',name_it:'Malabi',description:'קינוח מזרחי עדין',category:'מתוקים',base_price:null,addon_per_person:0,allergens:['חלב'],is_active:true,is_vegan:true,is_gluten_free:true,kids_priced:true}
 ];}
 
 // ══ AMALFI EVENT MODAL ══
