@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.3.14</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.4.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -129,6 +129,21 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .unav-sep{height:1px;background:rgba(255,255,255,0.1);margin:8px 0;}
 .unav-label{font-size:0.68rem;color:rgba(255,255,255,0.3);padding:4px 12px 2px;text-transform:uppercase;letter-spacing:0.8px;}
 
+/* ══ AUTH GATE ══ */
+.auth-gate{position:fixed;inset:0;background:linear-gradient(135deg,#1B2A4A 0%,#2A4070 100%);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;}
+.auth-gate.hidden{display:none;}
+.auth-box{background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.35);padding:36px 32px;width:min(380px,92vw);text-align:center;}
+.auth-logo{font-family:'Frank Ruhl Libre',serif;font-size:1.6rem;color:var(--navy);margin-bottom:4px;}
+.auth-sub{font-size:0.8rem;color:#888;margin-bottom:24px;}
+.auth-box input{margin-bottom:12px;text-align:right;font-family:'Heebo',sans-serif;font-size:0.9rem;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:#1a1a1a;outline:none;width:100%;}
+.auth-box input:focus{border-color:var(--gold);}
+.auth-error{color:#C0392B;font-size:0.8rem;margin-top:6px;min-height:1.2em;}
+.auth-btn{width:100%;padding:12px;border-radius:8px;border:none;background:var(--gold);color:var(--navy);font-weight:700;font-size:1rem;cursor:pointer;margin-top:4px;transition:all .2s;font-family:'Heebo',sans-serif;}
+.auth-btn:hover:not(:disabled){background:var(--gold2);}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed;}
+.signout-link{font-size:0.72rem;color:rgba(255,255,255,0.55);cursor:pointer;text-decoration:underline;}
+.signout-link:hover{color:var(--gold);}
+
   --warn:#b45309;--warn-bg:#FEF3C7;--purple2:#6d28d9;
 
 /* SCREENS */
@@ -219,13 +234,25 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
 </head>
 <body>
 
+<!-- ══ AUTH GATE ══ -->
+<div class="auth-gate" id="authGate">
+  <div class="auth-box">
+    <div class="auth-logo">🍕 Pizza Zmani</div>
+    <div class="auth-sub">אזור ניהול — נדרשת התחברות</div>
+    <input type="email" id="auth-email" placeholder="אימייל" autocomplete="username">
+    <input type="password" id="auth-password" placeholder="סיסמה" autocomplete="current-password">
+    <button class="auth-btn" id="authBtn" onclick="doSignIn()">התחבר</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="brand">🍕 Pizza Zmani — ניהול הצעות מחיר</div>
   <div style="display:flex;gap:8px;align-items:center;">
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.3.14</div>
+  <div class="version">v1.4.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -531,6 +558,46 @@ const SUPABASE_URL = 'https://arqxoyxobjudccskfwyt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ═══════════════════════════════════════════════
+//  AUTH GATE — נדרשת התחברות לפני גישה למערכת
+// ═══════════════════════════════════════════════
+async function checkAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    document.getElementById('authGate').classList.add('hidden');
+    init();
+  } else {
+    document.getElementById('authGate').classList.remove('hidden');
+  }
+}
+
+async function doSignIn() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('authBtn');
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'נא למלא אימייל וסיסמה'; return; }
+  btn.disabled = true; btn.textContent = 'מתחבר...';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'התחבר';
+  if (error) { errEl.textContent = 'פרטי התחברות שגויים'; return; }
+  document.getElementById('authGate').classList.add('hidden');
+  init();
+}
+
+async function doSignOut() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ['auth-email','auth-password'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doSignIn(); });
+  });
+});
+
 
 // ─── DISH META (ingredients + tasks per dish) ───
 const DISH_META = {
@@ -792,7 +859,7 @@ function buildWaText(rows, totalGuests) {
     totals[key].qty+=qty;
   });
   const evNames=activeIngrQuotes.map(q=>q.client_name).join(' + ');
-  const lines=Object.values(totals).sort((a,b)=>a.name.localeCompare(b.name,'he')).map(t=>`\u2022 ${t.name} \u2014 ${parseFloat(t.qty.toFixed(2))} ${t.unit}`);
+  const lines=Object.values(totals).sort((a,b)=>a.name.localeCompare(b.name,'he')).map(t=>`• ${t.name} — ${parseFloat(t.qty.toFixed(2))} ${t.unit}`);
   customWaText=`שלום! 🍕\nהזמנה לאירועים: ${evNames}\nסה"כ ${totalGuests} סועדים\n\n${lines.join('\n')}\n\nתודה רבה, גל\n📞 054-203-1181`;
   document.getElementById('wa-text').textContent=customWaText;
 }
@@ -1410,7 +1477,7 @@ function showToast(msg, type='') {
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-init();
+checkAuth();
 </script>
 
 <!-- ══ UNIVERSAL NAV ══ -->
