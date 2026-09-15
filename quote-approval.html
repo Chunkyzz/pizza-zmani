@@ -38,14 +38,6 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .detail-item span{font-size:0.92rem;font-weight:700;color:var(--navy);}
 .detail-item.full{grid-column:1/-1;}
 
-/* EDITABLE FIELDS */
-.edit-field{font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;color:var(--navy);border:none;border-bottom:1.5px solid transparent;background:transparent;padding:2px 0;width:100%;outline:none;transition:all 0.15s;}
-.edit-field:focus{border-bottom-color:var(--gold);background:#FFFDF5;}
-.edit-field.edited{border-bottom-color:var(--green);background:#F5FBF7;}
-.edit-field::placeholder{color:#bbb;font-weight:400;font-size:0.84rem;}
-.edited-banner{display:none;align-items:center;gap:8px;background:#FFF8E8;border:1px solid #E8C56A;border-radius:8px;padding:8px 14px;font-size:0.76rem;color:#7A5200;margin-top:10px;}
-.edited-banner.show{display:flex;}
-
 /* PRICE */
 .price-rows{display:flex;flex-direction:column;gap:0;}
 .price-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F0EDE5;font-size:0.88rem;}
@@ -102,48 +94,10 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .terms-box{background:#FFF8F0;border:1px solid #F0DCC0;border-radius:8px;padding:12px 14px;font-size:0.74rem;color:#666;line-height:1.65;margin-bottom:8px;}
 .terms-box h5{color:var(--navy);margin-bottom:4px;font-size:0.78rem;}
 
-.menu-cat-title{font-family:'Frank Ruhl Libre',serif;font-size:0.8rem;font-weight:700;color:var(--navy);border-bottom:1.5px solid var(--gold);padding-bottom:4px;margin:16px 0 8px;}
-.menu-cat-title:first-child{margin-top:0;}
-.menu-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px;}
-.menu-item{padding:6px 0;border-bottom:1px solid #F0EDE5;}
-.menu-item .mi-name{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;}
-.menu-item .mi-name span{font-weight:600;color:var(--navy);font-size:0.82rem;}
-.menu-item .mi-name bdi{font-size:0.68rem;color:var(--muted);font-style:italic;}
-.menu-item .mi-desc{font-size:0.7rem;color:#777;line-height:1.35;margin-top:1px;}
-.menu-item .mi-subopt{font-size:0.68rem;color:var(--green);font-weight:600;margin-top:2px;}
-.menu-item .mi-allergens{font-size:0.64rem;color:var(--danger);margin-top:1px;opacity:0.85;}
-.menu-item .mi-note{display:inline-block;margin-top:4px;background:#FFF3CC;color:#7A5200;font-size:0.66rem;font-weight:600;padding:2px 8px;border-radius:5px;border:1.5px solid var(--gold);}
-
 @media(max-width:400px){
   .detail-grid{grid-template-columns:1fr;}
   .detail-item.full{grid-column:1;}
-  .menu-cat-grid{grid-template-columns:1fr;}
 }
-
-/* APPROVED READ-ONLY BANNER */
-.approved-banner{background:linear-gradient(135deg,#2E6B4F 0%,#3A8264 100%);color:white;border-radius:14px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(46,107,79,0.25);}
-.approved-banner .icon{font-size:1.8rem;flex-shrink:0;}
-.approved-banner .txt strong{display:block;font-family:'Frank Ruhl Libre',serif;font-size:1rem;margin-bottom:2px;}
-.approved-banner .txt span{font-size:0.78rem;opacity:0.9;}
-.edit-field:disabled{background:#F7F5F0;color:var(--navy);opacity:1;cursor:default;-webkit-text-fill-color:var(--navy);}
-.sig-view-wrap{border:2px solid var(--border);border-radius:10px;overflow:hidden;background:white;padding:8px;text-align:center;}
-.sig-view-wrap img{max-width:100%;max-height:140px;}
-
-/* ══ UNIVERSAL NAV ══ */
-.unav-btn{position:fixed;bottom:24px;left:24px;width:52px;height:52px;border-radius:50%;background:#1B2A4A;color:#C9A84C;border:none;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9000;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
-.unav-btn:hover{transform:scale(1.1);background:#243660;}
-.unav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:8999;backdrop-filter:blur(3px);}
-.unav-overlay.open{display:block;}
-.unav-menu{position:fixed;bottom:88px;left:24px;background:#1B2A4A;border-radius:16px;padding:16px;z-index:9001;width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.35);animation:unavUp 0.2s ease;display:none;}
-.unav-menu.open{display:block;}
-@keyframes unavUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-.unav-title{font-family:'Frank Ruhl Libre',serif;font-size:0.78rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);}
-.unav-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;text-decoration:none;color:white;font-family:'Heebo',sans-serif;font-size:0.85rem;font-weight:500;transition:all 0.15s;margin-bottom:3px;}
-.unav-link:hover{background:rgba(255,255,255,0.1);}
-.unav-link.current{background:rgba(201,168,76,0.15);color:#C9A84C;}
-.unav-link .icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0;}
-.unav-sep{height:1px;background:rgba(255,255,255,0.1);margin:8px 0;}
-.unav-label{font-size:0.68rem;color:rgba(255,255,255,0.3);padding:4px 12px 2px;text-transform:uppercase;letter-spacing:0.8px;}
 </style>
 </head>
 <body>
@@ -151,8 +105,8 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 <div class="header">
   <div class="header-logo">🍕 Pizza Zmani</div>
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
-  <div class="header-title">אישור הצעת מחיר</div>
-  <div class="version">v1.1.10</div>
+  <div class="header-title" id="headerTitle">אישור הצעת מחיר</div>
+  <div class="version">v1.2.0 — נוסף מסלול "אישור שריון תאריך"</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -173,15 +127,15 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <!-- Locked -->
   <div class="locked-state" id="lockedState" style="display:none">
     <div class="state-icon">🔒</div>
-    <div class="state-title">ההצעה כבר אושרה</div>
+    <div class="state-title" id="lockedTitle">ההצעה כבר אושרה</div>
     <div class="state-sub" id="lockedSub">הצעה זו נחתמה כבר.<br>לא ניתן לחתום פעמיים.</div>
   </div>
 
   <!-- Success -->
   <div class="success-state" id="successState" style="display:none">
-    <div class="state-icon">✅</div>
-    <div class="state-title">תודה רבה!</div>
-    <div class="state-sub">ההצעה אושרה בהצלחה.<br>גל יצור איתך קשר בקרוב לתיאום פרטים.<br><br>
+    <div class="state-icon" id="successIcon">✅</div>
+    <div class="state-title" id="successTitle">תודה רבה!</div>
+    <div class="state-sub" id="successSub">ההצעה אושרה בהצלחה.<br>גל יצור איתך קשר בקרוב לתיאום פרטים.<br><br>
       <strong style="color:var(--navy)">📞 054-203-1181</strong>
     </div>
   </div>
@@ -189,63 +143,17 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <!-- Main content -->
   <div id="mainContent" style="display:none">
 
-    <!-- Banner: מוצג רק כשההזמנה כבר אושרה (צפייה בלבד) -->
-    <div class="approved-banner" id="approvedBanner" style="display:none">
-      <div class="icon">✅</div>
-      <div class="txt">
-        <strong>ההזמנה הזו כבר אושרה וחתומה</strong>
-        <span id="approvedBannerSub">לצפייה בלבד — לא ניתן לחתום פעמיים</span>
-      </div>
-    </div>
-
-    <!-- בקשת שינוי — כפתור קומפקטי, נפתח בלחיצה (רק בצפייה של הזמנה מאושרת) -->
-    <div id="changeReqCard" style="display:none;margin-bottom:16px;">
-      <button id="changeReqToggle" onclick="openChangeReq()" style="width:100%;padding:13px;border-radius:12px;border:1.5px dashed var(--gold);background:#FFFDF5;color:var(--navy);font-family:'Heebo',sans-serif;font-size:0.88rem;font-weight:700;cursor:pointer;">🔄 רוצים לשנות משהו? לעדכן?</button>
-      <div id="changeReqBox" class="card" style="display:none;margin-top:10px;margin-bottom:0;">
-        <div class="card-header"><h3>🔄 בקשת שינוי</h3></div>
-        <div class="card-body">
-          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">כתוב/י מה צריך לעדכן (כתובת, מספר סועדים, שעה וכו') ואנחנו נחזור אליך לאישור השינוי.</p>
-          <textarea id="changeReqText" rows="3" style="width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:9px;font-family:'Heebo',sans-serif;font-size:0.88rem;resize:vertical;outline:none;" placeholder="לדוגמה: השעה צריכה להיות 13:00 ולא 12:00"></textarea>
-          <button class="btn-ghost-send" id="changeReqBtn" onclick="sendChangeRequest()" style="margin-top:10px;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--navy);background:white;color:var(--navy);font-family:'Heebo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">📨 שלח בקשה</button>
-          <p id="changeReqDone" style="display:none;text-align:center;color:var(--green);font-size:0.85rem;font-weight:600;margin-top:10px;">✓ הבקשה נשלחה, גל יחזור אליך בקרוב</p>
-        </div>
-      </div>
-    </div>
-
     <!-- פרטי אירוע -->
     <div class="card">
       <div class="card-header"><h3>📅 פרטי האירוע</h3></div>
       <div class="card-body">
-        <p style="font-size:0.74rem;color:var(--muted);margin-bottom:12px;" id="editHint">ניתן לערוך כל פרט שאינו מדויק או חסר</p>
         <div class="detail-grid">
-          <div class="detail-item full">
-            <label>שם לקוח</label>
-            <input class="edit-field" id="d-name" data-field="client_name" oninput="markEdited(this)">
-          </div>
-          <div class="detail-item full">
-            <label>טלפון</label>
-            <input class="edit-field" id="d-phone" data-field="client_phone" oninput="markEdited(this)" placeholder="050-0000000">
-          </div>
-          <div class="detail-item">
-            <label>תאריך</label>
-            <input class="edit-field" id="d-date" data-field="event_date" type="date" oninput="markEdited(this)">
-          </div>
-          <div class="detail-item">
-            <label>שעת הגשה</label>
-            <input class="edit-field" id="d-time" data-field="event_time" type="time" oninput="markEdited(this)">
-          </div>
-          <div class="detail-item full">
-            <label>כתובת האירוע</label>
-            <input class="edit-field" id="d-address" data-field="address" oninput="markEdited(this)" placeholder="רחוב, עיר">
-          </div>
-          <div class="detail-item">
-            <label>סוג אירוע</label>
-            <input class="edit-field" id="d-type" data-field="event_type" oninput="markEdited(this)">
-          </div>
-          <div class="detail-item"><label>מספר סועדים</label><span id="d-guests">—</span></div>
-        </div>
-        <div class="edited-banner" id="editedBanner">
-          ✏️ <span>שינית פרטים — הם יישמרו עם האישור הסופי</span>
+          <div class="detail-item full"><label>שם לקוח</label><span id="d-name">—</span></div>
+          <div class="detail-item"><label>תאריך</label><span id="d-date">—</span></div>
+          <div class="detail-item"><label>שעת הגשה</label><span id="d-time">—</span></div>
+          <div class="detail-item full"><label>כתובת האירוע</label><span id="d-address">—</span></div>
+          <div class="detail-item"><label>סוג אירוע</label><span id="d-type">—</span></div>
+          <div class="detail-item" id="d-guests-wrap"><label>מספר סועדים</label><span id="d-guests">—</span></div>
         </div>
       </div>
     </div>
@@ -257,7 +165,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
     </div>
 
     <!-- מחיר -->
-    <div class="card">
+    <div class="card" id="priceCard">
       <div class="card-header"><h3>💰 סיכום מחירים</h3></div>
       <div class="card-body">
         <div class="price-rows">
@@ -298,24 +206,15 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
       </div>
     </div>
 
-    <!-- חתימה שמורה (רק בצפייה של הזמנה מאושרת) -->
-    <div class="card" id="sigViewCard" style="display:none">
-      <div class="card-header"><h3>✍️ חתימה שמורה</h3></div>
-      <div class="card-body">
-        <div class="sig-view-wrap"><img id="sigViewImg" alt="חתימה"></div>
-        <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:8px;" id="sigViewDate"></p>
-      </div>
-    </div>
-
     <!-- Checkboxes -->
-    <div class="card" id="checksCard">
+    <div class="card">
       <div class="card-header"><h3>✅ אישורים נדרשים</h3></div>
       <div class="card-body">
         <div class="checks">
           <div class="check-item" id="chk0" onclick="toggleCheck(0)">
             <input type="checkbox" id="cb0">
             <div class="checkmark" id="cm0"></div>
-            <div class="check-text">קראתי את ההצעה ואני מאשר/ת את כל הפרטים — שם, תאריך, שעה, כתובת ומספר סועדים</div>
+            <div class="check-text" id="ct0">קראתי את ההצעה ואני מאשר/ת את כל הפרטים — שם, תאריך, שעה, כתובת ומספר סועדים</div>
           </div>
           <div class="check-item" id="chk1" onclick="toggleCheck(1)">
             <input type="checkbox" id="cb1">
@@ -330,14 +229,14 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
           <div class="check-item" id="chk3" onclick="toggleCheck(3)">
             <input type="checkbox" id="cb3">
             <div class="checkmark" id="cm3"></div>
-            <div class="check-text">אני מבין/ה שאישור זה מהווה התחייבות לאירוע ומקדמה של 10% תידרש לסגירת התאריך</div>
+            <div class="check-text" id="ct3">אני מבין/ה שאישור זה מהווה התחייבות לאירוע ומקדמה של 10% תידרש לסגירת התאריך</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- חתימה -->
-    <div class="card" id="sigDrawCard">
+    <div class="card" id="sigCard">
       <div class="card-header"><h3>✍️ חתימה</h3></div>
       <div class="card-body">
         <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">חתום/י בתיבה למטה באצבע (מובייל) או בעכבר (מחשב)</p>
@@ -366,25 +265,7 @@ const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let quoteData = null;
-let originalValues = {};
-
-// label map for human-readable edited-field summary
-const FIELD_LABELS = {
-  client_name: 'שם לקוח', client_phone: 'טלפון', event_date: 'תאריך',
-  event_time: 'שעה', address: 'כתובת', event_type: 'סוג אירוע',
-};
-
-function markEdited(input) {
-  const field = input.dataset.field;
-  const changed = input.value.trim() !== (originalValues[field] || '').trim();
-  input.classList.toggle('edited', changed);
-  const anyEdited = document.querySelectorAll('.edit-field.edited').length > 0;
-  document.getElementById('editedBanner').classList.toggle('show', anyEdited);
-}
-
-function getEditedFields() {
-  return Array.from(document.querySelectorAll('.edit-field.edited')).map(el => FIELD_LABELS[el.dataset.field] || el.dataset.field);
-}
+let quoteKind = 'quote'; // 'quote' | 'reservation' — קובע איזה מסלול תצוגה/אישור מוצג
 let checks = [false, false, false, false];
 let hasSig = false;
 let sigCanvas, sigCtx, isDrawing = false;
@@ -400,79 +281,63 @@ async function init() {
 
   if (error || !data) { showError(); return; }
 
-  quoteData = data;
-  fillData(data);
+  quoteKind = data.kind === 'reservation' ? 'reservation' : 'quote';
 
   if (data.status === 'approved') {
-    showReadOnly(data);
+    showLocked(data.approved_at);
+    return;
   }
 
+  quoteData = data;
+  fillData(data);
+  applyKindLayout();
+  if (quoteKind === 'quote') initCanvas();
   show('mainContent');
   hide('loadingState');
-
-  if (data.status !== 'approved') {
-    initCanvas();
-  }
 }
 
-// מצב צפייה בלבד — ההזמנה כבר אושרה וחתומה
-function showReadOnly(d) {
-  show('approvedBanner');
-  if (d.approved_at) {
-    const dt = new Date(d.approved_at);
-    setText('approvedBannerSub', 'נחתם ב-' + dt.toLocaleDateString('he-IL') + ' בשעה ' + dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}));
-  }
-  setText('editHint', 'הצעה זו כבר אושרה — הפרטים מוצגים לצפייה בלבד');
+// מתאים את הדף לשני מסלולים: 'quote' (הצעת מחיר מלאה, כמו תמיד — תפריט+מחיר+חתימה)
+// ו-'reservation' (שריון תאריך בלבד — בלי תפריט/מחיר/חתימה, רק וידוא פרטים ואישור קליל).
+function applyKindLayout() {
+  if (quoteKind !== 'reservation') return;
 
-  // שדות הופכים לקריאה בלבד
-  ['d-name','d-phone','d-date','d-time','d-address','d-type'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = true;
-  });
+  setText('headerTitle', 'אישור שריון תאריך');
+  document.title = 'Pizza Zmani – אישור שריון תאריך';
 
-  // הסתרת כרטיס האישורים וכרטיס חתימת ה-canvas + כפתור השליחה
-  hide('checksCard');
-  hide('sigDrawCard');
-  hide('submitBtn');
-  hide('submitNote');
+  hide('priceCard');
+  hide('sigCard');
+  hide('menuCard'); // תמיד ריק בשריון, אבל ליתר ביטחון
 
-  // הצגת כרטיס בקשת שינוי
-  show('changeReqCard');
+  // רק אישור אחד — וידוא הפרטים. שאר האישורים (מחיר/ביטולים/מקדמה) לא רלוונטיים בשלב הזה.
+  hide('chk1'); hide('chk2'); hide('chk3');
+  setText('ct0', 'בדקתי ואני מאשר/ת שהפרטים לעיל נכונים — שם, תאריך, שעה וכתובת');
 
-  // הצגת החתימה השמורה, אם קיימת
-  if (d.signature_image) {
-    document.getElementById('sigViewImg').src = d.signature_image;
-    if (d.approved_at) {
-      const dt = new Date(d.approved_at);
-      setText('sigViewDate', 'נחתם ב-' + dt.toLocaleDateString('he-IL') + ' בשעה ' + dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}));
-    }
-    show('sigViewCard');
-  }
+  setText('submitNote', 'התאריך יישמר אצלנו במערכת מרגע האישור. התפריט והמחיר ייקבעו ויישלחו לאישור בנפרד, בהמשך.');
+  const btn = document.getElementById('submitBtn');
+  if (btn) btn.textContent = '📅 מאשר/ת שריון תאריך';
 }
 
 function fillData(d) {
-  // editable fields — set .value, store original for diffing
-  originalValues = {
-    client_name:  d.client_name  || '',
-    client_phone: d.client_phone || '',
-    event_date:   d.event_date   || '',
-    event_time:   d.event_time ? d.event_time.slice(0,5) : '',
-    address:      d.address      || '',
-    event_type:   d.event_type   || '',
-  };
-  document.getElementById('d-name').value   = originalValues.client_name;
-  document.getElementById('d-phone').value  = originalValues.client_phone;
-  document.getElementById('d-date').value   = originalValues.event_date;
-  document.getElementById('d-time').value   = originalValues.event_time;
-  document.getElementById('d-address').value = originalValues.address;
-  document.getElementById('d-type').value   = originalValues.event_type;
+  setText('d-name', d.client_name || '—');
+  setText('d-address', d.address || '—');
+  setText('d-type', d.event_type || '—');
+
+  if (d.event_date) {
+    const dt = new Date(d.event_date + 'T12:00:00');
+    setText('d-date', dt.toLocaleDateString('he-IL', {weekday:'long',day:'numeric',month:'long',year:'numeric'}));
+  }
+  setText('d-time', d.event_time ? d.event_time.slice(0,5) : '—');
 
   const billed = (d.guests_adults||0) + (d.guests_kids||0);
   const total = (d.guests_adults||0) + (d.guests_kids||0) + (d.guests_babies||0);
-  let guestStr = total + ' אנשים';
-  if (d.guests_kids) guestStr += ' (כולל ' + d.guests_kids + ' ילדים בהנחה)';
-  if (d.guests_babies) guestStr += ' + ' + d.guests_babies + ' פעוטות';
-  setText('d-guests', guestStr);
+  if (total > 0) {
+    let guestStr = total + ' אנשים';
+    if (d.guests_kids) guestStr += ' (כולל ' + d.guests_kids + ' ילדים בהנחה)';
+    if (d.guests_babies) guestStr += ' + ' + d.guests_babies + ' פעוטות';
+    setText('d-guests', guestStr);
+  } else {
+    setText('d-guests', 'ייקבע בהמשך');
+  }
 
   const beforeVat = d.price_before_vat || 0;
   const afterVat  = d.price_after_vat  || 0;
@@ -485,43 +350,14 @@ function fillData(d) {
   setText('d-deposit',    '₪' + deposit.toLocaleString());
   setText('cb1-price',    '₪' + afterVat.toLocaleString());
 
-  // Menu items — grouped by category with Italian name + description (rich format)
-  // Falls back to a flat list for older approvals saved before this format existed.
+  // Menu items
   if (d.menu_items && d.menu_items.length) {
     const menuEl = document.getElementById('d-menu');
-    const isRich = typeof d.menu_items[0] === 'object' && d.menu_items[0] !== null;
-
-    if (isRich) {
-      let html = '', lastCat = null, gridOpen = false;
-      d.menu_items.forEach(item => {
-        if (item.category !== lastCat) {
-          lastCat = item.category;
-          if (gridOpen) html += '</div>';
-          html += '<div class="menu-cat-title">' + item.category +
-            (item.category_it ? ' <bdi style="font-size:0.68rem;color:var(--muted);font-weight:400;font-style:italic;">' + item.category_it + '</bdi>' : '') +
-            '</div>';
-          html += '<div class="menu-cat-grid">';
-          gridOpen = true;
-        }
-        html += '<div class="menu-item">' +
-          '<div class="mi-name"><span>' + item.name + '</span>' +
-            (item.name_it ? '<bdi>' + item.name_it + '</bdi>' : '') +
-          '</div>' +
-          (item.description ? '<div class="mi-desc">' + item.description + '</div>' : '') +
-          (item.subopt ? '<div class="mi-subopt">🔸 ' + item.subopt + '</div>' : '') +
-          (item.note ? '<div class="mi-note">✏️ ' + item.note + '</div>' : '') +
-          (item.allergens && item.allergens.length ? '<div class="mi-allergens">⚠ ' + item.allergens.join(', ') + '</div>' : '') +
-        '</div>';
-      });
-      if (gridOpen) html += '</div>';
-      menuEl.innerHTML = html;
-    } else {
-      menuEl.innerHTML = d.menu_items.map(item =>
-        '<div style="padding:7px 0;border-bottom:1px solid #F0EDE5;font-size:0.86rem;color:var(--navy);display:flex;justify-content:space-between;">' +
-          '<span>' + item + '</span>' +
-        '</div>'
-      ).join('');
-    }
+    menuEl.innerHTML = d.menu_items.map(item =>
+      '<div style="padding:7px 0;border-bottom:1px solid #F0EDE5;font-size:0.86rem;color:var(--navy);display:flex;justify-content:space-between;">' +
+        '<span>' + item + '</span>' +
+      '</div>'
+    ).join('').replace(/border-bottom[^;]+;(?=[^<]*<\/div>\s*$)/, '');
     show('menuCard');
   }
 
@@ -543,6 +379,11 @@ function toggleCheck(i) {
 }
 
 function updateSubmitBtn() {
+  if (quoteKind === 'reservation') {
+    // רק אישור 0 רלוונטי בשריון, ואין דרישת חתימה
+    document.getElementById('submitBtn').disabled = !checks[0];
+    return;
+  }
   const allChecked = checks.every(c => c);
   document.getElementById('submitBtn').disabled = !(allChecked && hasSig);
 }
@@ -550,7 +391,7 @@ function updateSubmitBtn() {
 // ── SIGNATURE ──
 function initCanvas() {
   sigCanvas = document.getElementById('sigCanvas');
-  sigCanvas.width = sigCanvas.offsetWidth || sigCanvas.parentElement.offsetWidth || 500;
+  sigCanvas.width = sigCanvas.offsetWidth;
   sigCtx = sigCanvas.getContext('2d');
   sigCtx.strokeStyle = '#1B2A4A';
   sigCtx.lineWidth = 2.5;
@@ -587,99 +428,65 @@ function clearSignature() {
   hasSig = false; updateSubmitBtn();
 }
 
-// ── CHANGE REQUEST (post-approval) ──
-function openChangeReq() {
-  hide('changeReqToggle');
-  show('changeReqBox');
-  document.getElementById('changeReqText').focus();
-}
-
-async function sendChangeRequest() {
-  const text = document.getElementById('changeReqText').value.trim();
-  if (!text) { showToast('נא לכתוב מה צריך לשנות', 'error'); return; }
-  if (!quoteData) return;
-
-  const btn = document.getElementById('changeReqBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ שולח...';
-
-  const now = new Date().toISOString();
-  const { error } = await sb.from('quote_approvals')
-    .update({ change_request_text: text, change_request_at: now })
-    .eq('quote_id', quoteData.quote_id);
-
-  if (error) {
-    showToast('שגיאה בשליחה: ' + error.message, 'error');
-    btn.disabled = false;
-    btn.textContent = '📨 שלח בקשה';
-    return;
-  }
-
-  const msg = encodeURIComponent(
-    '🔄 בקשת שינוי להזמנה!\n' +
-    '👤 ' + (quoteData.client_name||'') + '\n' +
-    '📅 ' + (quoteData.event_date||'') + '\n' +
-    '📝 ' + text
-  );
-  window.open('https://wa.me/972542031181?text=' + msg, '_blank');
-
-  document.getElementById('changeReqText').style.display = 'none';
-  btn.style.display = 'none';
-  show('changeReqDone');
-}
-
 // ── SUBMIT ──
 async function submitApproval() {
   if (!quoteData) return;
   const btn = document.getElementById('submitBtn');
+  const isRes = quoteKind === 'reservation';
   btn.disabled = true;
   btn.textContent = '⏳ שומר...';
 
-  const sigImage = sigCanvas.toDataURL('image/png');
   const now = new Date().toISOString();
-  const editedFields = getEditedFields();
-
-  const updatedFields = {
-    client_name:  document.getElementById('d-name').value.trim(),
-    client_phone: document.getElementById('d-phone').value.trim(),
-    event_date:   document.getElementById('d-date').value || null,
-    event_time:   document.getElementById('d-time').value || null,
-    address:      document.getElementById('d-address').value.trim(),
-    event_type:   document.getElementById('d-type').value.trim(),
-  };
+  const updatePayload = { status: 'approved', approved_at: now };
+  if (!isRes) {
+    updatePayload.signature_image = sigCanvas.toDataURL('image/png');
+  }
 
   const { error } = await sb.from('quote_approvals')
-    .update({
-      status: 'approved',
-      approved_at: now,
-      signature_image: sigImage,
-      client_edited_fields: editedFields,
-      ...updatedFields,
-    })
+    .update(updatePayload)
     .eq('quote_id', quoteData.quote_id);
 
   if (error) {
     showToast('שגיאה בשמירה: ' + error.message, 'error');
     btn.disabled = false;
-    btn.textContent = '✅ אני מאשר/ת את ההצעה';
+    btn.textContent = isRes ? '📅 מאשר/ת שריון תאריך' : '✅ אני מאשר/ת את ההצעה';
     return;
   }
 
-  // מסנכרן את הסטטוס גם בטבלת ההצעות הראשית, כדי שזה יופיע אוטומטית ב-quotes-manager
-  await sb.from('qz_quotes').update({ status: 'approved' }).eq('id', quoteData.quote_id);
+  // עדכון סטטוס ההצעה עצמה ל"משוריין" (רק אם היא עדיין בטיוטה — לא דורסים סטטוס מתקדם יותר)
+  if (isRes) {
+    const { data: qRow } = await sb.from('qz_quotes').select('status').eq('id', quoteData.quote_id).maybeSingle();
+    if (qRow && (!qRow.status || qRow.status === 'draft')) {
+      await sb.from('qz_quotes').update({ status: 'reserved' }).eq('id', quoteData.quote_id);
+    }
+  }
 
   // WhatsApp notification to Gal
-  const editedNote = editedFields.length ? ('\n✏️ לקוח עדכן: ' + editedFields.join(', ')) : '';
-  const msg = encodeURIComponent(
-    '✅ הצעת מחיר אושרה!\n' +
-    '👤 ' + updatedFields.client_name + '\n' +
-    '📅 ' + (updatedFields.event_date || '') + '\n' +
-    '📍 ' + (updatedFields.address || '') + '\n' +
-    '💰 ₪' + (quoteData.price_after_vat || '') + ' כולל מע"מ' +
-    editedNote + '\n' +
-    '🕐 ' + new Date(now).toLocaleString('he-IL')
-  );
+  const msg = isRes
+    ? encodeURIComponent(
+        '📅 תאריך שוריין ואושר על ידי הלקוח!\n' +
+        '👤 ' + quoteData.client_name + '\n' +
+        '📅 ' + (quoteData.event_date || '') + '\n' +
+        '📍 ' + (quoteData.address || '') + '\n' +
+        '🕐 ' + new Date(now).toLocaleString('he-IL')
+      )
+    : encodeURIComponent(
+        '✅ הצעת מחיר אושרה!\n' +
+        '👤 ' + quoteData.client_name + '\n' +
+        '📅 ' + (quoteData.event_date || '') + '\n' +
+        '📍 ' + (quoteData.address || '') + '\n' +
+        '💰 ₪' + (quoteData.price_after_vat || '') + ' כולל מע"מ\n' +
+        '🕐 ' + new Date(now).toLocaleString('he-IL')
+      );
   window.open('https://wa.me/972542031181?text=' + msg, '_blank');
+
+  if (isRes) {
+    setText('successIcon', '📅');
+    setText('successTitle', 'התאריך משוריין!');
+    document.getElementById('successSub').innerHTML =
+      'שמרנו לך את התאריך ביומן. ניצור איתך קשר בהמשך לבניית התפריט ולאישור סופי של ההצעה.<br><br>' +
+      '<strong style="color:var(--navy)">📞 054-203-1181</strong>';
+  }
 
   hide('mainContent');
   show('successState');
@@ -695,10 +502,14 @@ function showError() { hide('loadingState'); show('errorState'); }
 
 function showLocked(ts) {
   hide('loadingState');
+  const isRes = quoteKind === 'reservation';
+  setText('lockedTitle', isRes ? 'התאריך כבר משוריין' : 'ההצעה כבר אושרה');
   if (ts) {
     const d = new Date(ts);
-    document.getElementById('lockedSub').textContent =
-      'הצעה זו נחתמה ב-' + d.toLocaleDateString('he-IL') + ' בשעה ' + d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}) + '.\nלא ניתן לחתום פעמיים.';
+    const when = d.toLocaleDateString('he-IL') + ' בשעה ' + d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('lockedSub').textContent = isRes
+      ? ('התאריך אושר ב-' + when + '.\nהתפריט והמחיר ישלחו בנפרד, בהמשך.')
+      : ('הצעה זו נחתמה ב-' + when + '.\nלא ניתן לחתום פעמיים.');
   }
   show('lockedState');
 }
@@ -712,75 +523,5 @@ function showToast(msg, type='') {
 init();
 </script>
 
-<!-- ══ UNIVERSAL NAV ══ -->
-<div class="unav-overlay" id="unavOverlay" onclick="closeUnav()"></div>
-<div class="unav-menu" id="unavMenu">
-  <div class="unav-title">🍕 Pizza Zmani — ניווט מהיר</div>
-
-  <div class="unav-label">הצעות מחיר</div>
-  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quotes-manager.html" id="nav-quotes-manager">
-    <span class="icon">📋</span>ניהול הצעות מחיר
-  </a>
-  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-builder.html" id="nav-quote-builder">
-    <span class="icon">📝</span>בונה הצעה חדשה
-  </a>
-  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-admin.html" id="nav-quote-admin">
-    <span class="icon">🍽️</span>ניהול תפריט מנות
-  </a>
-
-  <div class="unav-sep"></div>
-  <div class="unav-label">קייטרינג</div>
-  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/catering-order.html" id="nav-catering-order">
-    <span class="icon">🍽️</span>הזמנת קייטרינג
-  </a>
-  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/catering-admin.html" id="nav-catering-admin">
-    <span class="icon">🗂️</span>ניהול קייטרינג
-  </a>
-
-  <div class="unav-sep"></div>
-  <div class="unav-label">מערכות נוספות</div>
-  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-approval.html" id="nav-approval">
-    <span class="icon">✅</span>אישור הצעה (לקוח)
-  </a>
-  <a class="unav-link" href="https://chunkyzz.github.io/pizza-zmani/quote-simulator.html" id="nav-simulator">
-    <span class="icon">🎯</span>סימולציית הצעה (לקוח)
-  </a>
-  <a class="unav-link" href="https://chunkyzz.github.io/amalfi-orders/" id="nav-amalfi">
-    <span class="icon">🥦</span>אמלפי — הזמנת ירקות
-  </a>
-  <a class="unav-link" href="https://chunkyzz.github.io/pizza-order.html/" id="nav-home">
-    <span class="icon">🏠</span>דף הבית — כל המערכות
-  </a>
-</div>
-<button class="unav-btn" onclick="toggleUnav()" title="ניווט מהיר">🍕</button>
-
-<script>
-function toggleUnav(){
-  document.getElementById('unavMenu').classList.toggle('open');
-  document.getElementById('unavOverlay').classList.toggle('open');
-}
-function closeUnav(){
-  document.getElementById('unavMenu').classList.remove('open');
-  document.getElementById('unavOverlay').classList.remove('open');
-}
-// Mark current page
-(function(){
-  const page = window.location.pathname.split('/').pop();
-  const map = {
-    'quotes-manager.html':'nav-quotes-manager',
-    'quote-builder.html':'nav-quote-builder',
-    'quote-admin.html':'nav-quote-admin',
-    'quote-approval.html':'nav-approval',
-    'quote-simulator.html':'nav-simulator',
-    'catering-order.html':'nav-catering-order',
-    'catering-admin.html':'nav-catering-admin',
-  };
-  const id = map[page];
-  if(id){
-    const el=document.getElementById(id);
-    if(el) el.classList.add('current');
-  }
-})();
-</script>
 </body>
 </html>

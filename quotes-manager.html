@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.4.0</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.5.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -73,6 +73,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .badge-draft{background:#F0F0F0;color:#666;}
 .badge-approved{background:#E8F5E9;color:#2E7D32;}
 .badge-pending{background:#FFF3E0;color:#E65100;}
+.badge-reserved{background:#E0F2FE;color:#075985;}
 .badge-past{background:#FFEBEE;color:#B71C1C;}
 .quote-actions{display:flex;gap:6px;flex-shrink:0;}
 
@@ -252,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.4.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.5.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -425,6 +426,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <div class="fg"><label>סטטוס</label>
       <select id="edit-status">
         <option value="draft">טיוטה</option>
+        <option value="reserved">שריון</option>
         <option value="pending">ממתין לאישור</option>
         <option value="approved">מאושר</option>
         <option value="cancelled">מבוטל</option>
@@ -973,8 +975,8 @@ function renderQuotes() {
     const total  = billed + (q.guests_babies||0);
     const dishes = Array.isArray(q.selected_dishes) ? q.selected_dishes.length : 0;
 
-    const statusMap = {draft:'טיוטה',pending:'ממתין',approved:'מאושר',cancelled:'מבוטל',postponed:'נדחה'};
-    const badgeMap  = {draft:'badge-draft',pending:'badge-pending',approved:'badge-approved',cancelled:'badge-past',postponed:'badge-past'};
+    const statusMap = {draft:'טיוטה',reserved:'שריון',pending:'ממתין',approved:'מאושר',cancelled:'מבוטל',postponed:'נדחה'};
+    const badgeMap  = {draft:'badge-draft',reserved:'badge-reserved',pending:'badge-pending',approved:'badge-approved',cancelled:'badge-past',postponed:'badge-past'};
     const status = q.status || 'draft';
 
     return `<div class="quote-card${sel?' selected':''}${isPast?' past':''}" onclick="toggleSelect(${q.id}, event)">
@@ -1205,6 +1207,7 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
 
   await sb.from('quote_approvals').upsert({
     quote_id: quoteId,
+    kind: 'quote',
     client_name: qData.client_name,
     client_phone: qData.client_phone||'',
     event_date: qData.event_date,

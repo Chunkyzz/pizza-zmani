@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.6.2</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.7.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -345,9 +345,10 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-ghost" onclick="generatePDF(true)" title="מדפיס רק את דף התפריט, בלי דף תנאים/דיסקליימר — לעובד בשטח">🧑‍🍳 ייצוא לעובד</button>
     <button class="btn btn-ghost" onclick="syncOnly()" title="מעדכן את הנתונים ל-Supabase (למשל בשביל אמלפי) בלי לשלוח הודעה ללקוח">🔃 עדכן פנימי</button>
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
+    <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.6.2 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1798,6 +1799,58 @@ async function sendApproval(){
   showToast('לינק נוצר ונשלח ✓','success');
 }
 
+// שריון תאריך בלבד — ללקוח שעדיין לא בחר תפריט. לא דורש מנות/מחיר, רק שם+טלפון+תאריך.
+// יוצר רשומת quote_approvals עם kind:'reservation' (מסך אישור קליל, בלי חתימה/מחיר/תפריט — ב-quote-approval.html),
+// כדי שהלקוח רק יוודא שהפרטים נכונים ויאשר שהתאריך אצלנו ביומן. התפריט/המחיר יישלחו לאישור בנפרד, בהמשך.
+async function sendReservation(){
+  const name  = document.getElementById('cl-name').value.trim();
+  const phone = document.getElementById('cl-phone').value.trim();
+  const dateVal = document.getElementById('cl-date').value;
+  if(!name){showToast('נא להזין שם לקוח','error');return;}
+  if(!phone){showToast('נא להזין טלפון','error');return;}
+  if(!dateVal){showToast('נא להזין תאריך אירוע','error');return;}
+
+  await saveQuote(true); // שמירה אוטומטית
+  const quoteId = currentQuoteId;
+  if(!quoteId){showToast('שגיאה בשמירת ההצעה','error');return;}
+
+  // אם כבר קיימת רשומת quote_approvals קודמת (שריון או הצעה) — שומרים אותה כתמונת מצב לפני שדורסים
+  const{data:existingApproval}=await sb.from('quote_approvals').select('*').eq('quote_id',quoteId).maybeSingle();
+  if(existingApproval){
+    await sb.from('qz_approval_history').insert({
+      quote_id:quoteId, snapshot:existingApproval, archived_at:new Date().toISOString()
+    });
+  }
+
+  const g=getGuests();
+  const{error}=await sb.from('quote_approvals').upsert({
+    quote_id:quoteId, kind:'reservation',
+    client_name:name, client_phone:phone,
+    event_date:dateVal||null,
+    event_time:document.getElementById('cl-time').value||null,
+    event_type:getEventType(), address:document.getElementById('cl-address').value,
+    notes:document.getElementById('cl-notes').value,
+    guests_adults:g.adults, guests_kids:g.kids, guests_babies:g.babies,
+    menu_items:[],
+    price_before_vat:null, price_after_vat:null,
+    status:'pending', created_at:new Date().toISOString()
+  }, {onConflict:'quote_id'});
+  if(error){showToast('שגיאה: '+error.message,'error');return;}
+
+  const link='https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id='+quoteId;
+  navigator.clipboard.writeText(link).catch(()=>{});
+  const waPhone=phone.replace(/\D/g,'').replace(/^0/,'972');
+  const dateStr=new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const waMsg=encodeURIComponent(
+    "שלום "+name+"! 🍕\n\n"+
+    "משריינים עבורך את התאריך "+dateStr+" ב-Pizza Zmani.\n"+
+    "התפריט והמחיר הסופי ייקבעו ויישלחו לאישור בנפרד, בהמשך — כרגע רק שומרים את התאריך ביומן.\n\n"+
+    "אנא לחצ/י ואשר/י שהפרטים נכונים:\n"+link
+  );
+  window.open('https://wa.me/'+(waPhone.length>8?waPhone:'972542031181')+'?text='+waMsg,'_blank');
+  showToast('שריון נשלח ✓','success');
+}
+
 // PDF
 async function generatePDF(workerMode){
   updatePreview();
@@ -2202,6 +2255,7 @@ checkAuth();
     <button class="btn-cancel-changes" onclick="reloadQuote()">↩️ בטל</button>
     <button class="btn-cancel-changes" onclick="deleteCurrentQuote()" style="background:rgba(220,38,38,0.25);border-color:rgba(220,38,38,0.5);">🗑️ מחק</button>
     <button class="btn-cancel-changes" onclick="sendApproval()" style="background:rgba(46,107,79,0.3);border-color:rgba(46,107,79,0.6);">📨 שלח לאישור</button>
+    <button class="btn-cancel-changes" onclick="sendReservation()" style="background:rgba(3,105,161,0.3);border-color:rgba(3,105,161,0.6);" title="שריון תאריך בלבד, בלי תפריט או מחיר">📅 שלח לשריון</button>
     <button class="btn-cancel-changes" onclick="openAmalfiFromEdit()" style="background:rgba(8,145,178,0.25);border-color:rgba(8,145,178,0.5);">🥦 אמלפי</button>
     <button class="btn-cancel-changes" onclick="generatePDF()" style="background:rgba(201,168,76,0.25);border-color:rgba(201,168,76,0.5);">📄 PDF</button>
     <button class="btn-cancel-changes" onclick="generatePDF(true)" title="מדפיס רק את דף התפריט, בלי תנאים — לעובד בשטח">🧑‍🍳 לעובד</button>
