@@ -106,7 +106,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-logo">🍕 Pizza Zmani</div>
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title" id="headerTitle">אישור הצעת מחיר</div>
-  <div class="version">v1.2.0 — נוסף מסלול "אישור שריון תאריך"</div>
+  <div class="version">v1.2.1 — תוקן באג "[object Object]" בתצוגת התפריט ללקוח</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -350,14 +350,39 @@ function fillData(d) {
   setText('d-deposit',    '₪' + deposit.toLocaleString());
   setText('cb1-price',    '₪' + afterVat.toLocaleString());
 
-  // Menu items
+  // Menu items — menu_items הם אובייקטים עשירים (name, name_it, description, category, category_it, allergens, note),
+  // לא מחרוזות (מאז שquote-builder/quotes-manager עברו לתפריט "עשיר") — לפני התיקון זה הודפס כ-"[object Object]".
+  // מקובצים לפי קטגוריה כדי שהתצוגה תהיה קריאה, בדומה ל-PDF.
   if (d.menu_items && d.menu_items.length) {
     const menuEl = document.getElementById('d-menu');
-    menuEl.innerHTML = d.menu_items.map(item =>
-      '<div style="padding:7px 0;border-bottom:1px solid #F0EDE5;font-size:0.86rem;color:var(--navy);display:flex;justify-content:space-between;">' +
-        '<span>' + item + '</span>' +
-      '</div>'
-    ).join('').replace(/border-bottom[^;]+;(?=[^<]*<\/div>\s*$)/, '');
+    const byCat = {}, catOrder = [];
+    d.menu_items.forEach(item => {
+      const cat = (item && typeof item === 'object' && item.category) || 'תפריט';
+      if (!byCat[cat]) { byCat[cat] = []; catOrder.push(cat); }
+      byCat[cat].push(item);
+    });
+    let html = '';
+    catOrder.forEach(cat => {
+      const items = byCat[cat];
+      const catIt = items[0] && items[0].category_it ? items[0].category_it : '';
+      html += '<div style="font-family:\'Frank Ruhl Libre\',serif;font-size:0.8rem;font-weight:700;color:var(--navy);border-bottom:1.5px solid var(--gold);padding-bottom:3px;margin:10px 0 4px;">'
+        + cat + (catIt ? ' <span style="font-size:0.68rem;color:#bbb;font-weight:400;font-style:italic;">' + catIt + '</span>' : '')
+        + '</div>';
+      items.forEach(item => {
+        const isObj = item && typeof item === 'object';
+        const name = isObj ? (item.name || '') : String(item);
+        const nameIt = isObj && item.name_it ? item.name_it : '';
+        const desc = isObj && item.description ? item.description : '';
+        html += '<div style="padding:6px 0;border-bottom:1px solid #F0EDE5;font-size:0.86rem;color:var(--navy);">'
+          + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'
+          + '<span style="font-weight:600;">' + name + '</span>'
+          + (nameIt ? '<span style="font-size:0.72rem;color:#bbb;font-style:italic;">' + nameIt + '</span>' : '')
+          + '</div>'
+          + (desc ? '<div style="font-size:0.76rem;color:var(--muted);margin-top:1px;">' + desc + '</div>' : '')
+          + '</div>';
+      });
+    });
+    menuEl.innerHTML = html;
     show('menuCard');
   }
 
