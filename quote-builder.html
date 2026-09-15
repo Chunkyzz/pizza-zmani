@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.6.1</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.6.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -347,7 +347,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn btn-green" onclick="sendApproval()">📨 שלח</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.6.1 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.6.2 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -501,6 +501,9 @@ body.edit-mode-active{padding-bottom:64px;}
             <button type="button" id="reset-final-kid" onclick="resetFinalPrice('kid')" title="חזרה לחישוב אוטומטי" style="display:none;background:none;border:none;cursor:pointer;font-size:0.9rem;color:var(--muted);">↺</button>
           </span>
         </div>
+        <div style="display:none;justify-content:space-between;align-items:center;font-size:0.75rem;color:var(--green);padding:2px 0;font-weight:600;gap:6px;" id="disp-flatextras-row">
+          <span id="disp-flatextras-label">✚ תוספות מיוחדות</span><span id="disp-flatextras-note">—</span>
+        </div>
         <div style="display:none;justify-content:space-between;font-size:0.72rem;color:#B8860B;padding:2px 0;" id="disp-min-row">
           <span>⚠️ הובא למינימום אירוע (₪3,000)</span><span id="disp-min-note" style="font-weight:600;">—</span>
         </div>
@@ -601,6 +604,7 @@ body.edit-mode-active{padding-bottom:64px;}
 
         <!-- TOTALS -->
         <div class="pdf-totals" id="priceBlock">
+          <div class="pdf-total-row" id="t-flatextras-row" style="display:none;"><span id="t-flatextras-label">תוספות מיוחדות</span><span id="t-flatextras">—</span></div>
           <div class="pdf-total-row"><span>סה"כ לפני מע"מ</span><span id="t-subtotal">—</span></div>
           <div class="pdf-total-row" id="t-vat-row"><span>מע"מ (18%)</span><span id="t-vat">—</span></div>
           <div class="pdf-total-row grand divider"><span>💰 סה"כ לתשלום</span><span id="t-grand">—</span></div>
@@ -1161,6 +1165,12 @@ function togglePriceOverride() {
 // ── מחיר סופי לאדם/לילד — עקיפה ידנית נפרדת, לתיקוני מקרים חריגים ──
 // (הנחת ילדים גדולה יותר, הנחה על מנה, מנה במתנה, הורדת חלק מהילדים מהחישוב וכו')
 // עדיפות נמוכה מ"עקיפת מחיר כוללת" (chk-override) אבל גבוהה מהחישוב האוטומטי.
+// מ-v2.6.2: "מנות במחיר קבוע" (טירמיסו/סלמון/מלבי — flatExtras) ממשיכות להתווסף תמיד
+// מעל המחיר לאדם/לילד (גם כשהוא מוזן ידנית) — בדיוק כדי לתמוך במקרה הנפוץ: הצעה כבר
+// נשלחה במחיר נקי לאדם, ואז הלקוח מבקש תוספת (למשל טירמיסו) — זו מתווספת כסכום נפרד,
+// בלי "לקלקל" את המספר העגול לאדם. אבל התוספת הזו כבר לא שקטה: היא תמיד מוצגת כשורה
+// נפרדת וברורה — "תוספות מיוחדות" — גם למי שבונה (disp-flatextras-row) וגם ללקוח עצמו
+// (t-flatextras-row בתצוגה/PDF), עם שם המנה, כדי שאף אחד לא יופתע מהסכום הסופי.
 let finalPriceOverride = { adult: null, kid: null };
 
 function onFinalPriceInput(which) {
@@ -1194,7 +1204,7 @@ function computeBaseRates() {
   const hasPizzas = sel.some(d => d.category === 'פיצות' && d.name !== 'מאפייה מהטאבון');
   const pizzaRate = hasPizzas ? (dishPriceOverrides['pizza'] !== undefined ? dishPriceOverrides['pizza'] : 100) : 0;
 
-  let adultExtra = 0, kidExtra = 0, flatExtras = 0;
+  let adultExtra = 0, kidExtra = 0, flatExtras = 0, flatExtraNames = [];
 
   sel.forEach(d => {
     if (d.category === 'פיצות') return; // מחיר פיצות כבר חושב
@@ -1209,7 +1219,9 @@ function computeBaseRates() {
     }
     if (d.base_price) {
       // מחיר קבוע למנה (לא לפי אדם) — למשל דג כבוש, טירמיסו, מלבי. לא מושפע מ"מנת ילדים".
+      // תמיד מוצגת בנפרד כ"תוספות מיוחדות" (לא נספגת בשקט) — ראו getFinalTotals.
       flatExtras += d.base_price;
+      flatExtraNames.push(d.name);
     } else {
       const rate = d.addon_per_person || 0;
       adultExtra += rate;
@@ -1267,7 +1279,7 @@ function computeBaseRates() {
   const kidPerPersonRaw = pizzaRate + kidExtra;
   const kidPerPerson = Math.floor(kidPerPersonRaw * 0.85); // הנחת 15% — מעוגל למטה לפי בקשה מפורשת
 
-  return { pizzaRate, adultExtra, kidExtra, adultPerPerson, kidPerPerson, flatExtras };
+  return { pizzaRate, adultExtra, kidExtra, adultPerPerson, kidPerPerson, flatExtras, flatExtraNames };
 }
 
 // מפעיל את חוק מינימום האירוע (₪3,000 לפני מע"מ): רצפה פשוטה על הסה"כ הטבעי.
@@ -1293,7 +1305,7 @@ function applyMinimumEvent(rates, g) {
 function getAutoSubtotal() {
   const g = getGuests();
   const billed = g.adults + g.kids;
-  if (!billed) return {sub:0, pizzas:0, addons:0, kDisc:0, adultPerPerson:0, kidPerPerson:0, flatExtras:0, minApplied:false, minTopUp:0, naturalTotal:0};
+  if (!billed) return {sub:0, pizzas:0, addons:0, kDisc:0, adultPerPerson:0, kidPerPerson:0, flatExtras:0, flatExtraNames:[], minApplied:false, minTopUp:0, naturalTotal:0};
 
   const rates = computeBaseRates();
   const { sub, naturalTotal, minApplied, minTopUp } = applyMinimumEvent(rates, g);
@@ -1305,15 +1317,24 @@ function getAutoSubtotal() {
 
   return {
     sub, pizzas, addons, kDisc,
-    adultPerPerson: rates.adultPerPerson, kidPerPerson: rates.kidPerPerson, flatExtras: rates.flatExtras,
+    adultPerPerson: rates.adultPerPerson, kidPerPerson: rates.kidPerPerson,
+    flatExtras: rates.flatExtras, flatExtraNames: rates.flatExtraNames,
     minApplied, minTopUp, naturalTotal
   };
 }
 
 // מחזיר את המחיר הסופי בפועל, לפי סדר עדיפות:
-// 1. עקיפת מחיר כוללת (chk-override) — מחליפה הכל.
+// 1. עקיפת מחיר כוללת (chk-override) — מחליפה הכל, כולל flatExtras (מספר אחד, סופי).
 // 2. עקיפת מחיר סופי לאדם/לילד שהוזנה ידנית — אם הוזן לפחות אחד מהם.
 // 3. חישוב אוטומטי (כולל מינימום אירוע).
+//
+// מ-v2.6.2: "מנות במחיר קבוע" (flatExtras — טירמיסו/סלמון/מלבי) ממשיכות להתווסף תמיד
+// מעל המחיר לאדם/לילד, גם כשהוא מוזן ידנית (מצב 2) — כדי שתוספת שמבקש הלקוח אחרי
+// ששלחת הצעה במחיר עגול לאדם (למשל 200) תוסיף לסכום בלי "לקלקל" את ה-200 עצמו.
+// ההבדל מהגרסה הקודמת: הסכום הזה כבר לא שקט — הוא תמיד מופיע כשורה נפרדת וברורה
+// "תוספות מיוחדות" (שם המנה + הסכום) גם בבונה (disp-flatextras-row) וגם בתצוגה/PDF
+// שהלקוח רואה (t-flatextras-row) — בדיוק מה שקרה ב-17.9.2026 (24×200 + 10×100 + טירמיסו
+// ₪250 = 6,050) עכשיו מוסבר בבירור במקום להיעלם בתוך הסכום הסופי.
 function getFinalTotals() {
   const g = getGuests();
   const useOverride = document.getElementById('chk-override') && document.getElementById('chk-override').checked;
@@ -1376,6 +1397,21 @@ function calcAutoPrice() {
   }
   const pcRow = document.getElementById('disp-per-child-row');
   if (pcRow) pcRow.style.display = (g.kids > 0) ? '' : 'none';
+
+  // "תוספות מיוחדות" — מנות במחיר קבוע (flatExtras) — תמיד מוצגות כשקיימות בתפריט,
+  // כדי שהתוספת מעל המחיר לאדם/לילד (אוטומטי או ידני) תהיה גלויה ולא תפתיע.
+  const feRow = document.getElementById('disp-flatextras-row');
+  const feNote = document.getElementById('disp-flatextras-note');
+  const feLabel = document.getElementById('disp-flatextras-label');
+  if (feRow && feNote) {
+    if (r.flatExtras > 0) {
+      feRow.style.display = 'flex';
+      if (feLabel) feLabel.textContent = '✚ תוספות מיוחדות' + (r.flatExtraNames && r.flatExtraNames.length ? ' (' + r.flatExtraNames.join(', ') + ')' : '');
+      feNote.textContent = '+₪' + Math.round(r.flatExtras).toLocaleString();
+    } else {
+      feRow.style.display = 'none';
+    }
+  }
 
   // הערת מינימום אירוע — רק כשהחישוב האוטומטי הוא זה שקובע בפועל
   const minRow  = document.getElementById('disp-min-row');
@@ -1536,6 +1572,19 @@ function updatePreview() {
   document.getElementById('priceBlock').style.display=hidePrices?'none':'';
   if(!hidePrices){
     const showVat = document.getElementById('show-vat-row')?.checked !== false;
+    const feRow2 = document.getElementById('t-flatextras-row');
+    const feLabel2 = document.getElementById('t-flatextras-label');
+    const flatEx = ft2.auto.flatExtras || 0;
+    const flatNames = ft2.auto.flatExtraNames || [];
+    if (feRow2) {
+      if (flatEx > 0) {
+        feRow2.style.display = '';
+        if (feLabel2) feLabel2.textContent = 'תוספות מיוחדות' + (flatNames.length ? ' (' + flatNames.join(', ') + ')' : '');
+        document.getElementById('t-flatextras').textContent = fmt2(flatEx);
+      } else {
+        feRow2.style.display = 'none';
+      }
+    }
     document.getElementById('t-subtotal').textContent=fmt2(sub);
     document.getElementById('t-vat').textContent=includeVat?fmt2(vat2):'—';
     document.getElementById('t-vat-row').style.display=(includeVat&&showVat)?'':'none';
@@ -1550,6 +1599,8 @@ function updatePreview() {
 function clearTotals(){
   ['t-subtotal','t-vat','t-grand','t-deposit'].forEach(id=>document.getElementById(id).textContent='—');
   document.getElementById('t-per-person').textContent='';
+  const feRow2 = document.getElementById('t-flatextras-row');
+  if (feRow2) feRow2.style.display = 'none';
 }
 
 // SAVE
@@ -1848,10 +1899,13 @@ async function generatePDF(workerMode){
   const pNote   = (document.getElementById('price-note')?.value||'').trim();
   const perAdult = Math.round(ftPdf.adultPerPerson);
   const perKid   = Math.round(ftPdf.kidPerPerson);
+  const flatEx   = Math.round(ftPdf.auto.flatExtras || 0);
+  const flatNames = ftPdf.auto.flatExtraNames || [];
   return `
     <div style="background:#F8F5EE;border-radius:6px;padding:8px 12px;margin-top:10px;">
       ${showPA&&perAdult>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר למבוגר לאדם</span><span style="font-weight:600;">₪${perAdult.toLocaleString()}</span></div>`:''}
       ${showPK&&perKid>0&&g.kids>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר לילד לאדם</span><span style="font-weight:600;">₪${perKid.toLocaleString()}</span></div>`:''}
+      ${flatEx>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>תוספות מיוחדות${flatNames.length?' ('+flatNames.join(', ')+')':''}</span><span style="font-weight:600;">₪${flatEx.toLocaleString()}</span></div>`:''}
       ${showBV&&sub>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>סה"כ לפני מע"מ</span><span style="font-weight:600;">₪${Math.round(sub).toLocaleString()}</span></div>`:''}
       ${includeVat&&showVat?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מע"מ (18%)</span><span style="font-weight:600;">₪${Math.round(vat).toLocaleString()}</span></div>`:''}
       ${showGT&&grand>0?`<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#C9A84C;padding-top:5px;margin-top:3px;border-top:1px solid #DDD;"><span>💰 סה"כ לתשלום</span><span>₪${Math.round(grand).toLocaleString()}</span></div>`:''}
