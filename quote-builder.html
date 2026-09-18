@@ -348,7 +348,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.1 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1765,7 +1765,7 @@ async function syncApprovalData(){
   const grand=sub+(includeVat?sub*0.18:0);
   const quoteId = currentQuoteId; // מזהה קבוע של ההצעה — אותו לינק תמיד, מתעדכן בכל שליחה חוזרת (לא נוצר לינק חדש כל פעם)
   const{error}=await sb.from('quote_approvals').upsert({
-    quote_id:quoteId,client_name:name,
+    quote_id:quoteId,kind:'quote',client_name:name,
     client_phone:document.getElementById('cl-phone').value,
     event_date:document.getElementById('cl-date').value||null,
     event_time:document.getElementById('cl-time').value||null,
