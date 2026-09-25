@@ -107,7 +107,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title" id="headerTitle">אישור הצעת מחיר</div>
   <!-- v1.2.1: תוקן באג תצוגה שהדפיס "[object Object]" בתפריט (menu_items עבר לאובייקטים עשירים) -->
-  <div class="version">v1.2.1</div>
+  <div class="version">v1.2.2</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -488,13 +488,15 @@ async function submitApproval() {
   }
 
   // WhatsApp notification to Gal
+  const calLink = isRes ? buildReservationCalendarLink(quoteData) : '';
   const msg = isRes
     ? encodeURIComponent(
         '📅 תאריך שוריין ואושר על ידי הלקוח!\n' +
         '👤 ' + quoteData.client_name + '\n' +
         '📅 ' + (quoteData.event_date || '') + '\n' +
         '📍 ' + (quoteData.address || '') + '\n' +
-        '🕐 ' + new Date(now).toLocaleString('he-IL')
+        '🕐 ' + new Date(now).toLocaleString('he-IL') +
+        (calLink ? '\n\n📅 הוסף ליומן:\n' + calLink : '')
       )
     : encodeURIComponent(
         '✅ הצעת מחיר אושרה!\n' +
@@ -517,6 +519,31 @@ async function submitApproval() {
   hide('mainContent');
   show('successState');
   hide('loadingState');
+}
+
+// קישור יומן גוגל לשריון — אותו פורמט כמו כפתור 📅 בניהול: "🍕 שם – שריון אירוע"
+function buildReservationCalendarLink(d) {
+  if (!d.event_date) return '';
+  const startTime = d.event_time ? d.event_time.slice(0,5) : '19:00';
+  const startDt = new Date(d.event_date + 'T' + startTime + ':00');
+  const endDt = new Date(startDt.getTime() + 3*60*60*1000);
+  const fmt = x => x.getFullYear() + String(x.getMonth()+1).padStart(2,'0') + String(x.getDate()).padStart(2,'0')
+             + 'T' + String(x.getHours()).padStart(2,'0') + String(x.getMinutes()).padStart(2,'0') + '00';
+  const details = [
+    '👤 ' + (d.client_name || '—'),
+    d.client_phone ? '📞 ' + d.client_phone : '',
+    d.event_type ? '🎉 ' + d.event_type : '',
+    '',
+    'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + d.quote_id
+  ].filter(Boolean).join('\n');
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: '🍕 ' + (d.client_name || 'לקוח') + ' – שריון אירוע',
+    dates: fmt(startDt) + '/' + fmt(endDt),
+    details: details,
+    location: d.address || ''
+  });
+  return 'https://calendar.google.com/calendar/render?' + params.toString();
 }
 
 // ── HELPERS ──

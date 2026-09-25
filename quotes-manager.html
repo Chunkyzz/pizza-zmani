@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.5.0</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.5.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -253,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.5.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.5.1<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -1259,7 +1259,9 @@ function openCalendarInvite(quoteId) {
   const total  = billed + (q.guests_babies||0);
   const menuLink = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + q.id;
 
-  const title = '🍕 ' + (q.event_type || 'קייטרינג') + ' – ' + (q.client_name || 'לקוח');
+  // שם הלקוח ראשון. בשריון: "שריון אירוע"; אחרי סגירה: סוג האירוע
+  const kindLabel = q.status === 'reserved' ? 'שריון אירוע' : (q.event_type || 'קייטרינג');
+  const title = '🍕 ' + (q.client_name || 'לקוח') + ' – ' + kindLabel;
 
   const detailsLines = [
     '👤 ' + (q.client_name || '—'),
