@@ -348,7 +348,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.1 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.2 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1205,7 +1205,7 @@ function computeBaseRates() {
   const hasPizzas = sel.some(d => d.category === 'פיצות' && d.name !== 'מאפייה מהטאבון');
   const pizzaRate = hasPizzas ? (dishPriceOverrides['pizza'] !== undefined ? dishPriceOverrides['pizza'] : 100) : 0;
 
-  let adultExtra = 0, kidExtra = 0, flatExtras = 0, flatExtraNames = [];
+  let adultExtra = 0, kidExtra = 0, flatExtras = 0, flatExtraNames = [], serviceExtras = 0;
 
   sel.forEach(d => {
     if (d.category === 'פיצות') return; // מחיר פיצות כבר חושב
@@ -1223,6 +1223,8 @@ function computeBaseRates() {
       // תמיד מוצגת בנפרד כ"תוספות מיוחדות" (לא נספגת בשקט) — ראו getFinalTotals.
       flatExtras += d.base_price;
       flatExtraNames.push(d.name);
+      // "שונות" (מלצר וכו') = שירות שהלקוח ביקש, לא אוכל — מתווסף מעל מינימום האירוע
+      if (d.category === 'שונות') serviceExtras += d.base_price;
     } else {
       const rate = d.addon_per_person || 0;
       adultExtra += rate;
@@ -1280,7 +1282,7 @@ function computeBaseRates() {
   const kidPerPersonRaw = pizzaRate + kidExtra;
   const kidPerPerson = Math.floor(kidPerPersonRaw * 0.85); // הנחת 15% — מעוגל למטה לפי בקשה מפורשת
 
-  return { pizzaRate, adultExtra, kidExtra, adultPerPerson, kidPerPerson, flatExtras, flatExtraNames };
+  return { pizzaRate, adultExtra, kidExtra, adultPerPerson, kidPerPerson, flatExtras, flatExtraNames, serviceExtras };
 }
 
 // מפעיל את חוק מינימום האירוע (₪3,000 לפני מע"מ): רצפה פשוטה על הסה"כ הטבעי.
@@ -1295,10 +1297,14 @@ function applyMinimumEvent(rates, g) {
 
   const naturalTotal = g.adults * rates.adultPerPerson + g.kids * rates.kidPerPerson + rates.flatExtras;
 
-  if (naturalTotal >= MIN_EVENT_PRICE) {
+  // מ-v2.7.2: שירותים (קטגוריית "שונות", למשל מלצר) לא נספרים לרצפה — תמיד מתווספים מעליה
+  const service = rates.serviceExtras || 0;
+  const foodTotal = naturalTotal - service;
+
+  if (foodTotal >= MIN_EVENT_PRICE) {
     return { sub: naturalTotal, naturalTotal, minApplied: false, minTopUp: 0 };
   }
-  return { sub: MIN_EVENT_PRICE, naturalTotal, minApplied: true, minTopUp: MIN_EVENT_PRICE - naturalTotal };
+  return { sub: MIN_EVENT_PRICE + service, naturalTotal, minApplied: true, minTopUp: MIN_EVENT_PRICE - foodTotal };
 }
 
 // חישוב אוטומטי מלא (ללא עקיפות ידניות). משמר שדות legacy (pizzas/addons/kDisc)
