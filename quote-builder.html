@@ -353,7 +353,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.7 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.8 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -871,6 +871,21 @@ function markChangedDishes() {
   });
 }
 
+// מ-v2.7.8: בטעינת הצעה שמורה — אם הסה"כ שמחושב עכשיו שונה מהסה"כ שנשמר, מציג אזהרה.
+// לא חוסם כלום, רק מתריע (סגירה ב-✕).
+function checkSavedTotal(savedSub) {
+  if (savedSub === null || savedSub === undefined) return;
+  const nowSub = Math.round(getFinalTotals().sub);
+  const old = document.getElementById('total-diff-banner'); if (old) old.remove();
+  if (Math.abs(nowSub - Math.round(savedSub)) <= 1) return;
+  const el = document.createElement('div');
+  el.id = 'total-diff-banner';
+  el.style.cssText = 'position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:9999;background:#B71C1C;color:#fff;font-weight:700;font-size:1rem;padding:12px 18px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.3);display:flex;gap:14px;align-items:center;direction:rtl;max-width:92vw;';
+  el.innerHTML = '<span>⚠️ המחיר השתנה מאז השמירה: ₪' + Math.round(savedSub).toLocaleString() + ' ← ₪' + nowSub.toLocaleString() + ' (לפני מע"מ). בדוק לפני שליחה ללקוח.</span>' +
+    '<button onclick="this.parentElement.remove()" style="background:none;border:1.5px solid #fff;color:#fff;border-radius:6px;cursor:pointer;font-size:0.9rem;padding:2px 9px;">✕</button>';
+  document.body.appendChild(el);
+}
+
 async function loadExistingQuote(id) {
   const { data, error } = await sb.from('qz_quotes').select('*').eq('id', id).single();
   if (error || !data) { showToast('לא נמצאה הצעה', 'error'); return; }
@@ -969,6 +984,7 @@ async function loadExistingQuote(id) {
   setTimeout(() => {
     snapshotOriginal();
     markChangedFields();
+    checkSavedTotal(data.total_before_vat);
   }, 300);
 
   // Update title
