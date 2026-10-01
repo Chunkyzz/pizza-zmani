@@ -348,7 +348,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.2 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.3 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1049,7 +1049,7 @@ function renderDishes() {
             '<div class="dish-price-addon" id="dpo-show-'+d.id+'">'+(d.addon_per_person?'+₪'+d.addon_per_person+'/אדם':(d.category==='פיצות'?'₪100/אדם':(d.category==='סלטים'?'₪20/אדם':'')))+'</div>':''
           ) +
           '<div class="dish-price-override" id="dpo-wrap-'+d.id+'" style="display:none;">' +
-            '<input type="number" class="dpo-input" id="dpo-'+d.id+'" placeholder="₪/אדם" min="0" step="1" ' +
+            '<input type="number" class="dpo-input" id="dpo-'+d.id+'" placeholder="'+(d.base_price?'₪ קבוע':'₪/אדם')+'" min="0" step="0.1" ' +
             'onclick="event.stopPropagation()" oninput="setDishOverride('+d.id+',this.value)">' +
           '</div>' +
           '<button class="dpo-btn" id="dpo-btn-'+d.id+'" onclick="toggleDishOverride('+d.id+',event)" title="שנה מחיר">✏️</button>' +
@@ -1213,18 +1213,20 @@ function computeBaseRates() {
     if (d.name === 'מאפייה מהטאבון') return; // נחשב בנפרד למטה
     const ov = dishPriceOverrides[d.id];
     const kidsOk = d.kids_priced !== false; // ברירת מחדל: ילדים כן מחויבים, אלא אם סומן "מנת ילדים" כבוי
-    if (ov !== undefined) {
+    // מ-v2.7.3: במנה עם מחיר קבוע (base_price) — העקיפה מחליפה את המחיר הקבוע, לא ₪/אדם
+    if (ov !== undefined && !d.base_price) {
       adultExtra += ov;
       if (kidsOk) kidExtra += ov;
       return;
     }
     if (d.base_price) {
+      const flat = ov !== undefined ? ov : d.base_price;
       // מחיר קבוע למנה (לא לפי אדם) — למשל דג כבוש, טירמיסו, מלבי. לא מושפע מ"מנת ילדים".
       // תמיד מוצגת בנפרד כ"תוספות מיוחדות" (לא נספגת בשקט) — ראו getFinalTotals.
-      flatExtras += d.base_price;
+      flatExtras += flat;
       flatExtraNames.push(d.name);
       // "שונות" (מלצר וכו') = שירות שהלקוח ביקש, לא אוכל — מתווסף מעל מינימום האירוע
-      if (d.category === 'שונות') serviceExtras += d.base_price;
+      if (d.category === 'שונות') serviceExtras += flat;
     } else {
       const rate = d.addon_per_person || 0;
       adultExtra += rate;
