@@ -353,7 +353,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.8 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.9 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1000,13 +1000,15 @@ function setGuestVal(type, val) {
   if (el) el.value = val;
 }
 
+const CLASSIC_PIZZAS = ['פיצה אדומה','פיצה ירוקה','פיצה צהובה','פיצה סגולה','פיצה לבנה'];
 async function loadData() {
   const {data:cats,error:ce} = await sb.from('qz_categories').select('*').order('sort_order');
   allCats = (!ce && cats && cats.length) ? cats : getDefaultCats();
   const {data:dishes,error:de} = await sb.from('qz_dishes').select('*').eq('is_active',true).order('category');
   allDishes = (!de && dishes && dishes.length) ? dishes : getDemoMenu();
   allDishes.forEach(d => {
-    if (d.category === 'פיצות' && d.name !== 'מאפייה מהטאבון') selectedDishes.add(d.id);
+    // מ-v2.7.9: סימון אוטומטי רק ל-5 הפיצות הוותיקות
+    if (CLASSIC_PIZZAS.includes(d.name)) selectedDishes.add(d.id);
     if (d.name === 'קלצונה מתוק') selectedDishes.add(d.id);
   });
   renderCatTabs();
@@ -1083,6 +1085,10 @@ function renderDishes() {
           '<div id="dpo-area-'+d.id+'">'+dishPriceAreaHTML(d)+'</div>' +
         '</div>' +
         (DISH_SUBOPTIONS[d.name]?'<div class="dish-subopts" id="so-'+d.id+'" onclick="event.stopPropagation()"></div>':'') +
+        (d.name.includes('ללא גלוטן') && sel ?
+          '<div style="padding:4px 8px 2px;display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;color:var(--navy);" onclick="event.stopPropagation()">👥 כמה סועדים: ' +
+          '<input type="number" min="0" step="1" value="'+((dishSubOpts[d.id]||{})._count||'')+'" oninput="setDishCount('+d.id+',this.value)" onclick="event.stopPropagation()" ' +
+          'style="width:70px;font-size:1rem;font-weight:700;padding:5px 7px;border:1.5px solid var(--gold);border-radius:7px;background:#FFFDF5;font-family:inherit;color:var(--navy);"></div>' : '') +
         '<div style="padding:0 8px 6px;" onclick="event.stopPropagation()">' +
           '<span class="note-toggle" onclick="toggleNote('+d.id+',event)">+ הערה למנה</span>' +
           '<textarea class="dish-note-area" id="dn-'+d.id+'" placeholder="הערה ספציפית ללקוח..." oninput="saveNote('+d.id+',this.value,event)"></textarea>' +
@@ -1704,8 +1710,17 @@ function getSubOptLabelClient(d){
   return labels.length ? ('רוטב: '+labels.join(', ')) : '';
 }
 // returns the free-text note for a dish (trimmed) or '' if none
+// מ-v2.7.9: מנות "ללא גלוטן" — מספר סועדים (נשמר ב-dish_subopts[id]._count) מוצג כחלק מההערה
+function setDishCount(dishId, val){
+  const n = parseInt(val, 10);
+  if(!dishSubOpts[dishId]) dishSubOpts[dishId] = {};
+  if(n > 0) dishSubOpts[dishId]._count = n; else delete dishSubOpts[dishId]._count;
+  if(currentMode !== 'build') updatePreview();
+}
 function getDishNote(d){
-  return (dishNotes[d.id]||'').trim();
+  const c = (dishSubOpts[d.id]||{})._count;
+  const note = (dishNotes[d.id]||'').trim();
+  return [c ? c+' סועדים' : '', note].filter(Boolean).join(' · ');
 }
 
 function toggleSubOpt(dishId,optId,multi,event){
