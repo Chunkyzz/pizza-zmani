@@ -348,7 +348,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.4 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.5 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1228,7 +1228,11 @@ function computeBaseRates() {
       // "שונות" (מלצר וכו') = שירות שהלקוח ביקש, לא אוכל — מתווסף מעל מינימום האירוע
       if (d.category === 'שונות') serviceExtras += flat;
     } else {
-      const rate = d.addon_per_person || 0;
+      let rate = d.addon_per_person || 0;
+      // מ-v2.7.5: מינימום כמות (min_guests, למשל קינוחים — 30). מתחת למינימום, העלות של
+      // המינימום מתחלקת על האורחים בפועל ונכנסת למחיר לאדם (לא שורה נפרדת).
+      const gq = getGuests(), billedNow = gq.adults + gq.kids;
+      if (d.min_guests && billedNow > 0 && billedNow < d.min_guests) rate = rate * d.min_guests / billedNow;
       adultExtra += rate;
       if (kidsOk) kidExtra += rate;
     }
