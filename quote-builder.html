@@ -165,12 +165,17 @@ body.view-split .split-layout{display:grid;grid-template-columns:380px 1fr;min-h
 .pdf-dish-desc{font-size:0.68rem;color:#666;margin-top:1px;}
 .pdf-dish-allergy{font-size:0.62rem;color:#B71C1C;margin-top:1px;}
 .pdf-dish-subopt{font-size:0.66rem;color:#2E6B4F;font-weight:600;margin-top:1px;}
-.dish-price-override{margin-top:3px;}
-.dpo-input{width:72px;font-size:0.75rem;padding:3px 6px;border:1.5px solid var(--gold);border-radius:5px;background:#FFFDF5;font-family:inherit;color:var(--navy);outline:none;}
-.dpo-btn{background:none;border:none;cursor:pointer;font-size:0.75rem;padding:1px 3px;opacity:0.4;transition:opacity 0.15s;display:block;margin-top:2px;}
+.dish-price-override{margin-top:5px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.dpo-input{width:100px;font-size:1rem;font-weight:700;padding:7px 8px;border:1.5px solid var(--gold);border-radius:5px;background:#FFFDF5;font-family:inherit;color:var(--navy);outline:none;}
+.dpo-btn{background:#FFFDF5;border:1.5px solid var(--gold);color:var(--navy);border-radius:7px;cursor:pointer;font-family:inherit;font-size:0.8rem;font-weight:600;padding:5px 10px;display:block;margin-top:5px;white-space:nowrap;}
+.dpo-ok{background:var(--green);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:700;padding:7px 12px;}
+.dpo-clear{background:none;border:1.5px solid #ccc;color:#888;border-radius:7px;cursor:pointer;font-family:inherit;font-size:0.8rem;padding:6px 9px;}
+.dpo-locked{display:inline-block;margin-top:5px;background:#FFF3CC;border:2px solid var(--gold);color:#7A5200;border-radius:7px;font-size:0.85rem;font-weight:700;padding:5px 10px;cursor:pointer;white-space:nowrap;}
+.dpo-hint{font-size:0.65rem;color:var(--muted);margin-top:2px;}
 .dpo-btn:hover{opacity:1;}
 .dpo-btn.active{opacity:1;color:var(--gold);}
-.dish-price-addon.overridden{text-decoration:line-through;opacity:0.4;font-size:0.65rem;}
+.dish-price-addon.overridden,.dish-price-base.overridden{display:none;}
+.dpo-reset{background:none;border:1.5px solid #ccc;color:#666;border-radius:7px;cursor:pointer;font-size:0.85rem;padding:4px 8px;margin-top:5px;margin-right:4px;}
 .pdf-dish-note{display:inline-block;margin-top:4px;background:#FFF3CC;color:#7A5200;font-size:0.65rem;font-weight:600;padding:2px 8px;border-radius:5px;border:2px solid #C9A84C;}
 
 /* PDF SINGLE ROW (for fish etc) */
@@ -348,7 +353,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.6 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.7 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -913,6 +918,12 @@ async function loadExistingQuote(id) {
   if (data.dish_notes && typeof data.dish_notes === 'object') {
     dishNotes = data.dish_notes;
   }
+  // מ-v2.7.7: שינויי מחיר למנה (✏️) נשמרים בהצעה
+  if (data.dish_price_overrides && typeof data.dish_price_overrides === 'object') {
+    dishPriceOverrides = {};
+    Object.keys(data.dish_price_overrides).forEach(k => { dishPriceOverrides[isNaN(k) ? k : Number(k)] = Number(data.dish_price_overrides[k]); });
+    renderDishes();
+  }
   // מציג בפועל את הצ'יפים/הערות שכבר היו בחורים על כל מנה שכבר נבחרה בהצעה הזו
   selectedDishes.forEach(id => {
     const dish = allDishes.find(d => d.id === id);
@@ -1048,16 +1059,12 @@ function renderDishes() {
           (d.description?'<div class="dish-desc">'+d.description+'</div>':'') +
           (badges.length?'<div class="dish-badges">'+badges.join('')+'</div>':'') +
         '</div>' +
-        '<div class="dish-price">' +
-          (d.base_price?'<div class="dish-price-base" id="dpo-base-'+d.id+'">₪'+d.base_price+'</div>':'') +
+        '<div class="dish-price" onclick="event.stopPropagation()">' +
+          (d.base_price?'<div class="dish-price-base'+(dishPriceOverrides[d.id]!==undefined?' overridden':'')+'" id="dpo-base-'+d.id+'">₪'+d.base_price+'</div>':'') +
           (d.addon_per_person||d.category==='פיצות'||d.category==='סלטים'?
-            '<div class="dish-price-addon" id="dpo-show-'+d.id+'">'+(d.addon_per_person?'+₪'+d.addon_per_person+'/אדם':(d.category==='פיצות'?'₪100/אדם':(d.category==='סלטים'?'₪20/אדם':'')))+'</div>':''
+            '<div class="dish-price-addon'+(dishPriceOverrides[d.id]!==undefined?' overridden':'')+'" id="dpo-show-'+d.id+'">'+(d.addon_per_person?'+₪'+d.addon_per_person+'/אדם':(d.category==='פיצות'?'₪100/אדם':(d.category==='סלטים'?'₪20/אדם':'')))+'</div>':''
           ) +
-          '<div class="dish-price-override" id="dpo-wrap-'+d.id+'" style="display:none;">' +
-            '<input type="number" class="dpo-input" id="dpo-'+d.id+'" placeholder="'+(d.base_price?'₪ קבוע':'₪/אדם')+'" min="0" step="0.1" ' +
-            'onclick="event.stopPropagation()" oninput="setDishOverride('+d.id+',this.value)">' +
-          '</div>' +
-          '<button class="dpo-btn" id="dpo-btn-'+d.id+'" onclick="toggleDishOverride('+d.id+',event)" title="שנה מחיר">✏️</button>' +
+          '<div id="dpo-area-'+d.id+'">'+dishPriceAreaHTML(d)+'</div>' +
         '</div>' +
         (DISH_SUBOPTIONS[d.name]?'<div class="dish-subopts" id="so-'+d.id+'" onclick="event.stopPropagation()"></div>':'') +
         '<div style="padding:0 8px 6px;" onclick="event.stopPropagation()">' +
@@ -1127,25 +1134,56 @@ function toggleOpt(cb,id,key) {
 // ── PER-DISH PRICE OVERRIDES ──
 let dishPriceOverrides = {}; // {dishId: pricePerPerson}
 
-function toggleDishOverride(dishId, event) {
-  event && event.stopPropagation();
-  const wrap = document.getElementById('dpo-wrap-'+dishId);
-  const btn  = document.getElementById('dpo-btn-'+dishId);
-  const show = document.getElementById('dpo-show-'+dishId);
-  const isOpen = wrap.style.display !== 'none';
-  if (isOpen) {
-    wrap.style.display = 'none';
-    btn.classList.remove('active');
-    if (show) show.classList.remove('overridden');
-    delete dishPriceOverrides[dishId];
-  } else {
-    wrap.style.display = '';
-    btn.classList.add('active');
-    const inp = document.getElementById('dpo-'+dishId);
-    if (inp && dishPriceOverrides[dishId] !== undefined) inp.value = dishPriceOverrides[dishId];
+// מ-v2.7.7: עריכת מחיר למנה — כפתור גדול, שדה + "אישור" שנועל את המחיר.
+// כל אזור המחיר עוצר את הקליק (stopPropagation) כדי שלא יבטל בטעות את בחירת המנה.
+function dishPriceAreaHTML(d) {
+  const ov = dishPriceOverrides[d.id];
+  const unit = d.base_price ? '' : '/אדם';
+  if (ov !== undefined) {
+    return '<div style="white-space:nowrap;"><span class="dpo-locked" onclick="openDishOverride('+d.id+',event)" title="לחץ לשינוי">₪'+ov+unit+' ✏️</span>' +
+           '<button class="dpo-reset" onclick="clearDishOverride('+d.id+',event)" title="שחזור למחיר הרגיל (₪'+(d.base_price||d.addon_per_person||0)+')">↺</button></div>';
   }
+  return '<button class="dpo-btn" onclick="openDishOverride('+d.id+',event)">✏️ שנה מחיר</button>';
+}
+function openDishOverride(dishId, event) {
+  event && event.stopPropagation();
+  const d = allDishes.find(x => x.id === dishId); if (!d) return;
+  const area = document.getElementById('dpo-area-'+dishId); if (!area) return;
+  const ov = dishPriceOverrides[dishId];
+  area.innerHTML =
+    '<div class="dish-price-override">' +
+      '<input type="number" class="dpo-input" id="dpo-'+dishId+'" placeholder="'+(d.base_price?'₪ קבוע':'₪/אדם')+'" min="0" step="0.01" value="'+(ov!==undefined?ov:'')+'" ' +
+      'onclick="event.stopPropagation()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();confirmDishOverride('+dishId+',event);}">' +
+      '<button class="dpo-ok" onclick="confirmDishOverride('+dishId+',event)">אישור</button>' +
+      '<button class="dpo-clear" onclick="clearDishOverride('+dishId+',event)" title="חזרה למחיר הרגיל">✕</button>' +
+    '</div>' +
+    '<div class="dpo-hint">'+(d.base_price?'מחיר קבוע לאירוע, לפני מע״מ':'מחיר לאדם, לפני מע״מ')+'</div>';
+  const inp = document.getElementById('dpo-'+dishId); if (inp) inp.focus();
+}
+function refreshDishPriceUI(dishId) {
+  const d = allDishes.find(x => x.id === dishId);
+  const area = document.getElementById('dpo-area-'+dishId);
+  if (d && area) area.innerHTML = dishPriceAreaHTML(d);
+  const isOv = dishPriceOverrides[dishId] !== undefined;
+  const show = document.getElementById('dpo-show-'+dishId);
+  if (show) show.classList.toggle('overridden', isOv);
+  const base = document.getElementById('dpo-base-'+dishId);
+  if (base) base.classList.toggle('overridden', isOv);
   calcAutoPrice();
   if (currentMode !== 'build') updatePreview();
+}
+function confirmDishOverride(dishId, event) {
+  event && event.stopPropagation();
+  const inp = document.getElementById('dpo-'+dishId);
+  const v = inp ? parseFloat(inp.value) : NaN;
+  if (!isNaN(v) && inp.value !== '') dishPriceOverrides[dishId] = v;
+  else delete dishPriceOverrides[dishId];
+  refreshDishPriceUI(dishId);
+}
+function clearDishOverride(dishId, event) {
+  event && event.stopPropagation();
+  delete dishPriceOverrides[dishId];
+  refreshDishPriceUI(dishId);
 }
 
 function setDishOverride(dishId, val) {
@@ -1710,6 +1748,7 @@ async function saveQuote(silent=false){
     selected_dishes:[...selectedDishes],
     dish_subopts:dishSubOpts,
     dish_notes:dishNotes,
+    dish_price_overrides:dishPriceOverrides,
     price_override:useOverride,
     final_price_adult: finalPriceOverride.adult,
     final_price_kid: finalPriceOverride.kid,
@@ -1726,6 +1765,13 @@ async function saveQuote(silent=false){
     const{data,error:err}=await sb.from('qz_quotes').insert({...payload, status:'draft'}).select('id').single();
     error=err;
     if(data) currentQuoteId=data.id;
+  }
+  // מ-v2.7.7: אם עמודת dish_price_overrides עוד לא קיימת ב-DB — שומר בלעדיה במקום להיכשל
+  if(error && /dish_price_overrides/.test(error.message||'')){
+    delete payload.dish_price_overrides;
+    if(currentQuoteId){ ({error}=await sb.from('qz_quotes').update(payload).eq('id',currentQuoteId)); }
+    else { const{data,error:err}=await sb.from('qz_quotes').insert({...payload, status:'draft'}).select('id').single(); error=err; if(data) currentQuoteId=data.id; }
+    if(!error && !silent) showToast('נשמר — אבל שינויי מחיר למנות לא נשמרו (חסרה עמודה ב-DB)','error');
   }
   if(error){if(!silent)showToast('שגיאה: '+error.message,'error');return null;}
   if(!silent)showToast('הצעה נשמרה ✓','success');
