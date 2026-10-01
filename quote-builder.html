@@ -353,7 +353,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.9 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.10 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1085,7 +1085,7 @@ function renderDishes() {
           '<div id="dpo-area-'+d.id+'">'+dishPriceAreaHTML(d)+'</div>' +
         '</div>' +
         (DISH_SUBOPTIONS[d.name]?'<div class="dish-subopts" id="so-'+d.id+'" onclick="event.stopPropagation()"></div>':'') +
-        (d.name.includes('ללא גלוטן') && sel ?
+        (/ללא גלוטן|טבעוני/.test(d.name) && sel ?
           '<div style="padding:4px 8px 2px;display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;color:var(--navy);" onclick="event.stopPropagation()">👥 כמה סועדים: ' +
           '<input type="number" min="0" step="1" value="'+((dishSubOpts[d.id]||{})._count||'')+'" oninput="setDishCount('+d.id+',this.value)" onclick="event.stopPropagation()" ' +
           'style="width:70px;font-size:1rem;font-weight:700;padding:5px 7px;border:1.5px solid var(--gold);border-radius:7px;background:#FFFDF5;font-family:inherit;color:var(--navy);"></div>' : '') +
