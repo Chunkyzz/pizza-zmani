@@ -348,7 +348,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.3 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.4 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1327,7 +1327,7 @@ function getAutoSubtotal() {
   return {
     sub, pizzas, addons, kDisc,
     adultPerPerson: rates.adultPerPerson, kidPerPerson: rates.kidPerPerson,
-    flatExtras: rates.flatExtras, flatExtraNames: rates.flatExtraNames,
+    flatExtras: rates.flatExtras, flatExtraNames: rates.flatExtraNames, serviceExtras: rates.serviceExtras,
     minApplied, minTopUp, naturalTotal
   };
 }
@@ -1350,7 +1350,8 @@ function getFinalTotals() {
   const r = getAutoSubtotal();
 
   if (useOverride) {
-    const sub = parseFloat(document.getElementById('manual-subtotal').value) || 0;
+    // מ-v2.7.4: שירותים ("שונות" — מלצר) מתווספים תמיד מעל, גם על מחיר כולל ידני
+    const sub = (parseFloat(document.getElementById('manual-subtotal').value) || 0) + (r.serviceExtras || 0);
     return { sub, adultPerPerson: r.adultPerPerson, kidPerPerson: r.kidPerPerson, auto: r, usedOverride: 'total' };
   }
 
