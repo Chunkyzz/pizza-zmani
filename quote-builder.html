@@ -348,7 +348,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.5 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.6 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -938,6 +938,11 @@ async function loadExistingQuote(id) {
   const raKid   = document.getElementById('reset-final-kid');
   if (raAdult) raAdult.style.display = finalPriceOverride.adult !== null ? '' : 'none';
   if (raKid)   raKid.style.display   = finalPriceOverride.kid   !== null ? '' : 'none';
+  // מ-v2.7.6: ממלא את השדות בערך השמור (קודם נשארו עם ערך ישן מטעינת הדף — 100/85)
+  const faLoad = document.getElementById('final-price-adult');
+  const fkLoad = document.getElementById('final-price-kid');
+  if (faLoad && finalPriceOverride.adult !== null) faLoad.value = finalPriceOverride.adult;
+  if (fkLoad && finalPriceOverride.kid   !== null) fkLoad.value = finalPriceOverride.kid;
 
   togglePriceOverride(); // מסנכרן תצוגה (ידני/אוטומטי) + מחשב מחדש לפי המצב הנכון
 
