@@ -353,7 +353,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.10 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.7.11 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1338,6 +1338,8 @@ function computeBaseRates() {
   sel.forEach(d => {
     const def = DISH_SUBOPTIONS[d.name];
     if (!def || !def.extra) return;
+    // מ-v2.7.11: אם הוזן מחיר ידני למנה (✏️) — הוא המחיר הסופי שלה, בלי תוספת רטבים מעליו
+    if (dishPriceOverrides[d.id] !== undefined) return;
     const chosen = dishSubOpts[d.id] || {};
     const selCount = def.opts.filter(o => chosen[o.id]).length;
     const extraCount = Math.max(0, selCount - def.base);
