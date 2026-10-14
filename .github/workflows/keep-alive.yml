@@ -1,16 +1,46 @@
 name: Keep Supabase Alive
+# v2.0.0 — pings BOTH Supabase projects and fails loudly (GitHub emails you) if one doesn't answer.
+# Free Supabase projects pause after ~7 days without activity; this runs Mon/Wed/Fri, so the max gap is 3 days.
+
 on:
   schedule:
-    - cron: '0 8 */3 * *'  # כל 3 ימים בשעה 8 בבוקר
-  workflow_dispatch:
+    - cron: '17 6 * * 1,3,5'   # Mon/Wed/Fri 06:17 UTC (≈09:17 Israel). Odd minute = fewer GitHub delays.
+  workflow_dispatch:            # "Run workflow" button for a manual check
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Ping Supabase
+      - name: Ping both Supabase projects
         run: |
-          curl -s "https://qgmyaxxzebwcatetbngs.supabase.co/rest/v1/dishes?select=id&limit=1" \
-            -H "apikey: sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq" \
-            -H "Authorization: Bearer sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq"
-          echo "Pinged!"
+          set -u
+          failed=0
+
+          ping() {
+            local label="$1" url="$2" key="$3"
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 20 "$url" \
+                       -H "apikey: $key" -H "Authorization: Bearer $key" || echo 000)
+              if [ "${code:0:1}" = "2" ]; then
+                echo "✅ $label — HTTP $code (attempt $attempt)"
+                return 0
+              fi
+              echo "⚠️  $label — HTTP $code (attempt $attempt): $(head -c 200 /tmp/body 2>/dev/null)"
+              sleep 15
+            done
+            echo "::error::$label did not answer after 3 attempts (last HTTP $code). Check the project in the Supabase dashboard — it may be paused."
+            return 1
+          }
+
+          # Quotes / event management (quotes-manager, quote-builder, quote-approval)
+          ping "Pizza Zmani quotes (arqx…)" \
+            "https://arqxoyxobjudccskfwyt.supabase.co/rest/v1/quote_approvals?select=id&limit=1" \
+            "sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY" || failed=1
+
+          # Amalfi 3.7 (orders, veggie_orders, prep_tasks)
+          ping "Amalfi (qgmy…)" \
+            "https://qgmyaxxzebwcatetbngs.supabase.co/rest/v1/dishes?select=id&limit=1" \
+            "sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq" || failed=1
+
+          exit $failed
