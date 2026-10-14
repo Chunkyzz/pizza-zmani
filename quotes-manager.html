@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.5.1</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.6.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -253,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.5.1<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.6.0<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -914,7 +914,7 @@ async function loadQuotes() {
   if (error) { showToast('שגיאה בטעינה: ' + error.message, 'error'); return; }
 
   // fetch approval records to detect client-edited fields + approval evidence (signature/timestamp)
-  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, client_edited_fields, status, signature_image, approved_at, change_request_text, change_request_at');
+  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, public_token, client_edited_fields, status, signature_image, approved_at, change_request_text, change_request_at');
   const approvalsById = {};
   (approvals||[]).forEach(a => { approvalsById['ap_'+a.quote_id] = a; approvalsById[a.quote_id] = a; });
 
@@ -1205,7 +1205,7 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
     });
   });
 
-  await sb.from('quote_approvals').upsert({
+  const { data: apRow, error: apErr } = await sb.from('quote_approvals').upsert({
     quote_id: quoteId,
     kind: 'quote',
     client_name: qData.client_name,
@@ -1222,8 +1222,9 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
     price_after_vat: qData.total_with_vat||0,
     notes: qData.notes||'',
     status: 'pending'
-  }, { onConflict: 'quote_id' });
-  const approvalUrl = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + quoteId;
+  }, { onConflict: 'quote_id' }).select('public_token').single();
+  if (apErr || !apRow || !apRow.public_token) { showToast('שגיאה ביצירת קישור: ' + (apErr ? apErr.message : 'אין טוקן'), 'error'); return; }
+  const approvalUrl = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?t=' + apRow.public_token;
   const msg = wasApproved
     ? encodeURIComponent(
         'שלום ' + qData.client_name + '! 🍕' + '\n' +
@@ -1257,7 +1258,8 @@ function openCalendarInvite(quoteId) {
 
   const billed = (q.guests_adults||0) + (q.guests_kids||0);
   const total  = billed + (q.guests_babies||0);
-  const menuLink = 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + q.id;
+  const menuLink = q._approval && q._approval.public_token
+    ? 'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?t=' + q._approval.public_token : '';
 
   // שם הלקוח ראשון. בשריון: "שריון אירוע"; אחרי סגירה: סוג האירוע
   const kindLabel = q.status === 'reserved' ? 'שריון אירוע' : (q.event_type || 'קייטרינג');
@@ -1269,7 +1271,7 @@ function openCalendarInvite(quoteId) {
     '👥 ' + total + ' אנשים' + (q.guests_kids ? ' (כולל ' + q.guests_kids + ' ילדים)' : ''),
     q.total_before_vat ? '💰 ₪' + q.total_before_vat.toLocaleString() + ' לפני מע"מ' : '',
     '',
-    '🍽️ תפריט מלא ופרטי האירוע (לצפייה/שיתוף):',
+    menuLink ? '🍽️ תפריט מלא ופרטי האירוע (לצפייה/שיתוף):' : '',
     menuLink
   ].filter(Boolean);
 

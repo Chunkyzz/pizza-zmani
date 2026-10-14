@@ -107,7 +107,7 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
   <div class="header-sub">אוכל איטלקי שמח • פיצה • אירועים • סרדנאות</div>
   <div class="header-title" id="headerTitle">אישור הצעת מחיר</div>
   <!-- v1.2.1: תוקן באג תצוגה שהדפיס "[object Object]" בתפריט (menu_items עבר לאובייקטים עשירים) -->
-  <div class="version">v1.2.2</div>
+  <div class="version">v1.3.0</div>
 </div>
 
 <div class="container" id="appContainer">
@@ -266,6 +266,7 @@ const SUPABASE_KEY = 'sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let quoteData = null;
+let linkArgs = null; // {p_token, p_quote_id} — how this page was opened; reused on submit
 let quoteKind = 'quote'; // 'quote' | 'reservation' — קובע איזה מסלול תצוגה/אישור מוצג
 let checks = [false, false, false, false];
 let hasSig = false;
@@ -274,11 +275,14 @@ let sigCanvas, sigCtx, isDrawing = false;
 // ── INIT ──
 async function init() {
   const params = new URLSearchParams(window.location.search);
-  const id = params.get('id');
+  const token = params.get('t');   // new links: ?t=<random token>
+  const id    = params.get('id');  // old links (transition): ?id=<quote id>
+  const isUuid = s => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s || '');
 
-  if (!id) { showError(); return; }
+  if (!(isUuid(token) || id)) { showError(); return; }
+  linkArgs = isUuid(token) ? { p_token: token, p_quote_id: null } : { p_token: null, p_quote_id: String(id) };
 
-  const { data, error } = await sb.from('quote_approvals').select('*').eq('quote_id', id).single();
+  const { data, error } = await sb.rpc('approval_get', linkArgs);
 
   if (error || !data) { showError(); return; }
 
@@ -292,8 +296,8 @@ async function init() {
   quoteData = data;
   fillData(data);
   applyKindLayout();
+  show('mainContent');                       // show FIRST — a hidden canvas measures 0px wide
   if (quoteKind === 'quote') initCanvas();
-  show('mainContent');
   hide('loadingState');
 }
 
@@ -415,14 +419,23 @@ function updateSubmitBtn() {
 }
 
 // ── SIGNATURE ──
-function initCanvas() {
-  sigCanvas = document.getElementById('sigCanvas');
-  sigCanvas.width = sigCanvas.offsetWidth;
+// v1.3.0 fix: the canvas used to be measured while the page was still hidden → 0px wide,
+// so strokes were invisible and saved signatures were blank ("data:,").
+function sizeCanvas() {
+  const w = sigCanvas.offsetWidth || (sigCanvas.parentElement && sigCanvas.parentElement.offsetWidth) || 320;
+  sigCanvas.width = w;
   sigCtx = sigCanvas.getContext('2d');
   sigCtx.strokeStyle = '#1B2A4A';
   sigCtx.lineWidth = 2.5;
   sigCtx.lineCap = 'round';
   sigCtx.lineJoin = 'round';
+}
+
+function initCanvas() {
+  sigCanvas = document.getElementById('sigCanvas');
+  sizeCanvas();
+  // phone rotated / window resized: re-measure only while nothing is drawn (resizing clears the canvas)
+  window.addEventListener('resize', () => { if (!hasSig) sizeCanvas(); });
 
   // Mouse
   sigCanvas.addEventListener('mousedown', e => { isDrawing=true; startDraw(getPos(e,'mouse')); });
@@ -463,29 +476,20 @@ async function submitApproval() {
   btn.textContent = '⏳ שומר...';
 
   const now = new Date().toISOString();
-  const updatePayload = { status: 'approved', approved_at: now };
-  if (!isRes) {
-    updatePayload.signature_image = sigCanvas.toDataURL('image/png');
-  }
+  const signature = isRes ? null : sigCanvas.toDataURL('image/png');
 
-  const { error } = await sb.from('quote_approvals')
-    .update(updatePayload)
-    .eq('quote_id', quoteData.quote_id);
+  // One server call: marks approved, stores the signature, and for a reservation
+  // moves the quote draft → reserved (done server-side; used to fail silently).
+  const { data: res, error } = await sb.rpc('approval_submit', { ...linkArgs, p_signature: signature });
 
-  if (error) {
-    showToast('שגיאה בשמירה: ' + error.message, 'error');
+  if (error || !res || !res.ok) {
+    const why = error ? error.message : (res && res.error === 'signature_too_large' ? 'החתימה גדולה מדי — נקה ונסה שוב' : 'לא נמצאה הצעה');
+    showToast('שגיאה בשמירה: ' + why, 'error');
     btn.disabled = false;
     btn.textContent = isRes ? '📅 מאשר/ת שריון תאריך' : '✅ אני מאשר/ת את ההצעה';
     return;
   }
-
-  // עדכון סטטוס ההצעה עצמה ל"משוריין" (רק אם היא עדיין בטיוטה — לא דורסים סטטוס מתקדם יותר)
-  if (isRes) {
-    const { data: qRow } = await sb.from('qz_quotes').select('status').eq('id', quoteData.quote_id).maybeSingle();
-    if (qRow && (!qRow.status || qRow.status === 'draft')) {
-      await sb.from('qz_quotes').update({ status: 'reserved' }).eq('id', quoteData.quote_id);
-    }
-  }
+  if (res.already) { hide('mainContent'); showLocked(res.approved_at); return; }
 
   // WhatsApp notification to Gal
   const calLink = isRes ? buildReservationCalendarLink(quoteData) : '';
@@ -534,7 +538,7 @@ function buildReservationCalendarLink(d) {
     d.client_phone ? '📞 ' + d.client_phone : '',
     d.event_type ? '🎉 ' + d.event_type : '',
     '',
-    'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id=' + d.quote_id
+    'https://chunkyzz.github.io/pizza-zmani/quote-approval.html?t=' + d.public_token
   ].filter(Boolean).join('\n');
   const params = new URLSearchParams({
     action: 'TEMPLATE',

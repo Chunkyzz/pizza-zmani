@@ -353,7 +353,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.7.11 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.8.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1861,7 +1861,7 @@ async function syncApprovalData(){
   const sub = ftApproval.sub;
   const grand=sub+(includeVat?sub*0.18:0);
   const quoteId = currentQuoteId; // מזהה קבוע של ההצעה — אותו לינק תמיד, מתעדכן בכל שליחה חוזרת (לא נוצר לינק חדש כל פעם)
-  const{error}=await sb.from('quote_approvals').upsert({
+  const{data:apRow,error}=await sb.from('quote_approvals').upsert({
     quote_id:quoteId,kind:'quote',client_name:name,
     client_phone:document.getElementById('cl-phone').value,
     event_date:document.getElementById('cl-date').value||null,
@@ -1872,9 +1872,10 @@ async function syncApprovalData(){
     menu_items:menuItemsRich,
     price_before_vat:Math.round(sub),price_after_vat:Math.round(grand),
     status:'pending',created_at:new Date().toISOString()
-  }, {onConflict:'quote_id'});
+  }, {onConflict:'quote_id'}).select('public_token').single();
   if(error){showToast('שגיאה: '+error.message,'error');return null;}
-  return {quoteId, name};
+  if(!apRow||!apRow.public_token){showToast('שגיאה: לא נוצר קישור מאובטח','error');return null;}
+  return {quoteId, name, token:apRow.public_token};
 }
 
 async function syncOnly(){
@@ -1886,8 +1887,8 @@ async function syncOnly(){
 async function sendApproval(){
   const r = await syncApprovalData();
   if(!r) return;
-  const{quoteId,name}=r;
-  const link='https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id='+quoteId;
+  const{name,token}=r;
+  const link='https://chunkyzz.github.io/pizza-zmani/quote-approval.html?t='+token;
   navigator.clipboard.writeText(link).catch(()=>{});
   const phone=document.getElementById('cl-phone').value.replace(/\D/g,'').replace(/^0/,'972');
   const waPhone=phone.length>8?phone:'972542031181';
@@ -1920,7 +1921,7 @@ async function sendReservation(){
   }
 
   const g=getGuests();
-  const{error}=await sb.from('quote_approvals').upsert({
+  const{data:resRow,error}=await sb.from('quote_approvals').upsert({
     quote_id:quoteId, kind:'reservation',
     client_name:name, client_phone:phone,
     event_date:dateVal||null,
@@ -1931,10 +1932,11 @@ async function sendReservation(){
     menu_items:[],
     price_before_vat:null, price_after_vat:null,
     status:'pending', created_at:new Date().toISOString()
-  }, {onConflict:'quote_id'});
+  }, {onConflict:'quote_id'}).select('public_token').single();
   if(error){showToast('שגיאה: '+error.message,'error');return;}
+  if(!resRow||!resRow.public_token){showToast('שגיאה: לא נוצר קישור מאובטח','error');return;}
 
-  const link='https://chunkyzz.github.io/pizza-zmani/quote-approval.html?id='+quoteId;
+  const link='https://chunkyzz.github.io/pizza-zmani/quote-approval.html?t='+resRow.public_token;
   navigator.clipboard.writeText(link).catch(()=>{});
   const waPhone=phone.replace(/\D/g,'').replace(/^0/,'972');
   const dateStr=new Date(dateVal+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
