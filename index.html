@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מערכת הזמנות – אמלפי 3.7</title>
+<title>מערכת הזמנות – אמלפי 3.8</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;900&family=Frank+Ruhl+Libre:wght@400;700;900&display=swap');
@@ -262,11 +262,31 @@ button:active { transform:translateY(0); }
 .drag-handle { color:var(--text2); font-size:1rem; cursor:grab; padding:0 4px; }
 .dish-admin-row.drag-over { border-top:2px solid var(--gold); }
 
+.auth-gate{position:fixed;inset:0;background:linear-gradient(135deg,#1B2A4A 0%,#2A4070 100%);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;}
+.auth-gate.hidden{display:none;}
+.auth-box{background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.35);padding:36px 32px;width:min(380px,92vw);text-align:center;}
+.auth-logo{font-family:'Frank Ruhl Libre',serif;font-size:1.6rem;color:#1B2A4A;margin-bottom:4px;}
+.auth-sub{font-size:0.8rem;color:#888;margin-bottom:24px;}
+.auth-box input{display:block;width:100%;box-sizing:border-box;margin-bottom:12px;text-align:right;font-family:'Heebo',sans-serif;font-size:16px;padding:10px 13px;border:1.5px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;outline:none;}
+.auth-box input:focus{border-color:#C9A84C;}
+.auth-error{color:#C0392B;font-size:0.8rem;margin-top:6px;min-height:1.2em;}
+.auth-btn{width:100%;padding:12px;border-radius:8px;border:none;background:#C9A84C;color:#1B2A4A;font-weight:700;font-size:1rem;cursor:pointer;margin-top:4px;font-family:'Heebo',sans-serif;}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed;}
 </style>
 </head>
 <body>
+<div class="auth-gate hidden" id="authGate">
+  <div class="auth-box">
+    <div class="auth-logo">🥦 אמלפי</div>
+    <div class="auth-sub">Pizza Zmani — נדרשת התחברות (אותם פרטים כמו מנהל ההצעות)</div>
+    <input type="email" id="auth-email" placeholder="אימייל" autocomplete="username">
+    <input type="password" id="auth-password" placeholder="סיסמה" autocomplete="current-password">
+    <button class="auth-btn" id="authBtn" onclick="doSignIn()">התחבר</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
 
-<header>מערכת הזמנות ירקות – <span>אמלפי 3.7</span></header>
+<header>מערכת הזמנות ירקות – <span>אמלפי 3.8</span> <a href="#" onclick="doSignOut();return false;" style="font-size:0.7rem;color:rgba(255,255,255,0.55);text-decoration:none;margin-inline-start:10px;">🔒 התנתק</a></header>
 
 <div class="container">
 <div class="section">
@@ -420,7 +440,33 @@ button:active { transform:translateY(0); }
 
 <script>
 const { createClient } = supabase;
-const db = createClient("https://qgmyaxxzebwcatetbngs.supabase.co","sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq");
+// v3.8: moved to the main project (same login as the quotes manager); tables are locked to logged-in users
+const db = createClient("https://arqxoyxobjudccskfwyt.supabase.co","sb_publishable_20hsaLdN9osadPfzGM_lQw_t_2YRwZY");
+
+// ── AUTH GATE ──
+async function startApp(){
+  await loadDishes();          // loads dishes + pulls any pending veggie_orders into `orders`
+  await loadOrdersFromSupabase(); // merges previously-saved active orders (survives refresh/device change)
+}
+async function checkAuth(){
+  const { data: { session } } = await db.auth.getSession();
+  if(session){ document.getElementById('authGate').classList.add('hidden'); startApp(); }
+  else { document.getElementById('authGate').classList.remove('hidden'); }
+}
+async function doSignIn(){
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-password').value;
+  const btn=document.getElementById('authBtn'), errEl=document.getElementById('authError');
+  errEl.textContent='';
+  if(!email||!password){ errEl.textContent='נא למלא אימייל וסיסמה'; return; }
+  btn.disabled=true; btn.textContent='מתחבר...';
+  const { error } = await db.auth.signInWithPassword({ email, password });
+  btn.disabled=false; btn.textContent='התחבר';
+  if(error){ errEl.textContent='פרטי התחברות שגויים'; return; }
+  document.getElementById('authGate').classList.add('hidden');
+  startApp();
+}
+async function doSignOut(){ await db.auth.signOut(); location.reload(); }
 const categoriesOrder = ["סלטים","ראשונות","פיצה","פסטה","דגים","קינוח","שונות"];
 const TIMING_OPTIONS = ['יום לפני','ערב לפני','בוקר האירוע','שעה לפני','באירוע'];
 
@@ -1100,10 +1146,8 @@ function doPrint(){
 }
 
 document.getElementById("saveBtn").onclick=saveOrder;
-(async function(){
-  await loadDishes();          // loads dishes + pulls any pending veggie_orders into `orders`
-  await loadOrdersFromSupabase(); // merges previously-saved active orders (survives refresh/device change)
-})();
+['auth-email','auth-password'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter') doSignIn(); }));
+checkAuth();
 </script>
 </body>
 </html>
