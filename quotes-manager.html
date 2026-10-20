@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.6.1</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.6.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -253,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.6.1<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.6.2<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -884,8 +884,9 @@ function showSignature(quoteId){
   document.getElementById('sigModal').classList.add('open');
 }
 
-// Amalfi tables (dishes, veggie_orders, prep_tasks…) moved into the main project 2026-10-14 → same logged-in client
-const sbA = sb;
+// Amalfi tables (dishes, veggie_orders, prep_tasks…) still live in the legacy project (qgmy) — the live Amalfi app (amalfi-orders) reads from there.
+// Point back to arqx only after the data + amalfi-orders are migrated together.
+const sbA = supabase.createClient('https://qgmyaxxzebwcatetbngs.supabase.co','sb_publishable_EbgbcQ-w0HyPK3IsBt3vDQ_BuCFoirq',{auth:{persistSession:false,autoRefreshToken:false,storageKey:'sb-amalfi-legacy'}});
 
 let allQuotes = [];
 let selectedIds = new Set();
