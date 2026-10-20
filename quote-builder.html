@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.7.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.9.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -278,12 +278,18 @@ body.edit-mode-active{padding-bottom:64px;}
 /* save bar */
 #edit-save-bar{
   display:none;position:fixed;bottom:0;left:0;right:0;
-  background:#5b21b6;padding:12px 24px;z-index:8000;
+  background:#5b21b6;padding:10px 16px;z-index:8000;gap:10px;
   align-items:center;justify-content:space-between;
   box-shadow:0 -4px 24px rgba(0,0,0,0.25);
 }
-#edit-save-bar .bar-label{color:rgba(255,255,255,0.6);font-size:0.82rem;}
-#edit-save-bar .bar-btns{display:flex;gap:10px;align-items:center;}
+#edit-save-bar .bar-label{color:rgba(255,255,255,0.6);font-size:0.82rem;white-space:nowrap;}
+/* מ-v2.9.0: כפתורים קומפקטיים — כולם בשורה אחת; אם בכל זאת צר מדי — גלילה אופקית במקום חיתוך */
+#edit-save-bar .bar-btns{display:flex;gap:6px;align-items:center;min-width:0;overflow-x:auto;}
+#edit-save-bar .bar-btns button{white-space:nowrap;flex-shrink:0;}
+#edit-save-bar .btn-cancel-changes{padding:8px 11px;font-size:0.82rem;}
+#edit-save-bar .btn-save-changes{padding:9px 18px;}
+@media(max-width:900px){#edit-save-bar .bar-label{display:none;}}
+body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכסה את "שמור שינויים" */
 .btn-save-changes{
   background:white;color:#5b21b6;border:none;
   padding:10px 24px;border-radius:9px;
@@ -353,7 +359,7 @@ body.edit-mode-active{padding-bottom:64px;}
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.8.1 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.9.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -511,7 +517,13 @@ body.edit-mode-active{padding-bottom:64px;}
           <span id="disp-flatextras-label">✚ תוספות מיוחדות</span><span id="disp-flatextras-note">—</span>
         </div>
         <div style="display:none;justify-content:space-between;font-size:0.72rem;color:#B8860B;padding:2px 0;" id="disp-min-row">
-          <span>⚠️ הובא למינימום אירוע (₪3,000)</span><span id="disp-min-note" style="font-weight:600;">—</span>
+          <span>⚠️ הובא למינימום אירוע (₪3,000) <button type="button" onclick="lockPackage()" title="המנות הנוכחיות = חבילה. מנות שיתווספו אחר כך יחושבו מעל המחיר" style="margin-inline-start:6px;font-family:inherit;font-size:0.72rem;font-weight:700;color:#fff;background:var(--navy);border:none;border-radius:6px;padding:2px 8px;cursor:pointer;">🔒 נעל כחבילה</button></span><span id="disp-min-note" style="font-weight:600;">—</span>
+        </div>
+        <div style="display:none;justify-content:space-between;align-items:center;font-size:0.78rem;color:var(--navy);padding:2px 0;font-weight:700;" id="disp-pkg-row">
+          <span>🔒 חבילה <button type="button" onclick="unlockPackage()" style="margin-inline-start:6px;font-family:inherit;font-size:0.7rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:1px 7px;cursor:pointer;">🔓 שחרר</button></span><span id="disp-pkg-note">—</span>
+        </div>
+        <div style="display:none;justify-content:space-between;font-size:0.75rem;color:var(--green);padding:2px 0;font-weight:600;" id="disp-pkgx-row">
+          <span id="disp-pkgx-label">✚ תוספות מעל החבילה</span><span id="disp-pkgx-note">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);padding:3px 0;border-top:1px solid var(--border);margin-top:4px;">
           <span>לפני מע"מ</span><span id="disp-sub" style="font-weight:600;color:var(--navy);">—</span>
@@ -610,6 +622,8 @@ body.edit-mode-active{padding-bottom:64px;}
 
         <!-- TOTALS -->
         <div class="pdf-totals" id="priceBlock">
+          <div class="pdf-total-row" id="t-pkg-row" style="display:none;"><span>חבילה לאירוע</span><span id="t-pkg">—</span></div>
+          <div class="pdf-total-row" id="t-pkgx-row" style="display:none;"><span id="t-pkgx-label">תוספות</span><span id="t-pkgx">—</span></div>
           <div class="pdf-total-row" id="t-flatextras-row" style="display:none;"><span id="t-flatextras-label">תוספות מיוחדות</span><span id="t-flatextras">—</span></div>
           <div class="pdf-total-row"><span>סה"כ לפני מע"מ</span><span id="t-subtotal">—</span></div>
           <div class="pdf-total-row" id="t-vat-row"><span>מע"מ (18%)</span><span id="t-vat">—</span></div>
@@ -1018,7 +1032,11 @@ async function loadData() {
 // MODE
 function setMode(mode) {
   currentMode = mode;
-  document.body.className = 'view-' + mode;
+  // מ-v2.9.0: מחליף רק את מחלקת התצוגה — לא מוחק את edit-mode-active (מצב עריכה)
+  document.body.classList.remove('view-build','view-split','view-preview');
+  document.body.classList.add('view-' + mode);
+  const epb = document.getElementById('edit-preview-btn');
+  if (epb) epb.textContent = mode === 'preview' ? '✏️ חזרה לעריכה' : '👁️ תצוגה';
   ['Build','Split','Preview'].forEach(m => {
     document.getElementById('btn'+m).classList.toggle('active', mode===m.toLowerCase());
   });
@@ -1262,8 +1280,9 @@ const MIN_EVENT_PRICE = 3000; // אף אירוע לא יוצא מתחת לזה �
 
 // מחשב תעריף בסיס נפרד לאדם ולילד. "מנת ילדים" (kids_priced=false) מוציאה
 // מנה לגמרי מתמחור הילד (לא רק הנחה) — זה נפרד לגמרי מהתג הקוסמטי "מתאים לילדים".
-function computeBaseRates() {
-  const sel = allDishes.filter(d => selectedDishes.has(d.id));
+function computeBaseRates(ids) {
+  const idSet = ids || selectedDishes; // מ-v2.9.0: אפשר לחשב גם לתת-קבוצה (מנות החבילה הנעולה)
+  const sel = allDishes.filter(d => idSet.has(d.id));
 
   // פיצות: ₪100/אדם קבוע (אם נבחרה לפחות פיצה אחת) — משותף למבוגר ולילד
   const hasPizzas = sel.some(d => d.category === 'פיצות' && d.name !== 'מאפייה מהטאבון');
@@ -1387,7 +1406,24 @@ function getAutoSubtotal() {
   if (!billed) return {sub:0, pizzas:0, addons:0, kDisc:0, adultPerPerson:0, kidPerPerson:0, flatExtras:0, flatExtraNames:[], minApplied:false, minTopUp:0, naturalTotal:0};
 
   const rates = computeBaseRates();
-  const { sub, naturalTotal, minApplied, minTopUp } = applyMinimumEvent(rates, g);
+  let { sub, naturalTotal, minApplied, minTopUp } = applyMinimumEvent(rates, g);
+
+  // מ-v2.9.0: חבילה נעולה — המנות שנבחרו בזמן הנעילה = החבילה (לפחות ₪3,000),
+  // וכל מנה שנוספה אחרי הנעילה מתווספת מעליה (ולא נבלעת בהשלמה למינימום).
+  const pkg = getPackage();
+  let pkgInfo = { packageLocked: false };
+  if (pkg) {
+    const pkgIds = new Set(pkg.dishes.map(Number).filter(id => selectedDishes.has(id)));
+    const pkgNatural = foodNatural(computeBaseRates(pkgIds), g);
+    const allNatural = foodNatural(rates, g);
+    const extras = Math.max(0, allNatural - pkgNatural);
+    const pkgPart = Math.max(pkg.base, pkgNatural); // אם האורחים גדלו מעבר לחבילה — המחיר הטבעי
+    const service = rates.serviceExtras || 0;
+    const names = allDishes.filter(d => selectedDishes.has(d.id) && (d.category === 'שונות' || !pkgIds.has(d.id))).map(d => d.name);
+    sub = pkgPart + extras + service;
+    minApplied = false; minTopUp = 0;
+    pkgInfo = { packageLocked: true, packageBase: pkgPart, packageExtras: extras + service, packageExtraNames: names };
+  }
 
   // שדות legacy לשמירת תאימות עם תצוגת "פיצות/תוספות/הנחת ילדים"
   const pizzas = rates.pizzaRate * billed;
@@ -1398,8 +1434,34 @@ function getAutoSubtotal() {
     sub, pizzas, addons, kDisc,
     adultPerPerson: rates.adultPerPerson, kidPerPerson: rates.kidPerPerson,
     flatExtras: rates.flatExtras, flatExtraNames: rates.flatExtraNames, serviceExtras: rates.serviceExtras,
-    minApplied, minTopUp, naturalTotal
+    minApplied, minTopUp, naturalTotal, ...pkgInfo
   };
+}
+
+// ── חבילה נעולה (v2.9.0) — נשמרת בתוך dish_subopts._package, בלי עמודה חדשה ב-DB ──
+function getPackage() {
+  const p = dishSubOpts && dishSubOpts._package;
+  return (p && p.base > 0 && Array.isArray(p.dishes)) ? p : null;
+}
+function foodNatural(rates, g) {
+  return g.adults * rates.adultPerPerson + g.kids * rates.kidPerPerson + rates.flatExtras - (rates.serviceExtras || 0);
+}
+function lockPackage() {
+  const r = getAutoSubtotal();
+  if (!r.minApplied) { showToast('אפשר לנעול רק כשהאירוע במינימום', 'error'); return; }
+  dishSubOpts._package = { base: MIN_EVENT_PRICE, dishes: [...selectedDishes] };
+  calcAutoPrice();
+  showToast('🔒 נעול כחבילה — כל מנה שתוסיף מעכשיו תתווסף מעל ₪' + MIN_EVENT_PRICE.toLocaleString(), 'success');
+}
+function unlockPackage() {
+  if (!confirm('לשחרר את החבילה ולחזור לחישוב הרגיל?')) return;
+  delete dishSubOpts._package;
+  calcAutoPrice();
+  showToast('🔓 החבילה שוחררה', 'success');
+}
+function toggleEditPreview() {
+  setMode(currentMode === 'preview' ? 'build' : 'preview');
+  window.scrollTo({ top: 0 });
 }
 
 // מחזיר את המחיר הסופי בפועל, לפי סדר עדיפות:
@@ -1470,10 +1532,10 @@ function calcAutoPrice() {
   const faEl = document.getElementById('final-price-adult');
   const fkEl = document.getElementById('final-price-kid');
   if (faEl && finalPriceOverride.adult === null && document.activeElement !== faEl) {
-    faEl.value = r.adultPerPerson > 0 ? Math.round(r.adultPerPerson) : '';
+    faEl.value = (r.adultPerPerson > 0 && !r.packageLocked) ? Math.round(r.adultPerPerson) : '';
   }
   if (fkEl && finalPriceOverride.kid === null && document.activeElement !== fkEl) {
-    fkEl.value = r.kidPerPerson > 0 ? Math.round(r.kidPerPerson) : '';
+    fkEl.value = (r.kidPerPerson > 0 && !r.packageLocked) ? Math.round(r.kidPerPerson) : '';
   }
   const pcRow = document.getElementById('disp-per-child-row');
   if (pcRow) pcRow.style.display = (g.kids > 0) ? '' : 'none';
@@ -1483,8 +1545,9 @@ function calcAutoPrice() {
   const feRow = document.getElementById('disp-flatextras-row');
   const feNote = document.getElementById('disp-flatextras-note');
   const feLabel = document.getElementById('disp-flatextras-label');
+  const pkgOn = ft.usedOverride === null && r.packageLocked;
   if (feRow && feNote) {
-    if (r.flatExtras > 0) {
+    if (r.flatExtras > 0 && !pkgOn) {
       feRow.style.display = 'flex';
       if (feLabel) feLabel.textContent = '✚ תוספות מיוחדות' + (r.flatExtraNames && r.flatExtraNames.length ? ' (' + r.flatExtraNames.join(', ') + ')' : '');
       feNote.textContent = '+₪' + Math.round(r.flatExtras).toLocaleString();
@@ -1502,6 +1565,24 @@ function calcAutoPrice() {
       minNote.textContent = '+₪' + Math.round(r.minTopUp).toLocaleString();
     } else {
       minRow.style.display = 'none';
+    }
+  }
+
+  // מ-v2.9.0: חבילה נעולה — שורת חבילה + שורת תוספות מעליה
+  const pkgRow = document.getElementById('disp-pkg-row');
+  const pkgxRow = document.getElementById('disp-pkgx-row');
+  if (pkgRow && pkgxRow) {
+    if (pkgOn) {
+      pkgRow.style.display = 'flex';
+      document.getElementById('disp-pkg-note').textContent = '₪' + Math.round(r.packageBase).toLocaleString();
+      if (r.packageExtras > 0) {
+        pkgxRow.style.display = 'flex';
+        document.getElementById('disp-pkgx-label').textContent = '✚ תוספות מעל החבילה' + (r.packageExtraNames.length ? ' (' + r.packageExtraNames.join(', ') + ')' : '');
+        document.getElementById('disp-pkgx-note').textContent = '+₪' + Math.round(r.packageExtras).toLocaleString();
+      } else pkgxRow.style.display = 'none';
+    } else {
+      pkgRow.style.display = 'none';
+      pkgxRow.style.display = 'none';
     }
   }
 
@@ -1656,8 +1737,17 @@ function updatePreview() {
     const feLabel2 = document.getElementById('t-flatextras-label');
     const flatEx = ft2.auto.flatExtras || 0;
     const flatNames = ft2.auto.flatExtraNames || [];
+    const pkgOn2 = ft2.usedOverride === null && ft2.auto.packageLocked;
+    const pkgRow2 = document.getElementById('t-pkg-row'), pkgxRow2 = document.getElementById('t-pkgx-row');
+    if (pkgRow2) pkgRow2.style.display = pkgOn2 ? '' : 'none';
+    if (pkgxRow2) pkgxRow2.style.display = (pkgOn2 && ft2.auto.packageExtras > 0) ? '' : 'none';
+    if (pkgOn2) {
+      document.getElementById('t-pkg').textContent = fmt2(ft2.auto.packageBase);
+      document.getElementById('t-pkgx-label').textContent = 'תוספות' + (ft2.auto.packageExtraNames.length ? ' (' + ft2.auto.packageExtraNames.join(', ') + ')' : '');
+      document.getElementById('t-pkgx').textContent = fmt2(ft2.auto.packageExtras);
+    }
     if (feRow2) {
-      if (flatEx > 0) {
+      if (flatEx > 0 && !pkgOn2) {
         feRow2.style.display = '';
         if (feLabel2) feLabel2.textContent = 'תוספות מיוחדות' + (flatNames.length ? ' (' + flatNames.join(', ') + ')' : '');
         document.getElementById('t-flatextras').textContent = fmt2(flatEx);
@@ -1672,6 +1762,7 @@ function updatePreview() {
     document.getElementById('t-deposit').textContent=fmt2(dep2);
     let ppText = perAdult>0 ? 'מחיר לאדם: ₪'+Math.round(perAdult).toLocaleString() : '';
     if (g.kids>0 && perKid>0) ppText += ' | מחיר לילד: ₪'+Math.round(perKid).toLocaleString();
+    if (pkgOn2) ppText = ''; // בחבילה אין מחיר לאדם
     document.getElementById('t-per-person').textContent = ppText;
   }
 }
@@ -1681,6 +1772,7 @@ function clearTotals(){
   document.getElementById('t-per-person').textContent='';
   const feRow2 = document.getElementById('t-flatextras-row');
   if (feRow2) feRow2.style.display = 'none';
+  ['t-pkg-row','t-pkgx-row'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
 }
 
 // SAVE
@@ -2050,12 +2142,17 @@ async function generatePDF(workerMode){
   const pNote   = (document.getElementById('price-note')?.value||'').trim();
   const perAdult = Math.round(ftPdf.adultPerPerson);
   const perKid   = Math.round(ftPdf.kidPerPerson);
-  const flatEx   = Math.round(ftPdf.auto.flatExtras || 0);
+  const pkgPdf   = ftPdf.usedOverride === null && ftPdf.auto.packageLocked; // v2.9.0
+  const flatEx   = pkgPdf ? 0 : Math.round(ftPdf.auto.flatExtras || 0);
   const flatNames = ftPdf.auto.flatExtraNames || [];
+  const pkgRowsHtml = !pkgPdf ? '' :
+    `<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>חבילה לאירוע</span><span style="font-weight:600;">₪${Math.round(ftPdf.auto.packageBase).toLocaleString()}</span></div>` +
+    (ftPdf.auto.packageExtras > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>תוספות${ftPdf.auto.packageExtraNames.length?' ('+ftPdf.auto.packageExtraNames.join(', ')+')':''}</span><span style="font-weight:600;">₪${Math.round(ftPdf.auto.packageExtras).toLocaleString()}</span></div>` : '');
   return `
     <div style="background:#F8F5EE;border-radius:6px;padding:8px 12px;margin-top:10px;">
-      ${showPA&&perAdult>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר למבוגר לאדם</span><span style="font-weight:600;">₪${perAdult.toLocaleString()}</span></div>`:''}
-      ${showPK&&perKid>0&&g.kids>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר לילד לאדם</span><span style="font-weight:600;">₪${perKid.toLocaleString()}</span></div>`:''}
+      ${pkgRowsHtml}
+      ${showPA&&perAdult>0&&!pkgPdf?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר למבוגר לאדם</span><span style="font-weight:600;">₪${perAdult.toLocaleString()}</span></div>`:''}
+      ${showPK&&perKid>0&&g.kids>0&&!pkgPdf?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר לילד לאדם</span><span style="font-weight:600;">₪${perKid.toLocaleString()}</span></div>`:''}
       ${flatEx>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>תוספות מיוחדות${flatNames.length?' ('+flatNames.join(', ')+')':''}</span><span style="font-weight:600;">₪${flatEx.toLocaleString()}</span></div>`:''}
       ${showBV&&sub>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>סה"כ לפני מע"מ</span><span style="font-weight:600;">₪${Math.round(sub).toLocaleString()}</span></div>`:''}
       ${includeVat&&showVat?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מע"מ (18%)</span><span style="font-weight:600;">₪${Math.round(vat).toLocaleString()}</span></div>`:''}
@@ -2180,6 +2277,7 @@ window.onload=function(){setTimeout(function(){window.focus();window.print();},1
 function resetAll(){
   if(!confirm('לאפס?'))return;
   selectedDishes.clear();
+  if (dishSubOpts) delete dishSubOpts._package;
   finalPriceOverride = { adult: null, kid: null };
   const raA = document.getElementById('reset-final-adult'); if (raA) raA.style.display = 'none';
   const raK = document.getElementById('reset-final-kid');   if (raK) raK.style.display = 'none';
@@ -2357,6 +2455,7 @@ checkAuth();
     <button class="btn-cancel-changes" onclick="openAmalfiFromEdit()" style="background:rgba(8,145,178,0.25);border-color:rgba(8,145,178,0.5);">🥦 אמלפי</button>
     <button class="btn-cancel-changes" onclick="generatePDF()" style="background:rgba(201,168,76,0.25);border-color:rgba(201,168,76,0.5);">📄 PDF</button>
     <button class="btn-cancel-changes" onclick="generatePDF(true)" title="מדפיס רק את דף התפריט, בלי תנאים — לעובד בשטח">🧑‍🍳 לעובד</button>
+    <button class="btn-cancel-changes" id="edit-preview-btn" onclick="toggleEditPreview()" style="background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.5);">👁️ תצוגה</button>
     <button class="btn-save-changes" onclick="saveAndReturn()">💾 שמור שינויים</button>
   </div>
 </div>
