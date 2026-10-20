@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.7.0</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.7.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -253,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.7.0<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.7.1<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -909,7 +909,7 @@ async function loadDishes() {
   if (cats) allCats = cats;
 }
 
-// v1.7.0: מה השתנה בהצעה מאז שנשלחה ללקוח (רק שדות שהלקוח רואה). לא שולח כלום — רק מסמן.
+// v1.7.1: מה השתנה בהצעה מאז שנשלחה ללקוח (רק שדות שהלקוח רואה). לא שולח כלום — רק מסמן.
 function diffFromSent(q, ap) {
   if (!ap || ap.kind !== 'quote') return [];
   const out = [];
@@ -1451,8 +1451,8 @@ async function sendToAmalfi() {
     'פיצה אדומה':'פיצה כללי', 'פיצה ירוקה':'פיצה כללי', 'פיצה צהובה':'פיצה כללי',
     'פיצה סגולה':'פיצה כללי', 'פיצה לבנה':'פיצה כללי',
   };
-  // מנרמל גרש עברי (׳) מול גרש רגיל (') וגרשיים דומים, כדי שהתאמת שמות לא תיכשל על הבדל תו בלתי נראה
-  const normalize = s => s.trim().replace(/['׳’`]/g, "'");
+  // מסיר גרש/גרשיים מכל סוג (' ׳ " ״) — 'תפו"א' מול 'תפו״א', 'קרפציו' מול 'קרפצ׳יו' (v1.7.1)
+  const normalize = s => s.trim().replace(/["'׳״’`]/g, '').replace(/\s+/g, ' ');
 
   let successCount = 0;
   for (const q of selected) {
