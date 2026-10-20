@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.6.2</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.7.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -253,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.6.2<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.7.0<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -909,12 +909,33 @@ async function loadDishes() {
   if (cats) allCats = cats;
 }
 
+// v1.7.0: מה השתנה בהצעה מאז שנשלחה ללקוח (רק שדות שהלקוח רואה). לא שולח כלום — רק מסמן.
+function diffFromSent(q, ap) {
+  if (!ap || ap.kind !== 'quote') return [];
+  const out = [];
+  const t = v => (v || '').toString().slice(0, 5);
+  const str = v => (v || '').toString().trim();
+  if ((q.guests_adults||0) !== (ap.guests_adults||0)) out.push('מבוגרים');
+  if ((q.guests_kids||0)   !== (ap.guests_kids||0))   out.push('ילדים');
+  if ((q.guests_babies||0) !== (ap.guests_babies||0)) out.push('פעוטות');
+  if (Math.round(Number(q.total_before_vat)||0) !== Math.round(Number(ap.price_before_vat)||0)) out.push('מחיר');
+  if (str(q.event_date) !== str(ap.event_date)) out.push('תאריך');
+  if (t(q.event_time) !== t(ap.event_time)) out.push('שעה');
+  if (str(q.event_address) !== str(ap.address)) out.push('כתובת');
+  if (Array.isArray(ap.menu_items) && allDishes.length) {
+    const sent = new Set(ap.menu_items.map(m => str(m.name)));
+    const now  = new Set(allDishes.filter(d => (q.selected_dishes||[]).includes(d.id)).map(d => str(d.name)));
+    if (sent.size !== now.size || [...now].some(n => !sent.has(n))) out.push('מנות');
+  }
+  return out;
+}
+
 async function loadQuotes() {
   const { data, error } = await sb.from('qz_quotes').select('*').order('event_date', { ascending: true });
   if (error) { showToast('שגיאה בטעינה: ' + error.message, 'error'); return; }
 
   // fetch approval records to detect client-edited fields + approval evidence (signature/timestamp)
-  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, public_token, client_edited_fields, status, signature_image, approved_at, change_request_text, change_request_at');
+  const { data: approvals } = await sb.from('quote_approvals').select('quote_id, public_token, kind, client_edited_fields, status, signature_image, approved_at, change_request_text, change_request_at, event_date, event_time, address, guests_adults, guests_kids, guests_babies, price_before_vat, menu_items');
   const approvalsById = {};
   (approvals||[]).forEach(a => { approvalsById['ap_'+a.quote_id] = a; approvalsById[a.quote_id] = a; });
 
@@ -929,6 +950,7 @@ async function loadQuotes() {
       _changeRequest: (ap && ap.change_request_text) ? ap.change_request_text : null,
       _approval: ap || null,
       _hasHistory: historyQuoteIds.has(q.id),
+      _sentDiff: diffFromSent(q, ap),
     };
   });
   renderQuotes();
@@ -992,6 +1014,11 @@ function renderQuotes() {
         </div>
         ${q.event_address?`<div class="quote-dishes">📍 ${q.event_address}</div>`:''}
         ${q._clientEditedFields?`<div style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;background:#FFF3CC;color:#7A5200;font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:6px;border:1.5px solid #C9A84C;">⚠️ לקוח עדכן פרטים: ${q._clientEditedFields.join(', ')} — יש לוודא</div>`:''}
+        ${q._sentDiff && q._sentDiff.length
+          ? `<div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#FFF0E0;color:#9A4A00;font-size:0.72rem;font-weight:600;padding:5px 10px;border-radius:6px;border:1.5px solid #F0A050;">🟠 שונה מאז שנשלח ללקוח: ${q._sentDiff.join(', ')} <button class="btn btn-green btn-sm" style="padding:2px 9px;font-size:0.68rem;" onclick="event.stopPropagation();sendFromManager(${q.id},'${(q.client_name||'').replace(/'/g,'')}','${q.client_phone||''}')">📤 שלח לאישור השינוי</button></div>`
+          : (q._approval && q._approval.kind==='quote' && q._approval.status==='pending' && status==='approved')
+            ? `<div style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;background:#FFF8E1;color:#8A6D00;font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:6px;border:1.5px solid #E6C34A;">⏳ נשלח שינוי — ממתין לאישור הלקוח</div>`
+            : ''}
         ${q._changeRequest?`<div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#E3F2FD;color:#1565C0;font-size:0.72rem;font-weight:600;padding:5px 10px;border-radius:6px;border:1.5px solid #90CAF9;">🔄 בקשת שינוי מהלקוח: "${q._changeRequest}" <button class="btn btn-navy btn-sm" style="padding:2px 9px;font-size:0.68rem;" onclick="event.stopPropagation();resolveChangeRequest(${q.id})">✓ טופל</button></div>`:''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
