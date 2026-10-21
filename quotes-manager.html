@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.7.1</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.7.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -253,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.7.1<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.7.2<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -1443,40 +1443,58 @@ async function sendToAmalfi() {
 
   if (!selected.length) return;
 
-  // load amalfi dishes for name matching
+  // load amalfi dishes (id → name; amalfi-orders matches items by NAME)
   const { data: amalfiDishes } = await sbA.from('dishes').select('id, name');
+  const amalfiById = new Map((amalfiDishes||[]).map(a => [a.id, a.name]));
 
-  // ידני: מנות שהשמות שלהן במערכת ההצעות שונים מהותית מהשם באמלפי (לא ניתן להתאים לפי substring)
-  const NAME_ALIASES = {
-    'פיצה אדומה':'פיצה כללי', 'פיצה ירוקה':'פיצה כללי', 'פיצה צהובה':'פיצה כללי',
-    'פיצה סגולה':'פיצה כללי', 'פיצה לבנה':'פיצה כללי',
+  // v1.7.2 — התאמה קבועה: מספר מנה בהצעות (qz_dishes) → מספר מנה באמלפי (dishes)
+  const AMALFI_MAP = {
+    9:12,   // אנטיפסטי
+    4:5,    // בורגול סלקים → בורגול סלק
+    3:10,   // חציל → חציל קלוי
+    8:8,    // יווני
+    21:15,  // ניוקי צבעוני
+    23:17,  // סביצה דג ים → סביצ׳ה
+    5:7,    // עשבי תיבול
+    13:14, 14:14, 15:14, 16:14, 17:14, // 5 הפיצות → פיצה כללי
+    31:18,  // פירות העונה
+    20:22,  // פסטה קצרה → פסטה קצרה שמנת פטריות
+    6:9,    // קינואה
+    1:1,    // קיסר
+    2:2,    // קפרזה
+    10:11,  // קרפציו סלק → קרפצ׳יו סלק
+    7:6,    // שורשים
+    11:13,  // תפו"א איטלקי → תפו״א איטלקי
   };
-  // מסיר גרש/גרשיים מכל סוג (' ׳ " ״) — 'תפו"א' מול 'תפו״א', 'קרפציו' מול 'קרפצ׳יו' (v1.7.1)
-  const normalize = s => s.trim().replace(/["'׳״’`]/g, '').replace(/\s+/g, ' ');
+  // מנות שלא דורשות כלום מספק הירקות — לא נשלחות ולא מתריעות
+  const AMALFI_SKIP = new Set([
+    47, 46,         // הערות, מלצר
+    33, 32, 34, 18, // טירמיסו, טראפלס, מלבי, קלצונה מתוק
+    35, 36,         // שתייה קלה, שתייה חמה
+    40, 42,         // פיצה שמנת בטטה (זמנית)
+    19,             // מאפייה מהטאבון (כרגע לא מהספק)
+    44,             // שקשוקה עגבניות (לא מספק הירקות)
+  ]);
+  // גיבוי למנה חדשה שעוד לא במפה: התאמה לפי שם (בלי גרשיים)
+  const normalize = s => s.trim().replace(/["'׳״’‘`´]/g, '').replace(/\s+/g, ' ');
 
   let successCount = 0;
+  const unmatched = new Set();
   for (const q of selected) {
     const total  = (q.guests_adults||0)+(q.guests_kids||0)+(q.guests_babies||0);
-    const dishNames = new Set(); // Set — כדי שכל 5 הפיצות ימופו פעם אחת בלבד ל"פיצה כללי"
+    const dishNames = new Set(); // Set — כל 5 הפיצות נשלחות פעם אחת כ"פיצה כללי"
 
-    if (Array.isArray(q.selected_dishes)) {
-      // selected_dishes are qz_dishes IDs — need to load their names first
+    if (Array.isArray(q.selected_dishes) && q.selected_dishes.length) {
       const { data: qzDishes } = await sb.from('qz_dishes').select('id,name').in('id', q.selected_dishes);
-      if (qzDishes && amalfiDishes) {
-        qzDishes.forEach(qd => {
-          const aliasTarget = NAME_ALIASES[qd.name.trim()];
-          if (aliasTarget) {
-            const aliasMatch = amalfiDishes.find(a => normalize(a.name) === normalize(aliasTarget));
-            if (aliasMatch) { dishNames.add(aliasMatch.name); return; }
-          }
-          const qdNorm = normalize(qd.name);
-          const match = amalfiDishes.find(a => {
-            const aNorm = normalize(a.name);
-            return aNorm === qdNorm || aNorm.includes(qdNorm) || qdNorm.includes(aNorm);
-          });
-          if (match) dishNames.add(match.name); // amalfi-orders matches items by NAME, not ID
-        });
-      }
+      (qzDishes||[]).forEach(qd => {
+        if (AMALFI_SKIP.has(qd.id)) return;
+        const mappedName = amalfiById.get(AMALFI_MAP[qd.id]);
+        if (mappedName) { dishNames.add(mappedName); return; }
+        const qdNorm = normalize(qd.name);
+        const byName = (amalfiDishes||[]).find(a => normalize(a.name) === qdNorm);
+        if (byName) { dishNames.add(byName.name); return; }
+        unmatched.add(qd.name);
+      });
     }
 
     // veggie_orders only has: event_name, guests, items, status, created_at — fold group/note into the event name
@@ -1494,6 +1512,9 @@ async function sendToAmalfi() {
     if (!error) successCount++;
   }
 
+  if (unmatched.size) {
+    alert('⚠️ מנות שלא נמצאה להן מנה באמלפי ולא נשלחו:\n\n' + [...unmatched].join('\n') + '\n\nצריך להקים אותן באמלפי (באותו שם) או להוסיף התאמה.');
+  }
   if (successCount === selected.length) {
     showToast(successCount + ' אירועים נשלחו לאמלפי ✓', 'success');
   } else {
