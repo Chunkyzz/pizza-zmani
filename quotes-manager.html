@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.7.2</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.7.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -253,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.7.2<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.7.3<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -1314,12 +1314,15 @@ function openCalendarInvite(quoteId) {
 }
 
 async function openAmalfi(quoteId) {
+  // v1.7.3: פותחים את הלשונית מיד בלחיצה (אחרת חוסם החלונות חוסם אותה אחרי ההמתנה/האזהרה), ומנווטים לאמלפי רק אחרי שההזמנה נשמרה
+  const tab = window.open('', '_blank');
   const prevSelection = new Set(selectedIds);
   selectedIds = new Set([quoteId]);
   await sendToAmalfi(); // שולח למאגר הנכון (veggie_orders → amalfi-orders), עם התאמת השמות התקינה
   selectedIds = prevSelection;
   updateSelectionUI(); renderQuotes();
-  window.open('https://chunkyzz.github.io/amalfi-orders/', '_blank');
+  const url = 'https://chunkyzz.github.io/amalfi-orders/';
+  if (tab && !tab.closed) tab.location.href = url; else window.open(url, '_blank');
 }
 
 function filterQuotes() { renderQuotes(); }
