@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.7.3</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.7.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -253,7 +253,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.7.3<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.7.4<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -1482,10 +1482,10 @@ async function sendToAmalfi() {
   const normalize = s => s.trim().replace(/["'׳״’‘`´]/g, '').replace(/\s+/g, ' ');
 
   let successCount = 0;
-  const unmatched = new Set();
   for (const q of selected) {
     const total  = (q.guests_adults||0)+(q.guests_kids||0)+(q.guests_babies||0);
     const dishNames = new Set(); // Set — כל 5 הפיצות נשלחות פעם אחת כ"פיצה כללי"
+    const unmatched = new Set(); // v1.7.4: נשלח לאמלפי ומוצג שם על כרטיס ההזמנה
 
     if (Array.isArray(q.selected_dishes) && q.selected_dishes.length) {
       const { data: qzDishes } = await sb.from('qz_dishes').select('id,name').in('id', q.selected_dishes);
@@ -1511,13 +1511,12 @@ async function sendToAmalfi() {
       created_at:  new Date().toISOString(),
     };
 
-    const { error } = await sbA.from('veggie_orders').insert(payload);
+    if (unmatched.size) payload.missing = [...unmatched];
+    let { error } = await sbA.from('veggie_orders').insert(payload);
+    if (error && payload.missing) { delete payload.missing; ({ error } = await sbA.from('veggie_orders').insert(payload)); } // עמודת missing עוד לא קיימת — לא מאבדים את ההזמנה
     if (!error) successCount++;
   }
 
-  if (unmatched.size) {
-    alert('⚠️ מנות שלא נמצאה להן מנה באמלפי ולא נשלחו:\n\n' + [...unmatched].join('\n') + '\n\nצריך להקים אותן באמלפי (באותו שם) או להוסיף התאמה.');
-  }
   if (successCount === selected.length) {
     showToast(successCount + ' אירועים נשלחו לאמלפי ✓', 'success');
   } else {
