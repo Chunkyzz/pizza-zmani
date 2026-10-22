@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧪 בדיקה — Pizza Zmani – בונה הצעת מחיר v2.9.2</title>
+<title>🧪 בדיקה — Pizza Zmani – בונה הצעת מחיר v2.9.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.9.2 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.9.3 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1029,6 +1029,8 @@ async function loadExistingQuote(id) {
   if (data.total_before_vat) {
     document.getElementById('manual-subtotal').value = data.total_before_vat;
   }
+  // v2.9.3: הצעה ישנה במחיר ידני (בלי שורות גיל) — הסה"כ השמור נשאר כפי שהוא
+  if (data.price_override && !(dishSubOpts._tiers && dishSubOpts._tiers.active)) getTiers().totalTyped = true;
 
   // מחיר סופי לאדם/לילד — עקיפה נפרדת (אם נשמרה בהצעה)
   finalPriceOverride.adult = (data.final_price_adult !== undefined && data.final_price_adult !== null) ? data.final_price_adult : null;
@@ -1322,17 +1324,23 @@ function tierSum() {
   const t = getTiers(), q = tierQty();
   return q.adults * (t.adult || 0) + q.teens * (t.teen || 0) + q.kids * (t.kid || 0);
 }
-// ממלא מחירים ריקים במחיר האוטומטי (רק תצוגה — לא מפעיל את השורות)
-function fillTierDefaults() {
-  const t = getTiers(), r = getAutoSubtotal();
+// מ-v2.9.3: כל עוד לא נגעת בשורות — הן מציגות את המחיר שהמערכת מחשבת כרגע
+// (כולל כל התוספות, ומחיר סופי לאדם/לילד אם הוזן), כך שרואים מאיפה יורדים בהנחה.
+function fillTierDefaults(r) {
+  const t = getTiers();
+  r = r || getAutoSubtotal();
+  const auto = {
+    adult: finalPriceOverride.adult !== null ? finalPriceOverride.adult : r.adultPerPerson,
+    kid:   finalPriceOverride.kid   !== null ? finalPriceOverride.kid   : r.kidPerPerson
+  };
+  auto.teen = auto.adult;
   ['adult','teen','kid'].forEach(k => {
     const el = document.getElementById('tier-' + k);
-    if (!el) return;
-    if (t[k] === null || t[k] === undefined) el.value = Math.round(k === 'kid' ? r.kidPerPerson : r.adultPerPerson) || '';
-    else el.value = t[k];
+    if (!el || document.activeElement === el) return;
+    el.value = t.active ? (t[k] ?? '') : (Math.round(auto[k]) || '');
   });
   const tq = document.getElementById('tier-teen-qty');
-  if (tq) tq.value = t.teenQty || 0;
+  if (tq && document.activeElement !== tq) tq.value = t.teenQty || 0;
 }
 function onTierInput() {
   const t = getTiers();
@@ -1348,6 +1356,7 @@ function onTierInput() {
 }
 function onManualTotalInput() {
   getTiers().active = false;
+  getTiers().totalTyped = true;
   calcAutoPrice();
 }
 function renderTierRows() {
@@ -1603,6 +1612,11 @@ function getFinalTotals() {
     if (getTiers().active) {
       const ts = Math.round(tierSum());
       if (document.activeElement !== ms) ms.value = ts || '';
+    }
+    else {
+      fillTierDefaults(r); // מתעדכן עם כל שינוי מנות/אורחים
+      // הסה"כ עוקב אחרי החישוב האוטומטי עד שמקלידים בו ידנית
+      if (!getTiers().totalTyped && document.activeElement !== ms) ms.value = Math.round(r.sub) || '';
     }
     renderTierRows();
     // מ-v2.7.4: שירותים ("שונות" — מלצר) מתווספים תמיד מעל, גם על מחיר כולל ידני
