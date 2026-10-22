@@ -1337,7 +1337,7 @@ function fillTierDefaults(r) {
   ['adult','teen','kid'].forEach(k => {
     const el = document.getElementById('tier-' + k);
     if (!el || document.activeElement === el) return;
-    el.value = t.active ? (t[k] ?? '') : (Math.round(auto[k]) || '');
+    el.value = (t.active || t.touched) ? (t[k] ?? '') : (Math.round(auto[k]) || ''); // אחרי שנגעת — המחירים שלך נשמרים
   });
   const tq = document.getElementById('tier-teen-qty');
   if (tq && document.activeElement !== tq) tq.value = t.teenQty || 0;
@@ -1350,7 +1350,7 @@ function onTierInput() {
   });
   const q = parseInt(document.getElementById('tier-teen-qty').value, 10);
   t.teenQty = isNaN(q) ? 0 : Math.max(0, q);
-  t.active = true;
+  t.active = true; t.touched = true;
   calcAutoPrice();
   if (currentMode !== 'build') updatePreview();
 }
