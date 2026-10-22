@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.9.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.9.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -28,6 +28,28 @@ body.edit-mode-active{padding-bottom:64px;}
 .topbar-center{display:flex;gap:4px;align-items:center;}
 .topbar-right{display:flex;gap:4px;align-items:center;flex-shrink:0;}
 .version{font-size:0.6rem;color:rgba(255,255,255,0.2);}
+#internal-breakdown{font-size:0.78rem;display:flex;flex-direction:column;gap:1px;max-width:360px;}
+.ib-title{font-weight:700;color:var(--navy);font-size:0.72rem;margin-top:8px;opacity:0.7;}
+.ib-title:first-child{margin-top:0;}
+.ib-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;padding:1px 0;}
+.ib-p{font-weight:700;color:var(--navy);white-space:nowrap;}
+.ib-p::before{content:'· ';color:var(--muted);font-weight:400;}
+.ib-man{background:#FFF3CD;color:#8A6D00;border-radius:4px;padding:0 5px;font-size:0.68rem;font-weight:700;}
+.ib-tag{color:var(--muted);font-size:0.68rem;}
+.ib-warn{color:#B8860B;font-size:0.68rem;}
+.ib-row s{color:var(--muted);font-size:0.68rem;}
+.ib-manrow{background:#FFFBEA;border-radius:4px;padding:1px 4px;}
+.ib-calc{background:var(--cream2);border-radius:6px;padding:4px 8px;font-weight:600;color:var(--navy);margin-top:2px;}
+.ib-empty{color:var(--muted);}
+.tiers{display:flex;flex-direction:column;gap:5px;margin-top:6px;padding:8px 10px;background:#FFFDF5;border:1px dashed var(--gold);border-radius:8px;max-width:360px;}
+.tier-row{display:flex;align-items:center;gap:6px;font-size:0.82rem;}
+.tier-lbl{width:44px;font-weight:700;color:var(--navy);}
+.tier-row input{width:70px;text-align:center;font-family:inherit;font-size:0.85rem;font-weight:700;color:var(--navy);border:1.5px solid var(--border);border-radius:6px;padding:4px;background:#fff;}
+.tier-row input.tier-qty-in{width:52px;}
+.tier-x{color:var(--muted);}
+.tier-qty{width:52px;text-align:center;font-weight:700;color:var(--muted);}
+.tier-sum{color:var(--muted);font-size:0.75rem;white-space:nowrap;}
+.tier-hint{font-size:0.68rem;color:var(--muted);}
 
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:7px;border:none;font-family:'Heebo',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
@@ -359,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.9.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.9.4 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -483,7 +505,20 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
         <label style="font-size:0.72rem;color:var(--muted);">סה"כ לפני מע"מ (₪) — יחליף את החישוב האוטומטי</label>
         <input type="number" id="manual-subtotal" placeholder="0" min="0" step="50"
           style="font-family:inherit;font-size:0.95rem;padding:8px 12px;border:1.5px solid var(--gold);border-radius:8px;background:#FFFDF5;outline:none;width:100%;"
-          oninput="calcAutoPrice()">
+          oninput="onManualTotalInput()">
+        <!-- v2.9.2: מחיר לאדם לפי גיל — נסתר מהלקוח, הסה"כ מתעדכן מהשורות -->
+        <div class="tiers">
+          <div class="tier-row"><span class="tier-lbl">מבוגר</span>
+            <input type="number" id="tier-adult" min="0" step="1" oninput="onTierInput()"><span class="tier-x">×</span>
+            <span class="tier-qty" id="tier-adult-qty">0</span><span class="tier-sum" id="tier-adult-sum"></span></div>
+          <div class="tier-row"><span class="tier-lbl">נוער</span>
+            <input type="number" id="tier-teen" min="0" step="1" oninput="onTierInput()"><span class="tier-x">×</span>
+            <input type="number" id="tier-teen-qty" class="tier-qty-in" min="0" step="1" value="0" oninput="onTierInput()"><span class="tier-sum" id="tier-teen-sum"></span></div>
+          <div class="tier-row"><span class="tier-lbl">ילד</span>
+            <input type="number" id="tier-kid" min="0" step="1" oninput="onTierInput()"><span class="tier-x">×</span>
+            <span class="tier-qty" id="tier-kid-qty">0</span><span class="tier-sum" id="tier-kid-sum"></span></div>
+          <div class="tier-hint">נוער נספרים מתוך המבוגרים · ילדים מכמות האורחים · הלקוח רואה רק את הסה"כ</div>
+        </div>
       </div>
       <div style="background:var(--cream2);border-radius:8px;padding:10px 14px;border:1px solid var(--border);">
         <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);padding:1px 0;">
@@ -539,6 +574,14 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- פירוט פנימי — רק לגל, לא מוצג ללקוח (v2.9.1) -->
+  <div class="section-card">
+    <div class="section-head" style="cursor:pointer;" onclick="var b=document.getElementById('internal-breakdown');b.style.display=b.style.display==='none'?'':'none';this.querySelector('.ib-arrow').textContent=b.style.display==='none'?'▸':'▾';">
+      <h3>🔒 פירוט פנימי <span style="font-size:0.7rem;font-weight:400;color:var(--muted);">— רק לך, לא מוצג ללקוח</span></h3><span class="ib-arrow">▾</span>
+    </div>
+    <div class="section-body" id="internal-breakdown"></div>
   </div>
 
   <!-- מה מוצג ללקוח -->
@@ -969,6 +1012,8 @@ async function loadExistingQuote(id) {
   if (data.total_before_vat) {
     document.getElementById('manual-subtotal').value = data.total_before_vat;
   }
+  // v2.9.3: הצעה ישנה במחיר ידני (בלי שורות גיל) — הסה"כ השמור נשאר כפי שהוא
+  if (data.price_override && !(dishSubOpts._tiers && dishSubOpts._tiers.active)) getTiers().totalTyped = true;
 
   // מחיר סופי לאדם/לילד — עקיפה נפרדת (אם נשמרה בהצעה)
   finalPriceOverride.adult = (data.final_price_adult !== undefined && data.final_price_adult !== null) ? data.final_price_adult : null;
@@ -1242,7 +1287,89 @@ function setDishOverride(dishId, val) {
 function togglePriceOverride() {
   const on = document.getElementById('chk-override').checked;
   document.getElementById('override-wrap').style.display = on ? 'flex' : 'none';
+  if (on) fillTierDefaults();
   calcAutoPrice();
+}
+
+// ── v2.9.2: מחיר ידני לפי גיל (מבוגר / נוער / ילד) — נשמר ב-dish_subopts._tiers ──
+// active=true ברגע שגל נוגע בשורות → הסה"כ הידני = סכום השורות (ומתעדכן עם שינוי אורחים).
+// הקלדה ישירה בשדה הסה"כ מבטלת את זה (active=false) — הסה"כ שהוקלד קובע.
+function getTiers() {
+  if (!dishSubOpts._tiers) dishSubOpts._tiers = { adult: null, teen: null, kid: null, teenQty: 0, active: false };
+  return dishSubOpts._tiers;
+}
+function tierQty() {
+  const g = getGuests(), t = getTiers();
+  const teens = Math.max(0, Math.min(g.adults, Math.floor(t.teenQty || 0)));
+  return { adults: g.adults - teens, teens, kids: g.kids };
+}
+function tierSum() {
+  const t = getTiers(), q = tierQty();
+  return q.adults * (t.adult || 0) + q.teens * (t.teen || 0) + q.kids * (t.kid || 0);
+}
+// מ-v2.9.3: כל עוד לא נגעת בשורות — הן מציגות את המחיר שהמערכת מחשבת כרגע
+// (כולל כל התוספות, ומחיר סופי לאדם/לילד אם הוזן), כך שרואים מאיפה יורדים בהנחה.
+function fillTierDefaults(r) {
+  const t = getTiers();
+  r = r || getAutoSubtotal();
+  const auto = {
+    adult: finalPriceOverride.adult !== null ? finalPriceOverride.adult : r.adultPerPerson,
+    kid:   finalPriceOverride.kid   !== null ? finalPriceOverride.kid   : r.kidPerPerson
+  };
+  auto.teen = auto.adult;
+  ['adult','teen','kid'].forEach(k => {
+    const el = document.getElementById('tier-' + k);
+    if (!el || document.activeElement === el) return;
+    el.value = (t.active || t.touched) ? (t[k] ?? '') : (Math.round(auto[k]) || ''); // אחרי שנגעת — המחירים שלך נשמרים
+  });
+  const tq = document.getElementById('tier-teen-qty');
+  if (tq && document.activeElement !== tq) tq.value = t.teenQty || 0;
+}
+function onTierInput() {
+  const t = getTiers();
+  ['adult','teen','kid'].forEach(k => {
+    const v = parseFloat(document.getElementById('tier-' + k).value);
+    t[k] = isNaN(v) ? 0 : v;
+  });
+  const qEl = document.getElementById('tier-teen-qty');
+  const q = parseInt(qEl.value, 10);
+  t.teenQty = isNaN(q) ? 0 : Math.max(0, q);
+  // נוער הם מתוך המבוגרים — אי אפשר יותר נוער ממבוגרים
+  const maxTeens = getGuests().adults;
+  if (t.teenQty > maxTeens) {
+    t.teenQty = maxTeens;
+    qEl.value = maxTeens;
+    showToast('⚠️ נוער נספרים מתוך המבוגרים — יש רק ' + maxTeens + ' מבוגרים', 'error');
+  }
+  t.active = true; t.touched = true;
+  calcAutoPrice();
+  if (currentMode !== 'build') updatePreview();
+}
+function onManualTotalInput() {
+  getTiers().active = false;
+  getTiers().totalTyped = true;
+  calcAutoPrice();
+}
+function renderTierRows() {
+  const t = getTiers();
+  // הורדת מבוגרים למטה מכמות הנוער — הנוער יורד איתם
+  const maxTeens = getGuests().adults;
+  if ((t.teenQty || 0) > maxTeens) {
+    t.teenQty = maxTeens;
+    const qEl = document.getElementById('tier-teen-qty');
+    if (qEl) qEl.value = maxTeens;
+    showToast('⚠️ כמות הנוער ירדה ל-' + maxTeens + ' (לא יותר מהמבוגרים)', 'error');
+  }
+  const qEl2 = document.getElementById('tier-teen-qty');
+  if (qEl2) qEl2.max = maxTeens;
+  const q = tierQty();
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  set('tier-adult-qty', q.adults);
+  set('tier-kid-qty', q.kids);
+  const sumTxt = (n, p) => (t.active && n && p) ? '= ₪' + Math.round(n * p).toLocaleString() : '';
+  set('tier-adult-sum', sumTxt(q.adults, t.adult));
+  set('tier-teen-sum', sumTxt(q.teens, t.teen));
+  set('tier-kid-sum', sumTxt(q.kids, t.kid));
 }
 
 // ── מחיר סופי לאדם/לילד — עקיפה ידנית נפרדת, לתיקוני מקרים חריגים ──
@@ -1482,8 +1609,20 @@ function getFinalTotals() {
   const r = getAutoSubtotal();
 
   if (useOverride) {
+    // מ-v2.9.2: אם השורות מבוגר/נוער/ילד פעילות — הסה"כ הידני = סכומן (ומוצג בשדה)
+    const ms = document.getElementById('manual-subtotal');
+    if (getTiers().active) {
+      const ts = Math.round(tierSum());
+      if (document.activeElement !== ms) ms.value = ts || '';
+    }
+    else {
+      fillTierDefaults(r); // מתעדכן עם כל שינוי מנות/אורחים
+      // הסה"כ עוקב אחרי החישוב האוטומטי עד שמקלידים בו ידנית
+      if (!getTiers().totalTyped && document.activeElement !== ms) ms.value = Math.round(r.sub) || '';
+    }
+    renderTierRows();
     // מ-v2.7.4: שירותים ("שונות" — מלצר) מתווספים תמיד מעל, גם על מחיר כולל ידני
-    const sub = (parseFloat(document.getElementById('manual-subtotal').value) || 0) + (r.serviceExtras || 0);
+    const sub = (parseFloat(ms.value) || 0) + (r.serviceExtras || 0);
     return { sub, adultPerPerson: r.adultPerPerson, kidPerPerson: r.kidPerPerson, auto: r, usedOverride: 'total' };
   }
 
@@ -1592,6 +1731,115 @@ function calcAutoPrice() {
   document.getElementById('t-grand').textContent    = fmt(grand);
   document.getElementById('t-deposit').textContent  = fmt(dep);
   if (currentMode !== 'build') updatePreview();
+  renderInternalBreakdown(ft);
+}
+
+// ── מ-v2.9.1: פירוט פנימי — רק בבונה, לא בתצוגה/PDF/דף האישור ──
+// מראה לגל מאיפה מגיע כל שקל: מחיר כל מנה לאדם (כולל הגדלה בגלל מינימום כמות),
+// מחירים שהוזנו ידנית לעומת המחיר הרגיל, ואת החשבון המלא עד הסה"כ.
+function renderInternalBreakdown(ft) {
+  const box = document.getElementById('internal-breakdown');
+  if (!box) return;
+  const g = getGuests(), billed = g.adults + g.kids;
+  const sel = allDishes.filter(d => selectedDishes.has(d.id));
+  const r = ft.auto;
+  const n = v => '₪' + (Math.round(v * 10) / 10).toLocaleString();
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const MAN = '<span class="ib-man">✏️ ידני</span>';
+  const NOKID = '<span class="ib-tag">ילדים לא משלמים</span>';
+  const rows = [];
+  const row = (name, val, notes) => rows.push('<div class="ib-row"><span>' + name + '</span><span class="ib-p">' + val + '</span>' + (notes ? '<span>' + notes + '</span>' : '') + '</div>');
+
+  if (!billed || !sel.length) { box.innerHTML = '<div class="ib-empty">אין עדיין אורחים או מנות</div>'; return; }
+
+  // פיצות
+  const pizzas = sel.filter(d => d.category === 'פיצות' && d.name !== 'מאפייה מהטאבון');
+  if (pizzas.length) {
+    const ov = dishPriceOverrides['pizza'];
+    row('פיצות (' + pizzas.length + ' סוגים)', n(ov !== undefined ? ov : 100) + ' לאדם', ov !== undefined ? MAN + ' <s>₪100</s>' : '');
+  }
+  // סלטים
+  const salads = sel.filter(d => d.category === 'סלטים');
+  if (salads.length) {
+    if (salads.some(d => dishPriceOverrides[d.id] !== undefined)) {
+      salads.forEach(d => {
+        const ov = dishPriceOverrides[d.id];
+        row('סלט ' + esc(d.name), n(ov !== undefined ? ov : 20) + ' לאדם', (ov !== undefined ? MAN + ' <s>₪20</s> ' : '') + (d.kids_priced === false ? NOKID : ''));
+      });
+    } else {
+      const rate = 20 + (salads.length > 4 ? (salads.length - 4) * 5 : 0);
+      row('סלטים (' + salads.length + ')', n(rate) + ' לאדם', salads.some(d => d.kids_priced !== false) ? '' : NOKID);
+    }
+  }
+  // מאפייה
+  const bakery = sel.find(d => d.name === 'מאפייה מהטאבון');
+  if (bakery) {
+    const ov = dishPriceOverrides[bakery.id];
+    row('מאפייה מהטאבון', n(ov !== undefined ? ov : 10) + ' לאדם', (ov !== undefined ? MAN + ' <s>₪10</s> ' : '') + (bakery.kids_priced === false ? NOKID : ''));
+  }
+  // שאר המנות
+  sel.forEach(d => {
+    if (d.category === 'פיצות' || d.category === 'סלטים') return;
+    const ov = dishPriceOverrides[d.id];
+    const kidTag = d.kids_priced === false ? NOKID : '';
+    if (d.base_price) {
+      const flat = ov !== undefined ? ov : d.base_price;
+      row(esc(d.name), n(flat) + ' למנה (קבוע)', ov !== undefined ? MAN + ' <s>₪' + d.base_price + '</s>' : '');
+      return;
+    }
+    if (ov !== undefined) { row(esc(d.name), n(ov) + ' לאדם', MAN + ' <s>₪' + (d.addon_per_person || 0) + '</s> ' + kidTag); return; }
+    const base = d.addon_per_person || 0;
+    if (!base) return; // מנה שכלולה בלי תוספת
+    if (d.min_guests && billed < d.min_guests) {
+      row(esc(d.name), n(base * d.min_guests / billed) + ' לאדם',
+        '<span class="ib-warn">₪' + base + ' × מינימום ' + d.min_guests + ' ÷ ' + billed + ' אורחים</span> ' + kidTag);
+    } else row(esc(d.name), n(base) + ' לאדם', kidTag);
+  });
+  // רטבים נוספים
+  sel.forEach(d => {
+    const def = DISH_SUBOPTIONS[d.name];
+    if (!def || !def.extra || dishPriceOverrides[d.id] !== undefined) return;
+    const chosen = dishSubOpts[d.id] || {};
+    const extra = Math.max(0, def.opts.filter(o => chosen[o.id]).length - def.base);
+    if (extra > 0) row(esc(d.name) + ' — ' + extra + ' רטבים נוספים', n(extra * def.extra) + ' לאדם', '');
+  });
+
+  // סיכום מחירים לאדם
+  const sum = [];
+  const line = (a, b, cls) => sum.push('<div class="ib-row' + (cls ? ' ' + cls : '') + '"><span>' + a + '</span><span class="ib-p">' + b + '</span></div>');
+  line('מחיר אוטומטי למבוגר', n(r.adultPerPerson));
+  if (g.kids) line('מחיר אוטומטי לילד (×0.85)', n(r.kidPerPerson));
+  if (ft.usedOverride === 'final') {
+    if (finalPriceOverride.adult !== null) line('✏️ מחיר ידני למבוגר', n(finalPriceOverride.adult) + ' <span class="ib-diff">(' + diff(finalPriceOverride.adult - r.adultPerPerson) + ')</span>', 'ib-manrow');
+    if (g.kids && finalPriceOverride.kid !== null) line('✏️ מחיר ידני לילד', n(finalPriceOverride.kid) + ' <span class="ib-diff">(' + diff(finalPriceOverride.kid - r.kidPerPerson) + ')</span>', 'ib-manrow');
+  }
+  function diff(v) { v = Math.round(v); return (v > 0 ? '+' : '') + '₪' + v.toLocaleString(); }
+
+  // החשבון המלא
+  const calc = [];
+  if (ft.usedOverride === 'total') {
+    const t = getTiers(), q = tierQty();
+    if (t.active) {
+      [['מבוגר', q.adults, t.adult], ['נוער', q.teens, t.teen], ['ילד', q.kids, t.kid]].forEach(([lbl, c, p]) => {
+        if (c) calc.push('✏️ ' + lbl + ' ' + c + ' × ' + n(p || 0) + ' = ' + n(c * (p || 0)));
+      });
+    }
+    calc.push('✏️ סה"כ ידני: ' + n(ft.sub) + ' (אוטומטי היה ' + n(r.sub) + ')');
+  } else if (r.packageLocked && ft.usedOverride === null) {
+    calc.push('🔒 חבילה ' + n(r.packageBase) + (r.packageExtras ? ' + תוספות ' + n(r.packageExtras) : '') + ' = ' + n(ft.sub));
+  } else {
+    const parts = [g.adults + ' × ' + n(ft.adultPerPerson)];
+    if (g.kids) parts.push(g.kids + ' × ' + n(ft.kidPerPerson));
+    if (r.flatExtras) parts.push(n(r.flatExtras) + ' קבוע');
+    const natural = g.adults * ft.adultPerPerson + g.kids * ft.kidPerPerson + (r.flatExtras || 0);
+    calc.push(parts.join(' + ') + ' = ' + n(natural));
+    if (ft.usedOverride === null && r.minApplied) calc.push('⚠️ הובא למינימום אירוע: +' + n(r.minTopUp) + ' → ' + n(ft.sub));
+  }
+
+  box.innerHTML =
+    '<div class="ib-title">מנות שנבחרו</div>' + rows.join('') +
+    '<div class="ib-title">מחיר לאדם</div>' + sum.join('') +
+    '<div class="ib-title">החשבון (לפני מע"מ)</div>' + calc.map(c => '<div class="ib-calc">' + c + '</div>').join('');
 }
 
 // UPDATE PREVIEW
@@ -1763,6 +2011,7 @@ function updatePreview() {
     let ppText = perAdult>0 ? 'מחיר לאדם: ₪'+Math.round(perAdult).toLocaleString() : '';
     if (g.kids>0 && perKid>0) ppText += ' | מחיר לילד: ₪'+Math.round(perKid).toLocaleString();
     if (pkgOn2) ppText = ''; // בחבילה אין מחיר לאדם
+    if (ft2.usedOverride === 'total') ppText = ''; // v2.9.2: מחיר ידני — הלקוח רואה רק סה"כ
     document.getElementById('t-per-person').textContent = ppText;
   }
 }
@@ -2143,6 +2392,7 @@ async function generatePDF(workerMode){
   const perAdult = Math.round(ftPdf.adultPerPerson);
   const perKid   = Math.round(ftPdf.kidPerPerson);
   const pkgPdf   = ftPdf.usedOverride === null && ftPdf.auto.packageLocked; // v2.9.0
+  const manualPdf = ftPdf.usedOverride === 'total'; // v2.9.2: במחיר ידני אין מחיר לאדם ללקוח
   const flatEx   = pkgPdf ? 0 : Math.round(ftPdf.auto.flatExtras || 0);
   const flatNames = ftPdf.auto.flatExtraNames || [];
   const pkgRowsHtml = !pkgPdf ? '' :
@@ -2151,8 +2401,8 @@ async function generatePDF(workerMode){
   return `
     <div style="background:#F8F5EE;border-radius:6px;padding:8px 12px;margin-top:10px;">
       ${pkgRowsHtml}
-      ${showPA&&perAdult>0&&!pkgPdf?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר למבוגר לאדם</span><span style="font-weight:600;">₪${perAdult.toLocaleString()}</span></div>`:''}
-      ${showPK&&perKid>0&&g.kids>0&&!pkgPdf?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר לילד לאדם</span><span style="font-weight:600;">₪${perKid.toLocaleString()}</span></div>`:''}
+      ${showPA&&perAdult>0&&!pkgPdf&&!manualPdf?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר למבוגר לאדם</span><span style="font-weight:600;">₪${perAdult.toLocaleString()}</span></div>`:''}
+      ${showPK&&perKid>0&&g.kids>0&&!pkgPdf&&!manualPdf?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מחיר לילד לאדם</span><span style="font-weight:600;">₪${perKid.toLocaleString()}</span></div>`:''}
       ${flatEx>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>תוספות מיוחדות${flatNames.length?' ('+flatNames.join(', ')+')':''}</span><span style="font-weight:600;">₪${flatEx.toLocaleString()}</span></div>`:''}
       ${showBV&&sub>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>סה"כ לפני מע"מ</span><span style="font-weight:600;">₪${Math.round(sub).toLocaleString()}</span></div>`:''}
       ${includeVat&&showVat?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0;border-bottom:0.5px solid #E5E0D5;"><span>מע"מ (18%)</span><span style="font-weight:600;">₪${Math.round(vat).toLocaleString()}</span></div>`:''}

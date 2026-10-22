@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧪 בדיקה — Pizza Zmani – בונה הצעת מחיר v2.9.3</title>
+<title>🧪 בדיקה — Pizza Zmani – בונה הצעת מחיר v2.9.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.9.3 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.9.4 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -1348,8 +1348,16 @@ function onTierInput() {
     const v = parseFloat(document.getElementById('tier-' + k).value);
     t[k] = isNaN(v) ? 0 : v;
   });
-  const q = parseInt(document.getElementById('tier-teen-qty').value, 10);
+  const qEl = document.getElementById('tier-teen-qty');
+  const q = parseInt(qEl.value, 10);
   t.teenQty = isNaN(q) ? 0 : Math.max(0, q);
+  // נוער הם מתוך המבוגרים — אי אפשר יותר נוער ממבוגרים
+  const maxTeens = getGuests().adults;
+  if (t.teenQty > maxTeens) {
+    t.teenQty = maxTeens;
+    qEl.value = maxTeens;
+    showToast('⚠️ נוער נספרים מתוך המבוגרים — יש רק ' + maxTeens + ' מבוגרים', 'error');
+  }
   t.active = true; t.touched = true;
   calcAutoPrice();
   if (currentMode !== 'build') updatePreview();
@@ -1360,7 +1368,18 @@ function onManualTotalInput() {
   calcAutoPrice();
 }
 function renderTierRows() {
-  const t = getTiers(), q = tierQty();
+  const t = getTiers();
+  // הורדת מבוגרים למטה מכמות הנוער — הנוער יורד איתם
+  const maxTeens = getGuests().adults;
+  if ((t.teenQty || 0) > maxTeens) {
+    t.teenQty = maxTeens;
+    const qEl = document.getElementById('tier-teen-qty');
+    if (qEl) qEl.value = maxTeens;
+    showToast('⚠️ כמות הנוער ירדה ל-' + maxTeens + ' (לא יותר מהמבוגרים)', 'error');
+  }
+  const qEl2 = document.getElementById('tier-teen-qty');
+  if (qEl2) qEl2.max = maxTeens;
+  const q = tierQty();
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   set('tier-adult-qty', q.adults);
   set('tier-kid-qty', q.kids);
