@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.9.5</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.9.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.9.5 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.9.6 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -2377,6 +2377,73 @@ async function generatePDF(workerMode, inPlace){
     menuHtml+='</div></div>';
   });
 
+  // v2.9.6: דף עובד נפרד — גדול וקריא, עם פירוט המנה, בלי מחירים; תמיד עמוד אחד (מקטין את עצמו רק אם צריך)
+  if (workerMode) {
+    let wMenu = '';
+    catOrder.forEach(cat=>{
+      if(!bycat[cat]||!bycat[cat].length) return;
+      let items = '', count = 0;
+      bycat[cat].forEach(d=>{
+        const allergyStr=(d.allergens&&d.allergens.length)?d.allergens.join(', '):'';
+        const noteStr=getDishNote(d);
+        const def=DISH_SUBOPTIONS[d.name];
+        const chosenOpts=def?def.opts.filter(o=>(dishSubOpts[d.id]||{})[o.id]):[];
+        const variants=chosenOpts.length?chosenOpts.map(o=>'ברוטב '+o.l):[d.description||''];
+        variants.forEach(descText=>{
+          count++;
+          items+=`<div class="dish"><div class="dn">${d.name}</div>${descText?`<div class="dd">${descText}</div>`:''}${noteStr?`<div class="dnote">✏️ ${noteStr}</div>`:''}${allergyStr?`<div class="dal">⚠ ${allergyStr}</div>`:''}</div>`;
+        });
+      });
+      wMenu+=`<div class="cat"><div class="cat-h"><span>${cat}</span><small>${count} מנות</small></div><div class="grid">${items}</div></div>`;
+    });
+    const wHtml=`<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>${filename}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;}
+@page{size:A4;margin:8mm;}
+.w{--s:1;width:194mm;margin:0 auto;}
+@media print{.w{width:100%;}}
+.hd{background:#1B2A4A;color:#fff;padding:calc(var(--s)*10px) calc(var(--s)*14px);border-radius:8px 8px 0 0;}
+.hd-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+.client{font-size:calc(var(--s)*24px);font-weight:800;}
+.badge{font-size:calc(var(--s)*12px);font-weight:700;color:#1B2A4A;background:#C9A84C;padding:2px 10px;border-radius:20px;white-space:nowrap;}
+.facts{display:flex;flex-wrap:wrap;gap:4px calc(var(--s)*22px);margin-top:calc(var(--s)*6px);font-size:calc(var(--s)*14px);font-weight:600;}
+.guests{background:#243660;color:#fff;display:flex;gap:calc(var(--s)*22px);padding:calc(var(--s)*7px) calc(var(--s)*14px);border-radius:0 0 8px 8px;font-size:calc(var(--s)*13px);}
+.guests b{color:#C9A84C;font-size:calc(var(--s)*20px);margin-inline-start:5px;}
+.notes{margin-top:calc(var(--s)*8px);background:#FFF3CC;border:2px solid #C9A84C;border-radius:8px;padding:calc(var(--s)*7px) calc(var(--s)*12px);font-size:calc(var(--s)*14px);font-weight:600;color:#5a3d00;white-space:pre-line;}
+.cat{margin-top:calc(var(--s)*10px);}
+.cat-h{font-size:calc(var(--s)*17px);font-weight:800;color:#1B2A4A;border-bottom:2.5px solid #C9A84C;padding-bottom:2px;margin-bottom:calc(var(--s)*4px);display:flex;justify-content:space-between;align-items:baseline;}
+.cat-h small{font-size:calc(var(--s)*12px);color:#8a7a50;font-weight:600;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 calc(var(--s)*16px);}
+.dish{padding:calc(var(--s)*5px) 0;border-bottom:1px solid #E8E2D3;break-inside:avoid;}
+.dn{font-size:calc(var(--s)*16px);font-weight:800;color:#1B2A4A;line-height:1.25;}
+.dd{font-size:calc(var(--s)*13px);color:#333;line-height:1.35;margin-top:1px;}
+.dnote{display:inline-block;margin-top:3px;background:#FFF3CC;border:2px solid #C9A84C;color:#5a3d00;font-size:calc(var(--s)*13px);font-weight:700;padding:1px 7px;border-radius:5px;}
+.dal{font-size:calc(var(--s)*12px);color:#B71C1C;font-weight:600;margin-top:1px;}
+</style></head><body>
+<div class="w" id="w">
+<div class="hd"><div class="hd-top"><div class="client">${clientName}</div>${eventType?`<div class="badge">${eventType}</div>`:''}</div>
+<div class="facts"><span>📅 ${dateStr}</span><span>🕐 ${timeStr}</span>${clientAddr?`<span>📍 ${clientAddr}</span>`:''}${clientPhone?`<span dir="ltr">📞 ${clientPhone}</span>`:''}</div></div>
+<div class="guests"><span>סה"כ<b>${total}</b></span><span>מבוגרים<b>${g.adults}</b></span><span>ילדים<b>${g.kids}</b></span><span>פעוטות<b>${g.babies}</b></span></div>
+${clientNotes?`<div class="notes">📝 ${clientNotes}</div>`:''}
+${wMenu}
+</div>
+<script>
+function fitAndPrint(){
+  var w=document.getElementById('w'), limit=(297-16)*96/25.4-4, s=1.4;
+  w.style.setProperty('--s',s);
+  while(w.offsetHeight>limit && s>0.6){ s-=0.03; w.style.setProperty('--s',s); }
+  setTimeout(function(){window.focus();window.print();},300);
+}
+window.onload=function(){ (document.fonts&&document.fonts.ready)?document.fonts.ready.then(fitAndPrint):fitAndPrint(); };
+<\/script>
+</body></html>`;
+    openPrintWindow(wHtml, inPlace);
+    return;
+  }
+
   const notesHtml = clientNotes?`
     <div style="background:#FFFDF5;border:1px solid #E8D9A0;border-radius:5px;padding:6px 10px;margin-top:8px;">
       <div style="font-size:9px;font-weight:600;color:#888;margin-bottom:2px;">הערות</div>
@@ -2519,6 +2586,9 @@ window.onload=function(){setTimeout(function(){window.focus();window.print();},1
 </body>
 </html>`;
 
+  openPrintWindow(html, inPlace);
+}
+function openPrintWindow(html, inPlace){
   showToast('מייצר PDF...','');
   if(inPlace){ location.replace(URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}))); return; }
   const win=window.open('','_blank','width=850,height=750');
