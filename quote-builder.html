@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.9.4</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.9.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.9.4 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.9.5 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -825,10 +825,12 @@ async function init() {
   const params = new URLSearchParams(window.location.search);
   const editId = params.get('id');
   if (editId) await loadExistingQuote(editId);
-  // הגעה מ-quotes-manager עם כוונה להפיק PDF ישירות (כפתור 📄 בטבלה)
-  if (editId && params.get('action') === 'pdf') {
+  // הגעה מ-quotes-manager עם כוונה להדפיס ישירות (📄 מלא / 🧑‍🍳 לעובד)
+  // v2.9.5: ההדפסה נפתחת באותה לשונית — חלון popup בלי לחיצה נחסם ע"י הדפדפן
+  const act = params.get('action');
+  if (editId && (act === 'pdf' || act === 'worker')) {
     setMode('preview');
-    generatePDF();
+    generatePDF(act === 'worker', true);
   }
 }
 
@@ -2291,7 +2293,7 @@ async function sendReservation(){
 }
 
 // PDF
-async function generatePDF(workerMode){
+async function generatePDF(workerMode, inPlace){
   updatePreview();
   await saveQuote(true); // שמירה אוטומטית
 
@@ -2518,6 +2520,7 @@ window.onload=function(){setTimeout(function(){window.focus();window.print();},1
 </html>`;
 
   showToast('מייצר PDF...','');
+  if(inPlace){ location.replace(URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}))); return; }
   const win=window.open('','_blank','width=850,height=750');
   if(!win){showToast('אשר popup בדפדפן','error');return;}
   win.document.write(html);
