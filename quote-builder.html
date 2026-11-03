@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.9.7</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.9.8</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.9.7 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.9.8 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -830,7 +830,7 @@ async function init() {
   const act = params.get('action');
   if (editId && (act === 'pdf' || act === 'worker' || act === 'workershare')) {
     setMode('preview');
-    generatePDF(act !== 'pdf', true, act === 'workershare'); // v2.9.7: workershare = דף עובד בלי הדפסה אוטומטית, לשליחה בוואטסאפ
+    generatePDF(act !== 'pdf', true); // workershare נשאר רק לתאימות לקישורים ישנים
   }
 }
 
@@ -2293,7 +2293,7 @@ async function sendReservation(){
 }
 
 // PDF
-async function generatePDF(workerMode, inPlace, shareMode){
+async function generatePDF(workerMode, inPlace){
   updatePreview();
   await saveQuote(true); // שמירה אוטומטית
 
@@ -2439,13 +2439,13 @@ ${clientNotes?`<div class="notes">📝 ${clientNotes}</div>`:''}
 ${wMenu}
 </div>
 <script>
-var SHARE=${shareMode?'true':'false'}, FN=${JSON.stringify(filename)}, CLIENT=${JSON.stringify(clientName)}, pdfBlob=null;
+// v2.9.8: דף העובד לא מדפיס לבד — בוחרים למעלה הדפסה או שליחה בוואטסאפ
+var FN=${JSON.stringify(filename)}, CLIENT=${JSON.stringify(clientName)}, pdfBlob=null;
 function fitAndPrint(){
   var w=document.getElementById('w'), limit=(297-16)*96/25.4-4, s=1.4;
   w.style.setProperty('--s',s);
   while(w.offsetHeight>limit && s>0.6){ s-=0.03; w.style.setProperty('--s',s); }
   makePdf();
-  if(!SHARE) setTimeout(function(){window.focus();window.print();},300);
 }
 // v2.9.7: שליחה לעובד — מכינים PDF מראש, ובלחיצה פותחים את חלון השיתוף (וואטסאפ) עם הקובץ מצורף
 // v2.9.7: הדפדפן עצמו מצייר את התפריט לתמונה (SVG foreignObject) — html2canvas שובר עברית/RTL —

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.7.8</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.7.9</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -255,7 +255,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.7.8<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.7.9<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -1028,8 +1028,7 @@ function renderQuotes() {
         <div class="quote-actions" onclick="event.stopPropagation()">
           <button class="btn btn-navy btn-sm" onclick="openBuilder(${q.id})" title="עריכה מלאה">📝</button>
           <button class="btn btn-gold btn-sm" onclick="openPDFFromManager(${q.id})" title="PDF">📄</button>
-          <button class="btn btn-ghost btn-sm" onclick="openWorkerPrint(${q.id})" title="הדפסה לעובד">🧑‍🍳</button>
-          <button class="btn btn-sm btn-wa" onclick="openWorkerShare(${q.id})" title="שליחת תפריט לעובד בוואטסאפ">📤</button>
+          <button class="btn btn-ghost btn-sm" onclick="openWorkerPrint(${q.id})" title="תפריט לעובד — הדפסה או וואטסאפ">🧑‍🍳</button>
           <button class="btn btn-ghost btn-sm" onclick="openCalendarInvite(${q.id})" title="הוסף ליומן גוגל">📅</button>
           <button class="btn btn-sm btn-wa" onclick="openWhatsApp(${q.id})" title="וואטסאפ ללקוח">💬</button>
           <button class="btn btn-green btn-sm" onclick="sendFromManager(${q.id},'${q.client_name||''}','${q.client_phone||''}')" title="שלח לאישור">📨</button>
@@ -1273,9 +1272,6 @@ async function sendFromManager(quoteId, clientName, clientPhone) {
 
 function openWorkerPrint(quoteId) {
   window.open('quote-builder.html?id=' + quoteId + '&action=worker', '_blank');
-}
-function openWorkerShare(quoteId) { // v1.7.8: דף העובד בלי הדפסה, עם כפתור שליחה בוואטסאפ
-  window.open('quote-builder.html?id=' + quoteId + '&action=workershare', '_blank');
 }
 function openPDFFromManager(quoteId) {
   window.open('quote-builder.html?id=' + quoteId + '&action=pdf', '_blank');
