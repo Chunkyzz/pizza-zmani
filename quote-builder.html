@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.10.1</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.10.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.10.1 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.10.2 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -2430,7 +2430,7 @@ html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
 </head><body>
-<div class="bar"><button class="wa" id="waBtn" disabled onclick="shareToWorker()">⏳ מכין קובץ...</button><button class="pr" onclick="window.print()">🖨️ הדפסה</button><small id="waHint"></small></div>
+<div class="bar"><button class="wa" id="waBtn" disabled onclick="shareToWorker()">⏳ מכין קובץ...</button><button class="pr" onclick="sendDetails()" style="background:#fff;color:#1B2A4A;border:2px solid #25D366">💬 פרטים כטקסט</button><button class="pr" onclick="window.print()">🖨️ הדפסה</button><small id="waHint"></small></div>
 <div class="w" id="w">
 <div class="hd"><div class="hd-top"><div class="client">${clientName}</div>${eventType?`<div class="badge">${eventType}</div>`:''}</div>
 <div class="facts"><span>📅 ${dateStr}</span><span>🕐 ${timeStr}</span>${clientAddr?`<a id="ad" href="https://waze.com/ul?q=${encodeURIComponent(clientAddr)}&navigate=yes" style="color:inherit;text-decoration:none">📍 ${clientAddr}</a>`:''}${clientPhone?`<a id="ph" dir="ltr" href="tel:${clientPhone.replace(/[^\d+]/g,'')}" style="color:inherit;text-decoration:none">📞 ${clientPhone}</a><a id="wa" href="https://wa.me/${clientPhone.replace(/\D/g,'').replace(/^0/,'972')}" style="background:#25D366;color:#fff;text-decoration:none;font-size:calc(var(--s)*12px);font-weight:700;padding:1px 9px;border-radius:20px;">💬 וואטסאפ</a>`:''}</div></div>
@@ -2441,6 +2441,15 @@ ${wMenu}
 <script>
 // v2.9.8: דף העובד לא מדפיס לבד — בוחרים למעלה הדפסה או שליחה בוואטסאפ
 var FN=${JSON.stringify(filename)}, CLIENT=${JSON.stringify(clientName)}, pdfBlob=null;
+// v2.10.2: קישורים בתוך PDF לא תמיד עובדים בטלפון (תלוי בתוכנה שפותחת את הקובץ) —
+// לכן הפרטים נשלחים גם כטקסט בהודעה, ושם וואטסאפ תמיד מאפשר לחייג/לנווט בלחיצה
+function detailsMsg(){
+  var ph=document.getElementById('ph'), ad=document.getElementById('ad'), L=['תפריט לאירוע: '+CLIENT];
+  if(ph) L.push('📞 '+ph.textContent.replace('📞','').trim());
+  if(ad) L.push('📍 '+ad.textContent.replace('📍','').trim(), 'ניווט: '+ad.getAttribute('href'));
+  return L.join('\\n');
+}
+function sendDetails(){ window.open('https://wa.me/?text='+encodeURIComponent(detailsMsg()),'_blank'); }
 function fitAndPrint(){
   var w=document.getElementById('w'), limit=(297-16)*96/25.4-4, s=1.4;
   w.style.setProperty('--s',s);
@@ -2486,15 +2495,15 @@ function makePdf(){
 }
 function shareToWorker(){
   var hint=document.getElementById('waHint');
-  if(!pdfBlob){ window.open('https://wa.me/?text='+encodeURIComponent('תפריט לאירוע '+CLIENT),'_blank'); return; }
+  if(!pdfBlob){ sendDetails(); return; }
   var f=new File([pdfBlob],FN,{type:'application/pdf'});
   if(navigator.canShare && navigator.canShare({files:[f]})){
-    navigator.share({files:[f],title:FN}).catch(function(){});
-    hint.textContent='בחר וואטסאפ ואת העובד — הקובץ כבר מצורף';
+    navigator.share({files:[f],title:FN,text:detailsMsg()}).catch(function(){});
+    hint.textContent='בחר וואטסאפ ואת העובד — הקובץ והפרטים מצורפים. אם הטקסט לא נכנס: "פרטים כטקסט"';
     return;
   }
   var a=document.createElement('a'); a.href=URL.createObjectURL(pdfBlob); a.download=FN; document.body.appendChild(a); a.click(); a.remove();
-  window.open('https://wa.me/?text='+encodeURIComponent('תפריט לאירוע '+CLIENT+' – מצורף קובץ'),'_blank');
+  sendDetails();
   hint.textContent='הקובץ ירד למחשב — בוואטסאפ בחר את העובד וגרור אליו את הקובץ';
 }
 window.onload=function(){ (document.fonts&&document.fonts.ready)?document.fonts.ready.then(fitAndPrint):fitAndPrint(); };
