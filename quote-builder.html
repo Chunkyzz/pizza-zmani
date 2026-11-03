@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.9.6</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.9.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.9.6 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.9.7 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -828,9 +828,9 @@ async function init() {
   // הגעה מ-quotes-manager עם כוונה להדפיס ישירות (📄 מלא / 🧑‍🍳 לעובד)
   // v2.9.5: ההדפסה נפתחת באותה לשונית — חלון popup בלי לחיצה נחסם ע"י הדפדפן
   const act = params.get('action');
-  if (editId && (act === 'pdf' || act === 'worker')) {
+  if (editId && (act === 'pdf' || act === 'worker' || act === 'workershare')) {
     setMode('preview');
-    generatePDF(act === 'worker', true);
+    generatePDF(act !== 'pdf', true, act === 'workershare'); // v2.9.7: workershare = דף עובד בלי הדפסה אוטומטית, לשליחה בוואטסאפ
   }
 }
 
@@ -2293,7 +2293,7 @@ async function sendReservation(){
 }
 
 // PDF
-async function generatePDF(workerMode, inPlace){
+async function generatePDF(workerMode, inPlace, shareMode){
   updatePreview();
   await saveQuote(true); // שמירה אוטומטית
 
@@ -2403,8 +2403,13 @@ async function generatePDF(workerMode, inPlace){
 *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
 html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;}
 @page{size:A4;margin:8mm;}
-.w{--s:1;width:194mm;margin:0 auto;}
-@media print{.w{width:100%;}}
+.w{--s:1;width:194mm;margin:0 auto;direction:rtl;}
+@media print{.w{width:100%;}.bar{display:none!important;}}
+.bar{position:sticky;top:0;z-index:5;background:#F6F1E4;border-bottom:2px solid #C9A84C;padding:10px;display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+.bar button{font-family:inherit;font-size:16px;font-weight:700;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;}
+.bar .wa{background:#25D366;color:#fff;}.bar .wa:disabled{background:#9bd9b1;cursor:wait;}
+.bar .pr{background:#1B2A4A;color:#fff;}
+.bar small{width:100%;text-align:center;color:#8a7a50;font-size:12px;}
 .hd{background:#1B2A4A;color:#fff;padding:calc(var(--s)*10px) calc(var(--s)*14px);border-radius:8px 8px 0 0;}
 .hd-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
 .client{font-size:calc(var(--s)*24px);font-weight:800;}
@@ -2422,7 +2427,10 @@ html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;}
 .dd{font-size:calc(var(--s)*13px);color:#333;line-height:1.35;margin-top:1px;}
 .dnote{display:inline-block;margin-top:3px;background:#FFF3CC;border:2px solid #C9A84C;color:#5a3d00;font-size:calc(var(--s)*13px);font-weight:700;padding:1px 7px;border-radius:5px;}
 .dal{font-size:calc(var(--s)*12px);color:#B71C1C;font-weight:600;margin-top:1px;}
-</style></head><body>
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+</head><body>
+<div class="bar"><button class="wa" id="waBtn" disabled onclick="shareToWorker()">⏳ מכין קובץ...</button><button class="pr" onclick="window.print()">🖨️ הדפסה</button><small id="waHint"></small></div>
 <div class="w" id="w">
 <div class="hd"><div class="hd-top"><div class="client">${clientName}</div>${eventType?`<div class="badge">${eventType}</div>`:''}</div>
 <div class="facts"><span>📅 ${dateStr}</span><span>🕐 ${timeStr}</span>${clientAddr?`<span>📍 ${clientAddr}</span>`:''}${clientPhone?`<span dir="ltr">📞 ${clientPhone}</span>`:''}</div></div>
@@ -2431,11 +2439,54 @@ ${clientNotes?`<div class="notes">📝 ${clientNotes}</div>`:''}
 ${wMenu}
 </div>
 <script>
+var SHARE=${shareMode?'true':'false'}, FN=${JSON.stringify(filename)}, CLIENT=${JSON.stringify(clientName)}, pdfBlob=null;
 function fitAndPrint(){
   var w=document.getElementById('w'), limit=(297-16)*96/25.4-4, s=1.4;
   w.style.setProperty('--s',s);
   while(w.offsetHeight>limit && s>0.6){ s-=0.03; w.style.setProperty('--s',s); }
-  setTimeout(function(){window.focus();window.print();},300);
+  makePdf();
+  if(!SHARE) setTimeout(function(){window.focus();window.print();},300);
+}
+// v2.9.7: שליחה לעובד — מכינים PDF מראש, ובלחיצה פותחים את חלון השיתוף (וואטסאפ) עם הקובץ מצורף
+// v2.9.7: הדפדפן עצמו מצייר את התפריט לתמונה (SVG foreignObject) — html2canvas שובר עברית/RTL —
+// ורק התמונה עוברת ל-html2pdf ליצירת ה-PDF
+function snapCanvas(){
+  return new Promise(function(res,rej){
+    var w=document.getElementById('w'), W=w.offsetWidth, H=w.offsetHeight, css='';
+    for(var i=0;i<document.styleSheets.length;i++){ try{ var rs=document.styleSheets[i].cssRules; for(var j=0;j<rs.length;j++) css+=rs[j].cssText+' '; }catch(e){} }
+    css=css.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    var body=new XMLSerializer().serializeToString(w);
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'"><foreignObject x="0" y="0" width="'+W+'" height="'+H+'"><div xmlns="http://www.w3.org/1999/xhtml" dir="rtl" style="direction:rtl;background:#fff;font-family:Heebo,Arial,sans-serif;width:'+W+'px"><style>'+css+' .w{margin:0!important;}</style>'+body+'</div></foreignObject></svg>';
+    var img=new Image();
+    img.onload=function(){
+      var c=document.createElement('canvas'), k=2; c.width=W*k; c.height=H*k;
+      var x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.scale(k,k); x.drawImage(img,0,0);
+      res(c);
+    };
+    img.onerror=rej;
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  });
+}
+function makePdf(){
+  var btn=document.getElementById('waBtn');
+  var ready=function(){ btn.textContent='📤 שלח לעובד בוואטסאפ'; btn.disabled=false; };
+  if(!window.html2pdf){ ready(); return; }
+  snapCanvas().then(function(c){
+    return html2pdf().set({margin:8,filename:FN,image:{type:'jpeg',quality:0.95},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(c,'canvas').outputPdf('blob');
+  }).then(function(b){ pdfBlob=b; ready(); }).catch(ready);
+}
+function shareToWorker(){
+  var hint=document.getElementById('waHint');
+  if(!pdfBlob){ window.open('https://wa.me/?text='+encodeURIComponent('תפריט לאירוע '+CLIENT),'_blank'); return; }
+  var f=new File([pdfBlob],FN,{type:'application/pdf'});
+  if(navigator.canShare && navigator.canShare({files:[f]})){
+    navigator.share({files:[f],title:FN}).catch(function(){});
+    hint.textContent='בחר וואטסאפ ואת העובד — הקובץ כבר מצורף';
+    return;
+  }
+  var a=document.createElement('a'); a.href=URL.createObjectURL(pdfBlob); a.download=FN; document.body.appendChild(a); a.click(); a.remove();
+  window.open('https://wa.me/?text='+encodeURIComponent('תפריט לאירוע '+CLIENT+' – מצורף קובץ'),'_blank');
+  hint.textContent='הקובץ ירד למחשב — בוואטסאפ בחר את העובד וגרור אליו את הקובץ';
 }
 window.onload=function(){ (document.fonts&&document.fonts.ready)?document.fonts.ready.then(fitAndPrint):fitAndPrint(); };
 <\/script>
