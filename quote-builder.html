@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.10.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.10.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.10.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.10.1 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -2433,7 +2433,7 @@ html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;}
 <div class="bar"><button class="wa" id="waBtn" disabled onclick="shareToWorker()">⏳ מכין קובץ...</button><button class="pr" onclick="window.print()">🖨️ הדפסה</button><small id="waHint"></small></div>
 <div class="w" id="w">
 <div class="hd"><div class="hd-top"><div class="client">${clientName}</div>${eventType?`<div class="badge">${eventType}</div>`:''}</div>
-<div class="facts"><span>📅 ${dateStr}</span><span>🕐 ${timeStr}</span>${clientAddr?`<a id="ad" href="https://waze.com/ul?q=${encodeURIComponent(clientAddr)}&navigate=yes" style="color:inherit;text-decoration:none">📍 ${clientAddr}</a>`:''}${clientPhone?`<a id="ph" dir="ltr" href="tel:${clientPhone.replace(/[^\d+]/g,'')}" style="color:inherit;text-decoration:none">📞 ${clientPhone}</a>`:''}</div></div>
+<div class="facts"><span>📅 ${dateStr}</span><span>🕐 ${timeStr}</span>${clientAddr?`<a id="ad" href="https://waze.com/ul?q=${encodeURIComponent(clientAddr)}&navigate=yes" style="color:inherit;text-decoration:none">📍 ${clientAddr}</a>`:''}${clientPhone?`<a id="ph" dir="ltr" href="tel:${clientPhone.replace(/[^\d+]/g,'')}" style="color:inherit;text-decoration:none">📞 ${clientPhone}</a><a id="wa" href="https://wa.me/${clientPhone.replace(/\D/g,'').replace(/^0/,'972')}" style="background:#25D366;color:#fff;text-decoration:none;font-size:calc(var(--s)*12px);font-weight:700;padding:1px 9px;border-radius:20px;">💬 וואטסאפ</a>`:''}</div></div>
 <div class="guests"><span>סה"כ<b>${total}</b></span><span>מבוגרים<b>${g.adults}</b></span><span>ילדים<b>${g.kids}</b></span><span>פעוטות<b>${g.babies}</b></span></div>
 ${clientNotes?`<div class="notes">📝 ${clientNotes}</div>`:''}
 ${wMenu}
@@ -2473,7 +2473,7 @@ function makePdf(){
   if(!window.html2pdf){ ready(); return; }
   // v2.9.9–2.10.0: טלפון (חיוג) וכתובת (וויז) לחיצים גם ב-PDF — קישור מעל המקום שלהם בתמונה
   var w=document.getElementById('w'), wr=w.getBoundingClientRect(), mm=194/wr.width, links=[];
-  ['ph','ad'].forEach(function(id){ var el=document.getElementById(id); if(!el) return;
+  ['ph','ad','wa'].forEach(function(id){ var el=document.getElementById(id); if(!el) return;
     var r=el.getBoundingClientRect(), url=el.getAttribute('href');
     if(id==='ph') url='tel:'+url.slice(4).replace(/^0/,'+972');
     links.push({x:8+(r.left-wr.left)*mm, y:8+(r.top-wr.top)*mm, w:r.width*mm, h:r.height*mm, url:url}); });
