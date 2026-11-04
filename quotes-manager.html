@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – ניהול הצעות מחיר v1.7.9</title>
+<title>Pizza Zmani – ניהול הצעות מחיר v1.8.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -62,6 +62,12 @@ body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--text);mi
 .quote-card:hover{border-color:var(--gold);box-shadow:0 4px 20px rgba(201,168,76,0.12);}
 .quote-card.selected{border-color:var(--purple);background:#FAFAFF;}
 .quote-card.past{opacity:0.65;background:#F8F8F8;}
+.balls-box{display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;font-weight:700;color:#1B2A4A;background:#F6F1E4;border:1.5px solid #C9A84C;border-radius:8px;padding:2px 4px 2px 8px;}
+.balls-box input{width:52px;border:1px solid #d8cfb6;border-radius:6px;padding:2px 4px;font:inherit;text-align:center;background:#fff;}
+.balls-box .auto{font-size:0.66rem;color:#8a7a50;font-weight:600;}
+.balls-counter{display:none;position:fixed;left:24px;bottom:96px;z-index:50;background:#1B2A4A;color:#fff;font-weight:700;font-size:0.9rem;padding:10px 16px;border-radius:14px;border:2px solid #C9A84C;box-shadow:0 6px 20px rgba(0,0,0,0.2);text-align:center;line-height:1.3;}
+.balls-counter strong{color:#C9A84C;font-size:1.6rem;display:block;}
+.balls-counter small{display:block;font-size:0.68rem;opacity:0.8;font-weight:600;}
 .quote-checkbox{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);background:white;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;transition:all 0.15s;}
 .quote-card.selected .quote-checkbox{background:var(--purple);border-color:var(--purple);color:white;}
 .quote-info{flex:1;min-width:0;}
@@ -255,7 +261,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.7.9<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.8.0<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -279,6 +285,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
       <span class="selected-count" id="selectedCount" style="display:none">
         <strong id="selectedNum">0</strong> נבחרו
       </span>
+      <div class="balls-counter" id="ballsCounter">🍕 כדורים<strong id="selectedBalls">0</strong><small id="ballsEvents"></small></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-green btn-sm" onclick="openIngrFromSelected()" id="ingrBtn" disabled>🥦 חומרי גלם</button>
@@ -1015,6 +1022,7 @@ function renderQuotes() {
           ${q.total_before_vat?`<span>💰 <strong>₪${q.total_before_vat.toLocaleString()}</strong></span>`:''}
         </div>
         ${q.event_address?`<div class="quote-dishes">📍 ${q.event_address}</div>`:''}
+        <div style="margin-top:6px;"><label class="balls-box" onclick="event.stopPropagation()" title="ריק = חישוב אוטומטי (מבוגרים+ילדים × ${BALLS_FACTOR})">🍕 כדורים <input type="number" min="0" value="${ballsOf(q)}" onchange="saveBalls(${q.id},this)" onkeydown="if(event.key==='Enter')this.blur()">${q.dough_balls!=null?'<span class="auto">ידני</span>':'<span class="auto">אוטו׳</span>'}</label></div>
         ${q._clientEditedFields?`<div style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;background:#FFF3CC;color:#7A5200;font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:6px;border:1.5px solid #C9A84C;">⚠️ לקוח עדכן פרטים: ${q._clientEditedFields.join(', ')} — יש לוודא</div>`:''}
         ${q._sentDiff && q._sentDiff.length
           ? `<div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#FFF0E0;color:#9A4A00;font-size:0.72rem;font-weight:600;padding:5px 10px;border-radius:6px;border:1.5px solid #F0A050;">🟠 שונה מאז שנשלח ללקוח: ${q._sentDiff.join(', ')} <button class="btn btn-green btn-sm" style="padding:2px 9px;font-size:0.68rem;" onclick="event.stopPropagation();sendFromManager(${q.id},'${(q.client_name||'').replace(/'/g,'')}','${q.client_phone||''}')">📤 שלח לאישור השינוי</button></div>`
@@ -1343,8 +1351,24 @@ async function openAmalfi(quoteId) {
 function filterQuotes() { renderQuotes(); }
 
 // ══ SELECTION ══
+// v1.8.0: כדורי בצק לאירוע — ברירת מחדל (מבוגרים+ילדים)×0.8 מעוגל למעלה; ערך ידני נשמר ב-qz_quotes.dough_balls
+const BALLS_FACTOR = 0.8;
+function autoBalls(q){ return Math.ceil(((q.guests_adults||0)+(q.guests_kids||0))*BALLS_FACTOR); }
+function ballsOf(q){ return (q.dough_balls!=null && q.dough_balls!=='') ? +q.dough_balls : autoBalls(q); }
+async function saveBalls(id, inp){
+  const q = allQuotes.find(x=>x.id===id); if(!q) return;
+  const v = inp.value.trim()==='' ? null : Math.max(0, Math.round(+inp.value));
+  const prev = q.dough_balls;
+  if (v === (prev==null?null:+prev)) return;
+  const { error } = await sb.from('qz_quotes').update({ dough_balls: v }).eq('id', id);
+  if (error) { showToast('שמירת כדורים נכשלה: ' + error.message, 'error'); inp.value = ballsOf(q); return; }
+  q.dough_balls = v;
+  showToast(v===null ? 'כדורים חזר לחישוב אוטומטי ✓' : 'כדורים נשמר ✓', 'success');
+  renderQuotes(); updateSelectionUI();
+}
+
 function toggleSelect(id, event) {
-  if (event.target.tagName === 'BUTTON') return;
+  if (event.target.tagName === 'BUTTON' || event.target.tagName === 'INPUT') return;
   selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   updateSelectionUI();
   renderQuotes();
@@ -1369,7 +1393,10 @@ function updateSelectionUI() {
   const countEl = document.getElementById('selectedCount');
   const amalfiBtn = document.getElementById('amalfiBtn');
   countEl.style.display = count > 0 ? '' : 'none';
+  document.getElementById('ballsCounter').style.display = count > 0 ? 'block' : 'none';
+  document.getElementById('ballsEvents').textContent = count + (count===1 ? ' אירוע' : ' אירועים');
   document.getElementById('selectedNum').textContent = count;
+  document.getElementById('selectedBalls').textContent = allQuotes.filter(q=>selectedIds.has(q.id)).reduce((t,q)=>t+ballsOf(q),0);
   amalfiBtn.disabled = count === 0;
   document.getElementById('ingrBtn').disabled = count === 0;
 }

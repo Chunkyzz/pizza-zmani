@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.10.3</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.11.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.10.3 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.11.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -950,6 +950,7 @@ async function loadExistingQuote(id) {
 
   // Set currentQuoteId for upsert
   currentQuoteId = data.id;
+  loadedDoughBalls = (data.dough_balls!=null) ? +data.dough_balls : null; // v2.11.0
 
   // Fill form fields
   document.getElementById('cl-name').value    = data.client_name || '';
@@ -2293,6 +2294,7 @@ async function sendReservation(){
 }
 
 // PDF
+let loadedDoughBalls = null; // v2.11.0: ערך ידני מהמנהל; אחרת (מבוגרים+ילדים)×0.8 מעוגל למעלה
 async function generatePDF(workerMode, inPlace){
   updatePreview();
   await saveQuote(true); // שמירה אוטומטית
@@ -2413,6 +2415,7 @@ html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;}
 .hd{background:#1B2A4A;color:#fff;padding:calc(var(--s)*10px) calc(var(--s)*14px);border-radius:8px 8px 0 0;}
 .hd-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
 .client{font-size:calc(var(--s)*24px);font-weight:800;}
+.balls{font-size:calc(var(--s)*16px);font-weight:800;color:#1B2A4A;background:#fff;border:2px solid #C9A84C;padding:1px 12px;border-radius:20px;white-space:nowrap;}
 .badge{font-size:calc(var(--s)*12px);font-weight:700;color:#1B2A4A;background:#C9A84C;padding:2px 10px;border-radius:20px;white-space:nowrap;}
 .facts{display:flex;flex-wrap:wrap;gap:4px calc(var(--s)*22px);margin-top:calc(var(--s)*6px);font-size:calc(var(--s)*14px);font-weight:600;}
 .guests{background:#243660;color:#fff;display:flex;gap:calc(var(--s)*22px);padding:calc(var(--s)*7px) calc(var(--s)*14px);border-radius:0 0 8px 8px;font-size:calc(var(--s)*13px);}
@@ -2432,7 +2435,7 @@ html,body{direction:rtl;font-family:'Heebo',Arial,sans-serif;background:white;}
 </head><body>
 <div class="bar"><button class="wa" id="waBtn" disabled onclick="shareToWorker()">⏳ מכין קובץ...</button><button class="pr" onclick="sendDetails()" style="background:#fff;color:#1B2A4A;border:2px solid #25D366">💬 פרטים כטקסט</button><button class="pr" onclick="window.print()">🖨️ הדפסה</button><small id="waHint"></small></div>
 <div class="w" id="w">
-<div class="hd"><div class="hd-top"><div class="client">${clientName}</div>${eventType?`<div class="badge">${eventType}</div>`:''}</div>
+<div class="hd"><div class="hd-top"><div class="client">${clientName}</div><div style="display:flex;gap:6px;align-items:center;">${eventType?`<div class="badge">${eventType}</div>`:''}<div class="balls">🍕 ${loadedDoughBalls!=null?loadedDoughBalls:Math.ceil((g.adults+g.kids)*0.8)} כדורים</div></div></div>
 <div class="facts"><span>📅 ${dateStr}</span><span>🕐 ${timeStr}</span>${clientAddr?`<a id="ad" href="https://waze.com/ul?q=${encodeURIComponent(clientAddr)}&navigate=yes" style="color:inherit;text-decoration:none">📍 ${clientAddr}</a>`:''}${clientPhone?`<a id="ph" dir="ltr" href="tel:${clientPhone.replace(/[^\d+]/g,'')}" style="color:inherit;text-decoration:none">📞 ${clientPhone}</a><a id="wa" href="https://wa.me/${clientPhone.replace(/\D/g,'').replace(/^0/,'972')}" style="background:#25D366;color:#fff;text-decoration:none;font-size:calc(var(--s)*12px);font-weight:700;padding:1px 9px;border-radius:20px;">💬 וואטסאפ</a>`:''}</div></div>
 <div class="guests"><span>סה"כ<b>${total}</b></span><span>מבוגרים<b>${g.adults}</b></span><span>ילדים<b>${g.kids}</b></span><span>פעוטות<b>${g.babies}</b></span></div>
 ${clientNotes?`<div class="notes">📝 ${clientNotes}</div>`:''}
