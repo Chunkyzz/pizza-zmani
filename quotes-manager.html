@@ -261,7 +261,7 @@ tbody td{padding:9px 14px;font-size:0.85rem;vertical-align:middle;}
     <a href="quote-builder.html" class="btn btn-gold btn-sm">+ הצעה חדשה</a>
     <a href="quote-admin.html" class="btn btn-ghost btn-sm" style="color:white;border-color:rgba(255,255,255,0.3);">ניהול מנות</a>
   </div>
-  <div class="version">v1.8.0<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v1.8.1<span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <div class="main">
@@ -987,6 +987,7 @@ function renderQuotes() {
         !(q.event_type||'').toLowerCase().includes(search)) return false;
     return true;
   });
+  if (currentSubTab === 'history') quotes.reverse();
 
   const list = document.getElementById('quotesList');
   if (!quotes.length) {
