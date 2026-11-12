@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizza Zmani – בונה הצעת מחיר v2.11.0</title>
+<title>Pizza Zmani – בונה הצעת מחיר v2.11.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -381,7 +381,7 @@ body.edit-mode-active .unav-btn{bottom:84px !important;} /* v2.9.0: לא מכס�
     <button class="btn" style="background:#0369a1;color:white;" onclick="sendReservation()" title="שריון תאריך בלבד, בלי תפריט או מחיר — ללקוח שעדיין לא החליט מה הוא רוצה לאכול">📅 שלח לשריון</button>
     <button class="btn" style="background:#7c3aed;color:white;" onclick="openEventModal()">🎉 הפקת אירוע</button>
   </div>
-  <div class="version">v2.11.0 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
+  <div class="version">v2.11.1 <span class="signout-link" onclick="doSignOut()">🔒 התנתק</span></div>
 </div>
 
 <!-- SPLIT LAYOUT WRAPPER -->
@@ -950,7 +950,7 @@ async function loadExistingQuote(id) {
 
   // Set currentQuoteId for upsert
   currentQuoteId = data.id;
-  loadedDoughBalls = (data.dough_balls!=null) ? +data.dough_balls : null; // v2.11.0
+  loadedDoughBalls = (data.dough_balls!=null) ? +data.dough_balls : null; // v2.11.1
 
   // Fill form fields
   document.getElementById('cl-name').value    = data.client_name || '';
@@ -1135,6 +1135,7 @@ function renderDishes() {
       if(d.is_vegan) badges.push('<span class="dbadge dbadge-vegan">🌱</span>');
       if(d.is_gluten_free) badges.push('<span class="dbadge dbadge-gf">GF</span>');
       if(d.allergens&&d.allergens.length) badges.push('<span class="dbadge dbadge-allergy">⚠️ '+d.allergens.join(', ')+'</span>');
+      if(d.min_guests) badges.push('<span class="dbadge" style="background:#FFF3CC;color:#7A5200;">מינ׳ '+d.min_guests+' מנות</span>');
       return '<div class="dish-card'+(sel?' selected':'')+'" onclick="toggleDish('+d.id+')">' +
         '<div class="dish-check">'+(sel?'✓':'')+'</div>' +
         '<div class="dish-info">' +
@@ -2294,7 +2295,7 @@ async function sendReservation(){
 }
 
 // PDF
-let loadedDoughBalls = null; // v2.11.0: ערך ידני מהמנהל; אחרת (מבוגרים+ילדים)×0.8 מעוגל למעלה
+let loadedDoughBalls = null; // v2.11.1: ערך ידני מהמנהל; אחרת (מבוגרים+ילדים)×0.8 מעוגל למעלה
 async function generatePDF(workerMode, inPlace){
   updatePreview();
   await saveQuote(true); // שמירה אוטומטית
